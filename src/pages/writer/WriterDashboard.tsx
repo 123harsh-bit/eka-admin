@@ -1,8 +1,222 @@
+import { useState, useEffect } from 'react';
+import { WriterLayout } from '@/components/writer/WriterLayout';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { StatusBadge } from '@/components/shared/StatusBadge';
+import { WRITING_TASK_STATUSES, WRITING_TASK_STATUS_ORDER, WRITING_TASK_TYPES, type WritingTaskStatus } from '@/lib/statusConfig';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { PenTool, ExternalLink, Loader2, Calendar } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+
+interface WritingTask {
+  id: string; title: string; task_type: string; status: string;
+  client_id: string; due_date: string | null; doc_link: string | null;
+  word_count_target: number | null; version_notes: string | null;
+  client_name?: string;
+}
+
+const taskTypeLabel = (type: string) => WRITING_TASK_TYPES.find(t => t.value === type)?.label || type;
+
 export default function WriterDashboard() {
+  const { user } = useAuth();
+  const [tasks, setTasks] = useState<WritingTask[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedTask, setSelectedTask] = useState<WritingTask | null>(null);
+  const [docLink, setDocLink] = useState('');
+  const [versionNotes, setVersionNotes] = useState('');
+  const [wordCountActual, setWordCountActual] = useState('');
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchTasks();
+    const channel = supabase
+      .channel('writer-tasks')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'writing_tasks', filter: `assigned_writer=eq.${user?.id}` }, fetchTasks)
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
+
+  const fetchTasks = async () => {
+    if (!user) return;
+    setLoading(true);
+    const { data } = await supabase.from('writing_tasks').select('*, clients(name)').eq('assigned_writer', user.id).not('status', 'eq', 'delivered').order('due_date', { ascending: true, nullsFirst: false });
+    if (data) {
+      setTasks((data as unknown[]).map((t: unknown) => {
+        const row = t as Record<string, unknown>;
+        return { ...(row as unknown as WritingTask), client_name: (row.clients as { name: string } | null)?.name || 'Unknown' };
+      }));
+    }
+    setLoading(false);
+  };
+
+  const handleStatusChange = async (taskId: string, status: string) => {
+    await supabase.from('writing_tasks').update({ status }).eq('id', taskId);
+    await fetchTasks();
+    if (selectedTask?.id === taskId) setSelectedTask(t => t ? { ...t, status } : t);
+    toast({ title: 'Status updated' });
+  };
+
+  const handleSave = async () => {
+    if (!selectedTask) return;
+    setSaving(true);
+    await supabase.from('writing_tasks').update({
+      doc_link: docLink || null,
+      version_notes: versionNotes || null,
+    }).eq('id', selectedTask.id);
+    toast({ title: 'Saved' });
+    await fetchTasks();
+    setSaving(false);
+  };
+
+  const openTask = (t: WritingTask) => {
+    setSelectedTask(t);
+    setDocLink(t.doc_link || '');
+    setVersionNotes(t.version_notes || '');
+    setWordCountActual('');
+  };
+
+  const today = new Date().toISOString().split('T')[0];
+
+  // Group by status category
+  const activeStatuses: WritingTaskStatus[] = ['briefed', 'drafting'];
+  const reviewStatuses: WritingTaskStatus[] = ['review', 'revisions'];
+  const approvedStatuses: WritingTaskStatus[] = ['approved'];
+
+  const groups = [
+    { label: 'Active', statuses: activeStatuses, tasks: tasks.filter(t => activeStatuses.includes(t.status as WritingTaskStatus)) },
+    { label: 'For Review', statuses: reviewStatuses, tasks: tasks.filter(t => reviewStatuses.includes(t.status as WritingTaskStatus)) },
+    { label: 'Approved', statuses: approvedStatuses, tasks: tasks.filter(t => approvedStatuses.includes(t.status as WritingTaskStatus)) },
+  ];
+
   return (
-    <div className="min-h-screen bg-background p-8 fade-in">
-      <h1 className="text-3xl font-display font-bold gradient-text">Writer Dashboard</h1>
-      <p className="text-muted-foreground mt-2">Your assigned writing tasks will appear here.</p>
-    </div>
+    <WriterLayout>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-display font-bold gradient-text">My Writing Tasks</h1>
+          <p className="text-muted-foreground mt-1">{tasks.length} active task{tasks.length !== 1 ? 's' : ''} assigned to you</p>
+        </div>
+
+        {loading ? (
+          <div className="space-y-3">
+            {[...Array(5)].map((_, i) => <div key={i} className="glass-card h-16 animate-pulse" />)}
+          </div>
+        ) : tasks.length === 0 ? (
+          <div className="glass-card p-16 text-center">
+            <PenTool size={40} className="mx-auto text-muted-foreground/40 mb-3" />
+            <p className="text-muted-foreground">No writing tasks assigned to you yet.</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {groups.map(group => group.tasks.length > 0 && (
+              <div key={group.label}>
+                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">{group.label}</h2>
+                <div className="space-y-2">
+                  {group.tasks.map(task => {
+                    const isOverdue = task.due_date && task.due_date < today;
+                    return (
+                      <div
+                        key={task.id}
+                        onClick={() => openTask(task)}
+                        className={cn('glass-card-hover p-4 cursor-pointer flex items-center gap-4', selectedTask?.id === task.id && 'ring-1 ring-primary')}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-medium text-foreground truncate">{task.title}</p>
+                            <span className="text-[10px] bg-accent text-accent-foreground px-1.5 py-0.5 rounded flex-shrink-0">{taskTypeLabel(task.task_type)}</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">{task.client_name}</p>
+                        </div>
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          {task.word_count_target && (
+                            <span className="text-xs text-muted-foreground">{task.word_count_target.toLocaleString()}w target</span>
+                          )}
+                          <StatusBadge status={task.status as WritingTaskStatus} type="writing" />
+                          {task.due_date && (
+                            <span className={cn('text-xs flex items-center gap-1', isOverdue ? 'text-destructive' : 'text-muted-foreground')}>
+                              <Calendar size={10} />
+                              {new Date(task.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Detail Panel */}
+        {selectedTask && (
+          <div className="fixed right-0 top-0 h-full w-80 bg-sidebar border-l border-sidebar-border z-50 flex flex-col shadow-2xl">
+            <div className="p-4 border-b border-glass-border flex items-start justify-between">
+              <div>
+                <h2 className="font-display font-semibold text-foreground text-sm">{selectedTask.title}</h2>
+                <p className="text-xs text-muted-foreground">{selectedTask.client_name}</p>
+              </div>
+              <button onClick={() => setSelectedTask(null)} className="text-muted-foreground hover:text-foreground text-lg leading-none">×</button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-5">
+              {/* Word count */}
+              {selectedTask.word_count_target && (
+                <div className="p-3 bg-primary/10 rounded-lg">
+                  <p className="text-xs text-muted-foreground">Word Count Target</p>
+                  <p className="text-lg font-bold text-primary">{selectedTask.word_count_target.toLocaleString()} words</p>
+                </div>
+              )}
+
+              {/* Status */}
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Update Status</p>
+                <div className="space-y-1">
+                  {WRITING_TASK_STATUS_ORDER.map((s, i) => {
+                    const currentIdx = WRITING_TASK_STATUS_ORDER.indexOf(selectedTask.status as WritingTaskStatus);
+                    const isCurrent = s === selectedTask.status;
+                    const isPast = i < currentIdx;
+                    return (
+                      <button key={s} onClick={() => handleStatusChange(selectedTask.id, s)}
+                        className={cn('w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-all hover:bg-muted/30',
+                          isCurrent && 'bg-primary/20 text-primary font-semibold',
+                          isPast && 'text-muted-foreground',
+                          !isCurrent && !isPast && 'text-foreground/70',
+                        )}>
+                        <span className={cn('h-2 w-2 rounded-full', isCurrent ? 'bg-primary' : isPast ? 'bg-success' : 'bg-muted-foreground/30')} />
+                        {WRITING_TASK_STATUSES[s].emoji} {WRITING_TASK_STATUSES[s].label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs">Google Doc Link</Label>
+                <Input value={docLink} onChange={e => setDocLink(e.target.value)} placeholder="https://docs.google.com/…" className="text-xs h-8" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Version Notes</Label>
+                <textarea value={versionNotes} onChange={e => setVersionNotes(e.target.value)} rows={4} placeholder="Notes on this draft…" className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-xs text-foreground resize-none" />
+              </div>
+
+              <Button size="sm" onClick={handleSave} disabled={saving} className="w-full gap-2">
+                {saving && <Loader2 size={12} className="animate-spin" />}
+                Save
+              </Button>
+
+              {selectedTask.doc_link && (
+                <a href={selectedTask.doc_link} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs text-primary hover:underline">
+                  <ExternalLink size={10} /> Open Google Doc
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </WriterLayout>
   );
 }

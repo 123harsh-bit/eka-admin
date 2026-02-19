@@ -23,8 +23,12 @@ import AdminSettings from "@/pages/admin/AdminSettings";
 
 // Role dashboards
 import EditorDashboard from "@/pages/editor/EditorDashboard";
+import EditorAllVideos from "@/pages/editor/EditorAllVideos";
+import EditorClients from "@/pages/editor/EditorClients";
 import DesignerDashboard from "@/pages/designer/DesignerDashboard";
+import DesignerBrandKits from "@/pages/designer/DesignerBrandKits";
 import WriterDashboard from "@/pages/writer/WriterDashboard";
+import WriterClientBriefs from "@/pages/writer/WriterClientBriefs";
 import ClientDashboard from "@/pages/client/ClientDashboard";
 
 const queryClient = new QueryClient();
@@ -56,12 +60,16 @@ const App = () => (
 
             {/* Editor routes */}
             <Route path="/editor" element={<ProtectedRoute allowedRoles={['editor']}><EditorDashboard /></ProtectedRoute>} />
+            <Route path="/editor/videos" element={<ProtectedRoute allowedRoles={['editor']}><EditorAllVideos /></ProtectedRoute>} />
+            <Route path="/editor/clients" element={<ProtectedRoute allowedRoles={['editor']}><EditorClients /></ProtectedRoute>} />
 
             {/* Designer routes */}
             <Route path="/designer" element={<ProtectedRoute allowedRoles={['designer']}><DesignerDashboard /></ProtectedRoute>} />
+            <Route path="/designer/brand-kits" element={<ProtectedRoute allowedRoles={['designer']}><DesignerBrandKits /></ProtectedRoute>} />
 
             {/* Writer routes */}
             <Route path="/writer" element={<ProtectedRoute allowedRoles={['writer']}><WriterDashboard /></ProtectedRoute>} />
+            <Route path="/writer/briefs" element={<ProtectedRoute allowedRoles={['writer']}><WriterClientBriefs /></ProtectedRoute>} />
 
             {/* Client routes */}
             <Route path="/client" element={<ProtectedRoute allowedRoles={['client']}><ClientDashboard /></ProtectedRoute>} />
