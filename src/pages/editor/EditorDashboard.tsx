@@ -3,6 +3,7 @@ import { EditorLayout } from '@/components/editor/EditorLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { StatusBadge } from '@/components/shared/StatusBadge';
+import { MyPerformance } from '@/components/shared/MyPerformance';
 import { VIDEO_STATUSES, VIDEO_STATUS_ORDER, type VideoStatus } from '@/lib/statusConfig';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -104,7 +105,11 @@ export default function EditorDashboard() {
 
   return (
     <EditorLayout>
-      <div className="flex gap-6 h-[calc(100vh-10rem)]">
+      <div className="space-y-6">
+        {/* Performance Section */}
+        <MyPerformance role="editor" />
+
+        <div className="flex gap-6 h-[calc(100vh-10rem)]">
         <div className={cn('flex flex-col space-y-4', selectedVideo ? 'flex-1 min-w-0' : 'w-full')}>
           <div>
             <h1 className="text-3xl font-display font-bold gradient-text">My Tasks</h1>
@@ -239,6 +244,7 @@ export default function EditorDashboard() {
             </div>
           </div>
         )}
+      </div>
       </div>
     </EditorLayout>
   );

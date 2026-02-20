@@ -3,6 +3,7 @@ import { WriterLayout } from '@/components/writer/WriterLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { StatusBadge } from '@/components/shared/StatusBadge';
+import { MyPerformance } from '@/components/shared/MyPerformance';
 import { WRITING_TASK_STATUSES, WRITING_TASK_STATUS_ORDER, WRITING_TASK_TYPES, type WritingTaskStatus } from '@/lib/statusConfig';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -95,6 +96,7 @@ export default function WriterDashboard() {
   return (
     <WriterLayout>
       <div className="space-y-6">
+        <MyPerformance role="writer" />
         <div>
           <h1 className="text-3xl font-display font-bold gradient-text">My Writing Tasks</h1>
           <p className="text-muted-foreground mt-1">{tasks.length} active task{tasks.length !== 1 ? 's' : ''} assigned to you</p>
