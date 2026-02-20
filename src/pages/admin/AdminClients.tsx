@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
+import { ClientPortalAccess } from '@/components/admin/ClientPortalAccess';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,7 +9,7 @@ import { ConfirmDeleteModal } from '@/components/shared/ConfirmDeleteModal';
 import { useToast } from '@/hooks/use-toast';
 import {
   Plus, Search, X, Users, Building2, Phone, Mail,
-  Calendar, Edit2, Trash2, ToggleLeft, ToggleRight, Upload, Loader2
+  Calendar, Edit2, Trash2, ToggleLeft, ToggleRight, Upload, Loader2, KeyRound
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -27,6 +28,7 @@ interface Client {
   contract_end: string | null;
   notes: string | null;
   created_at: string;
+  user_id: string | null;
 }
 
 const INDUSTRIES = ['Technology', 'E-commerce', 'Health & Fitness', 'Real Estate', 'Education', 'Food & Beverage', 'Fashion', 'Finance', 'Travel', 'Entertainment', 'Other'];
@@ -213,11 +215,15 @@ export default function AdminClients() {
                       {client.industry && <p className="text-xs text-muted-foreground">{client.industry}</p>}
                     </div>
                   </div>
-                  <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium',
-                    client.is_active ? 'bg-success/20 text-success' : 'bg-muted text-muted-foreground'
-                  )}>
-                    {client.is_active ? 'Active' : 'Inactive'}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium',
+                      client.is_active ? 'bg-success/20 text-success' : 'bg-muted text-muted-foreground'
+                    )}>
+                      {client.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                    <span className={cn('h-2.5 w-2.5 rounded-full', client.user_id ? 'bg-success' : 'bg-destructive')}
+                      title={client.user_id ? 'Portal active' : 'No portal access'} />
+                  </div>
                 </div>
 
                 <div className="space-y-1.5 text-xs text-muted-foreground">
@@ -353,6 +359,19 @@ export default function AdminClients() {
                   />
                 </div>
               </div>
+
+              {/* Client Portal Access - only show when editing */}
+              {editingClient && (
+                <div className="border-t border-glass-border pt-4">
+                  <ClientPortalAccess
+                    clientId={editingClient.id}
+                    clientEmail={editingClient.email}
+                    clientName={editingClient.name}
+                    userId={editingClient.user_id}
+                    onUpdate={fetchClients}
+                  />
+                </div>
+              )}
             </form>
 
             <div className="p-6 border-t border-sidebar-border flex gap-3">

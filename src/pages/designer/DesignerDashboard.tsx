@@ -3,6 +3,7 @@ import { DesignerLayout } from '@/components/designer/DesignerLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { StatusBadge } from '@/components/shared/StatusBadge';
+import { MyPerformance } from '@/components/shared/MyPerformance';
 import { DESIGN_TASK_STATUSES, DESIGN_TASK_STATUS_ORDER, DESIGN_TASK_TYPES, type DesignTaskStatus } from '@/lib/statusConfig';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -93,6 +94,7 @@ export default function DesignerDashboard() {
   return (
     <DesignerLayout>
       <div className="space-y-6">
+        <MyPerformance role="designer" />
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-display font-bold gradient-text">My Design Tasks</h1>

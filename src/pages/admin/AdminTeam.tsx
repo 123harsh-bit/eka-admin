@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
+import { TeamPerformanceGrid } from '@/components/admin/TeamPerformance';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,7 +15,6 @@ interface TeamMember {
   full_name: string;
   email: string;
   phone: string | null;
-  is_active: boolean;
   role: string;
   created_at: string;
   taskCount?: number;
@@ -37,6 +37,7 @@ export default function AdminTeam() {
   const [form, setForm] = useState({ full_name: '', email: '', phone: '', role: 'editor', password: '' });
   const [saving, setSaving] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; member: TeamMember | null }>({ open: false, member: null });
+  const [deleting, setDeleting] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => { fetchTeam(); }, []);
@@ -60,7 +61,6 @@ export default function AdminTeam() {
       full_name: p.full_name,
       email: p.email,
       phone: p.phone,
-      is_active: p.is_active,
       role: roleMap[p.id] || 'editor',
       created_at: p.created_at,
     }));
@@ -106,14 +106,12 @@ export default function AdminTeam() {
 
     try {
       if (editingMember) {
-        // Update profile
         const { error: profileError } = await supabase.from('profiles').update({
           full_name: form.full_name.trim(),
           phone: form.phone || null,
         }).eq('id', editingMember.id);
         if (profileError) throw profileError;
 
-        // Update role if changed
         if (editingMember.role !== form.role) {
           await supabase.from('user_roles').update({ role: form.role as 'admin' | 'editor' | 'designer' | 'writer' | 'client' }).eq('user_id', editingMember.id);
         }
@@ -122,9 +120,9 @@ export default function AdminTeam() {
       } else {
         if (!form.password || form.password.length < 8) {
           toast({ title: 'Password must be at least 8 characters', variant: 'destructive' });
+          setSaving(false);
           return;
         }
-        // Create via edge function
         const { data: { session } } = await supabase.auth.getSession();
         const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-admin-user`, {
           method: 'POST',
@@ -142,7 +140,6 @@ export default function AdminTeam() {
         const result = await res.json();
         if (!res.ok) throw new Error(result.error || 'Failed to create user');
 
-        // Update phone if provided
         if (form.phone && result.user_id) {
           await supabase.from('profiles').update({ phone: form.phone }).eq('id', result.user_id);
         }
@@ -159,21 +156,29 @@ export default function AdminTeam() {
     }
   };
 
-  const handleToggleActive = async (member: TeamMember) => {
-    const { error } = await supabase.from('profiles').update({ is_active: !member.is_active }).eq('id', member.id);
-    if (!error) {
-      setMembers(prev => prev.map(m => m.id === member.id ? { ...m, is_active: !m.is_active } : m));
-      toast({ title: member.is_active ? 'Member deactivated' : 'Member activated' });
-    }
-  };
-
   const handleDelete = async () => {
     if (!deleteModal.member) return;
-    // Note: Deleting from profiles cascades. Auth user deletion requires service role.
-    await supabase.from('profiles').update({ is_active: false }).eq('id', deleteModal.member.id);
-    await fetchTeam();
-    toast({ title: 'Member deactivated' });
-    setDeleteModal({ open: false, member: null });
+    setDeleting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-admin-user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({ action: 'delete_user', user_id: deleteModal.member.id }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Failed to delete');
+      await fetchTeam();
+      toast({ title: `${deleteModal.member.full_name} has been permanently removed.` });
+    } catch (err: unknown) {
+      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Something went wrong', variant: 'destructive' });
+    } finally {
+      setDeleting(false);
+      setDeleteModal({ open: false, member: null });
+    }
   };
 
   const getRoleConfig = (role: string) => ROLES.find(r => r.value === role) || ROLES[0];
@@ -187,10 +192,13 @@ export default function AdminTeam() {
   return (
     <AdminLayout>
       <div className="space-y-6">
+        {/* Team Performance Section */}
+        <TeamPerformanceGrid />
+
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-display font-bold gradient-text">Team</h1>
-            <p className="text-muted-foreground mt-1">{members.length} members · {members.filter(m => m.is_active).length} active</p>
+            <p className="text-muted-foreground mt-1">{members.length} members</p>
           </div>
           <Button onClick={openAdd} className="gap-2"><Plus size={16} /> Add Member</Button>
         </div>
@@ -220,7 +228,7 @@ export default function AdminTeam() {
             {filtered.map(member => {
               const roleConfig = getRoleConfig(member.role);
               return (
-                <div key={member.id} className={cn('glass-card-hover p-5 space-y-4', !member.is_active && 'opacity-60')}>
+                <div key={member.id} className="glass-card-hover p-5 space-y-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-sm font-bold text-primary">
@@ -234,7 +242,6 @@ export default function AdminTeam() {
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
-                      {!member.is_active && <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Inactive</span>}
                       {member.taskCount !== undefined && member.taskCount > 0 && (
                         <span className="text-xs text-warning bg-warning/20 px-2 py-0.5 rounded-full">{member.taskCount} active</span>
                       )}
@@ -250,8 +257,8 @@ export default function AdminTeam() {
                     <Button size="sm" variant="outline" onClick={() => openEdit(member)} className="flex-1 gap-1.5 text-xs">
                       <Edit2 size={12} /> Edit
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => handleToggleActive(member)} className="text-xs px-3">
-                      {member.is_active ? 'Deactivate' : 'Activate'}
+                    <Button size="sm" variant="ghost" onClick={() => setDeleteModal({ open: true, member })} className="px-3 text-xs text-destructive hover:text-destructive hover:bg-destructive/10">
+                      <Trash2 size={14} />
                     </Button>
                   </div>
                 </div>
@@ -309,8 +316,8 @@ export default function AdminTeam() {
         open={deleteModal.open}
         onOpenChange={(open) => !open && setDeleteModal({ open: false, member: null })}
         onConfirm={handleDelete}
-        title="Deactivate Member"
-        description={`Deactivate "${deleteModal.member?.full_name}"? They will no longer be able to log in.`}
+        title="Permanently Delete Team Member"
+        description={`This action is permanent and cannot be undone. ${deleteModal.member?.full_name} (${getRoleConfig(deleteModal.member?.role || '').label}) will lose all access immediately.`}
       />
     </AdminLayout>
   );
