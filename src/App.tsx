@@ -20,6 +20,7 @@ import AdminWritingTasks from "@/pages/admin/AdminWritingTasks";
 import AdminTeam from "@/pages/admin/AdminTeam";
 import AdminNotifications from "@/pages/admin/AdminNotifications";
 import AdminSettings from "@/pages/admin/AdminSettings";
+import AdminDailyTasks from "@/pages/admin/AdminDailyTasks";
 
 // Role dashboards
 import EditorDashboard from "@/pages/editor/EditorDashboard";
@@ -50,6 +51,7 @@ const App = () => (
 
             {/* Admin routes */}
             <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/admin/daily-tasks" element={<ProtectedRoute allowedRoles={['admin']}><AdminDailyTasks /></ProtectedRoute>} />
             <Route path="/admin/clients" element={<ProtectedRoute allowedRoles={['admin']}><AdminClients /></ProtectedRoute>} />
             <Route path="/admin/videos" element={<ProtectedRoute allowedRoles={['admin']}><AdminVideos /></ProtectedRoute>} />
             <Route path="/admin/design-tasks" element={<ProtectedRoute allowedRoles={['admin']}><AdminDesignTasks /></ProtectedRoute>} />
