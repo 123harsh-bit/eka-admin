@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -19,7 +19,7 @@ interface AuthContextType {
   profile: Profile | null;
   role: AppRole | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: string | null; role: AppRole | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: string | null }>;
 }
@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<AppRole | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfileAndRole = async (userId: string) => {
+  const fetchProfileAndRole = useCallback(async (userId: string) => {
     try {
       const [profileRes, roleRes] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', userId).single(),
@@ -42,12 +42,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (profileRes.data) setProfile(profileRes.data as Profile);
       if (roleRes.data) setRole(roleRes.data.role as AppRole);
+      return { profile: profileRes.data, role: roleRes.data?.role as AppRole | null };
     } catch {
-      // Silently handle — profile/role may not exist yet
+      return { profile: null, role: null };
     }
-  };
+  }, []);
 
   useEffect(() => {
+    // Set up auth listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         setSession(session);
@@ -64,6 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
+    // Then check existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -74,11 +77,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [fetchProfileAndRole]);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error ? error.message : null };
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return { error: error.message, role: null };
+
+    // Immediately set user and session from the response — don't wait for onAuthStateChange
+    const signedInUser = data.user;
+    const signedInSession = data.session;
+    setUser(signedInUser);
+    setSession(signedInSession);
+
+    // Fetch profile and role immediately, set them in state
+    const result = await fetchProfileAndRole(signedInUser.id);
+    return { error: null, role: result.role };
   };
 
   const signOut = async () => {

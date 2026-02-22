@@ -75,7 +75,7 @@ export default function AdminVideos() {
   };
 
   const fetchVideos = async () => {
-    const { data } = await supabase.from('videos').select('*, clients(name), profiles!videos_assigned_editor_fkey(full_name)').order('created_at', { ascending: false });
+    const { data } = await supabase.from('videos').select('*, clients(name), profiles(full_name)').order('created_at', { ascending: false });
     if (data) {
       const vids: VideoRow[] = (data as unknown[]).map((v: unknown) => {
         const row = v as Record<string, unknown>;

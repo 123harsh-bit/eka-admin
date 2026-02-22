@@ -60,7 +60,7 @@ export default function AdminDesignTasks() {
   };
 
   const fetchTasks = async () => {
-    const { data } = await supabase.from('design_tasks').select('*, clients(name), profiles!design_tasks_assigned_designer_fkey(full_name)').order('created_at', { ascending: false });
+    const { data } = await supabase.from('design_tasks').select('*, clients(name), profiles(full_name)').order('created_at', { ascending: false });
     if (data) {
       setTasks((data as unknown[]).map((t: unknown) => {
         const row = t as Record<string, unknown>;

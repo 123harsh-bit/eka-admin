@@ -107,6 +107,42 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_todos: {
+        Row: {
+          admin_id: string
+          carried_over_from: string | null
+          completed_at: string | null
+          created_at: string
+          id: string
+          is_complete: boolean
+          original_date: string
+          priority: string
+          title: string
+        }
+        Insert: {
+          admin_id: string
+          carried_over_from?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          is_complete?: boolean
+          original_date?: string
+          priority?: string
+          title: string
+        }
+        Update: {
+          admin_id?: string
+          carried_over_from?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          is_complete?: boolean
+          original_date?: string
+          priority?: string
+          title?: string
+        }
+        Relationships: []
+      }
       design_tasks: {
         Row: {
           assigned_designer: string | null
@@ -154,6 +190,13 @@ export type Database = {
           video_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "design_tasks_assigned_designer_fkey"
+            columns: ["assigned_designer"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "design_tasks_client_id_fkey"
             columns: ["client_id"]
@@ -336,6 +379,7 @@ export type Database = {
           internal_notes: string | null
           is_internal_note_visible_to_client: boolean
           live_url: string | null
+          raw_footage_link: string | null
           status: string
           thumbnail_url: string | null
           title: string
@@ -353,6 +397,7 @@ export type Database = {
           internal_notes?: string | null
           is_internal_note_visible_to_client?: boolean
           live_url?: string | null
+          raw_footage_link?: string | null
           status?: string
           thumbnail_url?: string | null
           title: string
@@ -370,12 +415,20 @@ export type Database = {
           internal_notes?: string | null
           is_internal_note_visible_to_client?: boolean
           live_url?: string | null
+          raw_footage_link?: string | null
           status?: string
           thumbnail_url?: string | null
           title?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "videos_assigned_editor_fkey"
+            columns: ["assigned_editor"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "videos_client_id_fkey"
             columns: ["client_id"]
@@ -393,7 +446,9 @@ export type Database = {
           doc_link: string | null
           due_date: string | null
           id: string
+          script_duration_seconds: number | null
           status: string
+          target_duration_seconds: number | null
           task_type: string
           title: string
           updated_at: string
@@ -408,7 +463,9 @@ export type Database = {
           doc_link?: string | null
           due_date?: string | null
           id?: string
+          script_duration_seconds?: number | null
           status?: string
+          target_duration_seconds?: number | null
           task_type?: string
           title: string
           updated_at?: string
@@ -423,7 +480,9 @@ export type Database = {
           doc_link?: string | null
           due_date?: string | null
           id?: string
+          script_duration_seconds?: number | null
           status?: string
+          target_duration_seconds?: number | null
           task_type?: string
           title?: string
           updated_at?: string
@@ -432,6 +491,13 @@ export type Database = {
           word_count_target?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "writing_tasks_assigned_writer_fkey"
+            columns: ["assigned_writer"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "writing_tasks_client_id_fkey"
             columns: ["client_id"]

@@ -59,7 +59,7 @@ export default function AdminWritingTasks() {
   };
 
   const fetchTasks = async () => {
-    const { data } = await supabase.from('writing_tasks').select('*, clients(name), profiles!writing_tasks_assigned_writer_fkey(full_name)').order('created_at', { ascending: false });
+    const { data } = await supabase.from('writing_tasks').select('*, clients(name), profiles(full_name)').order('created_at', { ascending: false });
     if (data) {
       setTasks((data as unknown[]).map((t: unknown) => {
         const row = t as Record<string, unknown>;

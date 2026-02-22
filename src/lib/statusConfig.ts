@@ -8,7 +8,7 @@ interface StatusConfig {
   label: string;
   clientLabel: string;
   emoji: string;
-  color: string; // Tailwind class
+  color: string;
   bgColor: string;
 }
 
@@ -67,11 +67,40 @@ export const DESIGN_TASK_TYPES = [
 ];
 
 export const WRITING_TASK_TYPES = [
-  { value: 'script', label: 'Video Script' },
+  { value: 'reel_script', label: 'Reel Script' },
+  { value: 'short_video_script', label: 'Short Video Script' },
+  { value: 'long_form_script', label: 'Long Form Script' },
   { value: 'caption', label: 'Caption' },
-  { value: 'blog', label: 'Blog Post' },
   { value: 'ad_copy', label: 'Ad Copy' },
+  { value: 'blog', label: 'Blog Post' },
   { value: 'email', label: 'Email Newsletter' },
   { value: 'bio', label: 'Bio/About' },
   { value: 'other', label: 'Other' },
+];
+
+// Duration formatting helpers
+export function formatDuration(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  if (secs === 0) return `${mins}min`;
+  return `${seconds}s (${mins}min ${secs}s)`;
+}
+
+export function formatDurationShort(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  if (secs === 0) return `${mins}min`;
+  return `${mins}m${secs}s`;
+}
+
+export const DURATION_PRESETS = [
+  { label: '30s', value: 30 },
+  { label: '45s', value: 45 },
+  { label: '60s', value: 60 },
+  { label: '90s', value: 90 },
+  { label: '2min', value: 120 },
+  { label: '3min', value: 180 },
+  { label: '5min+', value: 300 },
 ];

@@ -7,6 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
+const roleRoutes: Record<string, string> = {
+  admin: '/admin',
+  editor: '/editor',
+  designer: '/designer',
+  writer: '/writer',
+  client: '/client',
+};
+
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,17 +28,24 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return; // Prevent double-click
     setError('');
     setIsLoading(true);
 
-    const { error } = await signIn(email, password);
-    if (error) {
-      setError(getAuthErrorMessage(error));
-    } else {
-      // Role-based redirect handled by App routing
-      navigate('/');
+    try {
+      const { error, role } = await signIn(email, password);
+      if (error) {
+        setError(getAuthErrorMessage(error));
+        setIsLoading(false);
+        return;
+      }
+      // Redirect immediately using the role returned from signIn
+      const target = role ? roleRoutes[role] || '/admin' : '/admin';
+      navigate(target, { replace: true });
+    } catch {
+      setError('An unexpected error occurred. Please try again.');
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
