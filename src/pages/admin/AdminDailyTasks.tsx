@@ -5,45 +5,42 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Check, ArrowRight, Calendar, PartyPopper, Clock, Loader2 } from 'lucide-react';
+import { Plus, Check, ArrowRight, Calendar, PartyPopper, Clock, Loader2, ChevronDown, ChevronUp, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format, isToday, subDays } from 'date-fns';
+import { format, subDays } from 'date-fns';
+import { DailyTodoHistory } from '@/components/shared/DailyTodoHistory';
 
 interface DailyTodo {
-  id: string;
-  title: string;
-  priority: string;
-  is_complete: boolean;
-  original_date: string;
-  carried_over_from: string | null;
-  created_at: string;
-  completed_at: string | null;
+  id: string; title: string; priority: string; is_complete: boolean;
+  original_date: string; carried_over_from: string | null;
+  created_at: string; completed_at: string | null;
 }
 
 const PRIORITY_COLORS: Record<string, string> = {
-  high: 'border-l-destructive',
-  medium: 'border-l-warning',
-  low: 'border-l-muted-foreground',
+  high: 'border-l-destructive', medium: 'border-l-warning', low: 'border-l-muted-foreground',
 };
 
 export default function AdminDailyTasks() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [todos, setTodos] = useState<DailyTodo[]>([]);
+  const [yesterdayTodos, setYesterdayTodos] = useState<DailyTodo[]>([]);
   const [loading, setLoading] = useState(true);
   const [newTask, setNewTask] = useState('');
   const [newPriority, setNewPriority] = useState('medium');
   const [adding, setAdding] = useState(false);
   const [showCheckin, setShowCheckin] = useState(false);
+  const [showYesterday, setShowYesterday] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   const today = new Date().toISOString().split('T')[0];
+  const yesterday = subDays(new Date(), 1).toISOString().split('T')[0];
 
   useEffect(() => {
     fetchTodos();
-    // Check if it's after 6PM for check-in
+    fetchYesterday();
     const hour = new Date().getHours();
     if (hour >= 18) setShowCheckin(true);
-    
     const channel = supabase
       .channel('daily-todos')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'daily_todos' }, fetchTodos)
@@ -54,27 +51,28 @@ export default function AdminDailyTasks() {
   const fetchTodos = async () => {
     if (!user) return;
     setLoading(true);
-    const { data } = await supabase
-      .from('daily_todos')
-      .select('*')
-      .eq('admin_id', user.id)
-      .eq('original_date', today)
+    const { data } = await supabase.from('daily_todos').select('*')
+      .eq('admin_id', user.id).eq('original_date', today)
       .order('created_at', { ascending: true });
     if (data) setTodos(data as DailyTodo[]);
     setLoading(false);
+  };
+
+  const fetchYesterday = async () => {
+    if (!user) return;
+    const { data } = await supabase.from('daily_todos').select('*')
+      .eq('admin_id', user.id).eq('original_date', yesterday)
+      .order('created_at', { ascending: true });
+    if (data) setYesterdayTodos(data as DailyTodo[]);
   };
 
   const addTodo = async () => {
     if (!newTask.trim() || !user) return;
     setAdding(true);
     await supabase.from('daily_todos').insert({
-      admin_id: user.id,
-      title: newTask.trim(),
-      priority: newPriority,
-      original_date: today,
+      admin_id: user.id, title: newTask.trim(), priority: newPriority, original_date: today,
     });
-    setNewTask('');
-    setNewPriority('medium');
+    setNewTask(''); setNewPriority('medium');
     await fetchTodos();
     setAdding(false);
   };
@@ -91,16 +89,10 @@ export default function AdminDailyTasks() {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const tomorrowStr = tomorrow.toISOString().split('T')[0];
-    
-    // Create a new todo for tomorrow with carry-over info
     await supabase.from('daily_todos').insert({
-      admin_id: user!.id,
-      title: todo.title,
-      priority: todo.priority,
-      original_date: tomorrowStr,
-      carried_over_from: today,
+      admin_id: user!.id, title: todo.title, priority: todo.priority,
+      original_date: tomorrowStr, carried_over_from: today,
     });
-    // Delete from today
     await supabase.from('daily_todos').delete().eq('id', todo.id);
     await fetchTodos();
     toast({ title: 'Task moved to tomorrow' });
@@ -110,14 +102,99 @@ export default function AdminDailyTasks() {
   const pending = todos.filter(t => !t.is_complete);
   const allDone = todos.length > 0 && pending.length === 0;
   const progress = todos.length > 0 ? (completed.length / todos.length) * 100 : 0;
+  const yesterdayCompleted = yesterdayTodos.filter(t => t.is_complete).length;
+  const yesterdayCarried = yesterdayTodos.filter(t => !t.is_complete).length;
+
+  if (showHistory) {
+    return (
+      <AdminLayout>
+        <div className="space-y-6 max-w-4xl">
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-display font-bold gradient-text">Task History</h1>
+            <Button variant="outline" onClick={() => setShowHistory(false)} className="gap-2">
+              <ArrowRight size={14} className="rotate-180" /> Back to Today
+            </Button>
+          </div>
+          <DailyTodoHistory userId={user?.id || ''} />
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  const renderTodoItem = (todo: DailyTodo, showCarryBadge = false) => (
+    <div key={todo.id} className={cn(
+      'glass-card p-4 flex items-center gap-3 border-l-4',
+      PRIORITY_COLORS[todo.priority] || PRIORITY_COLORS.medium,
+      todo.is_complete && 'opacity-60'
+    )}>
+      <button onClick={() => toggleComplete(todo)} className={cn(
+        'h-5 w-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all',
+        todo.is_complete ? 'border-success bg-success' : 'border-muted-foreground hover:border-primary'
+      )}>
+        {todo.is_complete && <Check size={12} className="text-success-foreground" />}
+      </button>
+      <div className="flex-1 min-w-0">
+        <p className={cn('text-sm text-foreground', todo.is_complete && 'line-through')}>{todo.title}</p>
+        {showCarryBadge && todo.carried_over_from && (
+          <span className="text-[10px] bg-warning/20 text-warning px-1.5 py-0.5 rounded">
+            Carried over from {format(new Date(todo.carried_over_from + 'T00:00:00'), 'MMM d')}
+          </span>
+        )}
+      </div>
+      {!showCarryBadge && (
+        <span className={cn('text-[10px] px-1.5 py-0.5 rounded capitalize',
+          todo.priority === 'high' ? 'bg-destructive/20 text-destructive' :
+          todo.priority === 'medium' ? 'bg-warning/20 text-warning' : 'bg-muted text-muted-foreground'
+        )}>{todo.priority}</span>
+      )}
+      {!todo.is_complete && (
+        <Button size="sm" variant="ghost" onClick={() => moveToTomorrow(todo)} className="text-xs h-7 gap-1">
+          <ArrowRight size={12} /> Tomorrow
+        </Button>
+      )}
+    </div>
+  );
 
   return (
     <AdminLayout>
       <div className="space-y-6 max-w-3xl">
-        <div>
-          <h1 className="text-3xl font-display font-bold gradient-text">Today's To-Do</h1>
-          <p className="text-muted-foreground mt-1">{format(new Date(), 'EEEE, MMMM d, yyyy')}</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-display font-bold gradient-text">Today's To-Do</h1>
+            <p className="text-muted-foreground mt-1">{format(new Date(), 'EEEE, MMMM d, yyyy')}</p>
+          </div>
+          <Button variant="outline" onClick={() => setShowHistory(true)} className="gap-2">
+            <History size={14} /> View History
+          </Button>
         </div>
+
+        {/* Yesterday summary */}
+        {yesterdayTodos.length > 0 && (
+          <div className="glass-card overflow-hidden">
+            <button onClick={() => setShowYesterday(!showYesterday)}
+              className="w-full p-4 flex items-center justify-between hover:bg-muted/20 transition-colors">
+              <div className="flex items-center gap-2">
+                <Calendar size={14} className="text-muted-foreground" />
+                <span className="text-sm font-medium text-foreground">Yesterday — {format(subDays(new Date(), 1), 'MMM d')}</span>
+                <span className="text-xs text-muted-foreground">
+                  {yesterdayCompleted} of {yesterdayTodos.length} completed
+                  {yesterdayCarried > 0 && ` · ${yesterdayCarried} carried over`}
+                </span>
+              </div>
+              {showYesterday ? <ChevronUp size={14} className="text-muted-foreground" /> : <ChevronDown size={14} className="text-muted-foreground" />}
+            </button>
+            {showYesterday && (
+              <div className="px-4 pb-4 space-y-2">
+                {yesterdayTodos.map(t => (
+                  <div key={t.id} className={cn('flex items-center gap-2 text-sm p-2 rounded-lg', t.is_complete ? 'text-muted-foreground' : 'text-foreground')}>
+                    {t.is_complete ? <Check size={12} className="text-success" /> : <Clock size={12} className="text-warning" />}
+                    <span className={t.is_complete ? 'line-through' : ''}>{t.title}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Progress */}
         {todos.length > 0 && (
@@ -132,7 +209,6 @@ export default function AdminDailyTasks() {
           </div>
         )}
 
-        {/* All Done Celebration */}
         {allDone && (
           <div className="glass-card p-6 text-center bg-success/10 border-success/30">
             <PartyPopper size={32} className="mx-auto text-success mb-2" />
@@ -140,7 +216,7 @@ export default function AdminDailyTasks() {
           </div>
         )}
 
-        {/* 6PM Check-in Banner */}
+        {/* 6PM Check-in */}
         {showCheckin && pending.length > 0 && (
           <div className="glass-card p-5 border-warning/40 bg-warning/5 space-y-3">
             <div className="flex items-center justify-between">
@@ -150,9 +226,7 @@ export default function AdminDailyTasks() {
               </div>
               <button onClick={() => setShowCheckin(false)} className="text-muted-foreground hover:text-foreground text-sm">Dismiss</button>
             </div>
-            <p className="text-sm text-muted-foreground">
-              ✅ {completed.length} tasks completed · ⏳ {pending.length} tasks still pending
-            </p>
+            <p className="text-sm text-muted-foreground">✅ {completed.length} tasks completed · ⏳ {pending.length} tasks still pending</p>
             <div className="space-y-2">
               {pending.map(todo => (
                 <div key={todo.id} className="flex items-center gap-2 bg-muted/30 rounded-lg p-3">
@@ -172,25 +246,14 @@ export default function AdminDailyTasks() {
         {/* Add Task */}
         <div className="glass-card p-4">
           <div className="flex gap-2">
-            <Input
-              value={newTask}
-              onChange={e => setNewTask(e.target.value)}
-              placeholder="Add a task for today..."
-              className="flex-1"
-              onKeyDown={e => e.key === 'Enter' && addTodo()}
-            />
-            <select
-              value={newPriority}
-              onChange={e => setNewPriority(e.target.value)}
-              className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground"
-            >
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
+            <Input value={newTask} onChange={e => setNewTask(e.target.value)} placeholder="Add a task for today..."
+              className="flex-1" onKeyDown={e => e.key === 'Enter' && addTodo()} />
+            <select value={newPriority} onChange={e => setNewPriority(e.target.value)}
+              className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground">
+              <option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option>
             </select>
             <Button onClick={addTodo} disabled={adding || !newTask.trim()} className="gap-2">
-              {adding ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-              Add
+              {adding ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Add
             </Button>
           </div>
         </div>
@@ -207,61 +270,10 @@ export default function AdminDailyTasks() {
           </div>
         ) : (
           <div className="space-y-2">
-            {/* Carried over tasks first */}
-            {todos.filter(t => t.carried_over_from).map(todo => (
-              <div key={todo.id} className={cn(
-                'glass-card p-4 flex items-center gap-3 border-l-4',
-                PRIORITY_COLORS[todo.priority] || PRIORITY_COLORS.medium,
-                todo.is_complete && 'opacity-60'
-              )}>
-                <button onClick={() => toggleComplete(todo)} className={cn(
-                  'h-5 w-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all',
-                  todo.is_complete ? 'border-success bg-success' : 'border-muted-foreground hover:border-primary'
-                )}>
-                  {todo.is_complete && <Check size={12} className="text-success-foreground" />}
-                </button>
-                <div className="flex-1 min-w-0">
-                  <p className={cn('text-sm text-foreground', todo.is_complete && 'line-through')}>{todo.title}</p>
-                  <span className="text-[10px] bg-warning/20 text-warning px-1.5 py-0.5 rounded">
-                    Carried over from {format(new Date(todo.carried_over_from + 'T00:00:00'), 'MMM d')}
-                  </span>
-                </div>
-                {!todo.is_complete && (
-                  <Button size="sm" variant="ghost" onClick={() => moveToTomorrow(todo)} className="text-xs h-7 gap-1">
-                    <ArrowRight size={12} /> Tomorrow
-                  </Button>
-                )}
-              </div>
-            ))}
-            {/* Regular tasks */}
-            {todos.filter(t => !t.carried_over_from).map(todo => (
-              <div key={todo.id} className={cn(
-                'glass-card p-4 flex items-center gap-3 border-l-4',
-                PRIORITY_COLORS[todo.priority] || PRIORITY_COLORS.medium,
-                todo.is_complete && 'opacity-60'
-              )}>
-                <button onClick={() => toggleComplete(todo)} className={cn(
-                  'h-5 w-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all',
-                  todo.is_complete ? 'border-success bg-success' : 'border-muted-foreground hover:border-primary'
-                )}>
-                  {todo.is_complete && <Check size={12} className="text-success-foreground" />}
-                </button>
-                <p className={cn('flex-1 text-sm text-foreground', todo.is_complete && 'line-through')}>{todo.title}</p>
-                <span className={cn('text-[10px] px-1.5 py-0.5 rounded capitalize',
-                  todo.priority === 'high' ? 'bg-destructive/20 text-destructive' :
-                  todo.priority === 'medium' ? 'bg-warning/20 text-warning' : 'bg-muted text-muted-foreground'
-                )}>{todo.priority}</span>
-                {!todo.is_complete && (
-                  <Button size="sm" variant="ghost" onClick={() => moveToTomorrow(todo)} className="text-xs h-7 gap-1">
-                    <ArrowRight size={12} /> Tomorrow
-                  </Button>
-                )}
-              </div>
-            ))}
+            {todos.filter(t => t.carried_over_from).map(todo => renderTodoItem(todo, true))}
+            {todos.filter(t => !t.carried_over_from).map(todo => renderTodoItem(todo, false))}
           </div>
         )}
-
-        <p className="text-xs text-muted-foreground text-center">Resets on the 1st of each day</p>
       </div>
     </AdminLayout>
   );

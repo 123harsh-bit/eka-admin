@@ -4,19 +4,20 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { MyPerformance } from '@/components/shared/MyPerformance';
-import { WRITING_TASK_STATUSES, WRITING_TASK_STATUS_ORDER, WRITING_TASK_TYPES, type WritingTaskStatus } from '@/lib/statusConfig';
+import { WRITING_TASK_STATUSES, WRITING_TASK_STATUS_ORDER, WRITING_TASK_TYPES, formatDuration, formatDurationShort, type WritingTaskStatus } from '@/lib/statusConfig';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PenTool, ExternalLink, Loader2, Calendar } from 'lucide-react';
+import { PenTool, ExternalLink, Loader2, Calendar, Clock, FolderOpen, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
 interface WritingTask {
   id: string; title: string; task_type: string; status: string;
   client_id: string; due_date: string | null; doc_link: string | null;
-  word_count_target: number | null; version_notes: string | null;
-  client_name?: string;
+  target_duration_seconds: number | null; script_duration_seconds: number | null;
+  version_notes: string | null; video_id: string | null;
+  client_name?: string; raw_footage_link?: string | null;
 }
 
 const taskTypeLabel = (type: string) => WRITING_TASK_TYPES.find(t => t.value === type)?.label || type;
@@ -28,8 +29,9 @@ export default function WriterDashboard() {
   const [selectedTask, setSelectedTask] = useState<WritingTask | null>(null);
   const [docLink, setDocLink] = useState('');
   const [versionNotes, setVersionNotes] = useState('');
-  const [wordCountActual, setWordCountActual] = useState('');
+  const [scriptDuration, setScriptDuration] = useState('');
   const [saving, setSaving] = useState(false);
+  const [savingDuration, setSavingDuration] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -44,12 +46,27 @@ export default function WriterDashboard() {
   const fetchTasks = async () => {
     if (!user) return;
     setLoading(true);
-    const { data } = await supabase.from('writing_tasks').select('*, clients(name)').eq('assigned_writer', user.id).not('status', 'eq', 'delivered').order('due_date', { ascending: true, nullsFirst: false });
+    const { data } = await supabase.from('writing_tasks')
+      .select('id, title, task_type, status, client_id, due_date, doc_link, target_duration_seconds, script_duration_seconds, version_notes, video_id, clients(name)')
+      .eq('assigned_writer', user.id)
+      .not('status', 'eq', 'delivered')
+      .order('due_date', { ascending: true, nullsFirst: false });
     if (data) {
-      setTasks((data as unknown[]).map((t: unknown) => {
+      const mapped = (data as unknown[]).map((t: unknown) => {
         const row = t as Record<string, unknown>;
         return { ...(row as unknown as WritingTask), client_name: (row.clients as { name: string } | null)?.name || 'Unknown' };
-      }));
+      });
+      setTasks(mapped);
+      // Fetch raw footage links for tasks with video_id
+      const videoIds = mapped.filter(t => t.video_id).map(t => t.video_id!);
+      if (videoIds.length > 0) {
+        const { data: videos } = await supabase.from('videos').select('id, raw_footage_link').in('id', videoIds);
+        if (videos) {
+          const linkMap: Record<string, string | null> = {};
+          videos.forEach(v => { linkMap[v.id] = v.raw_footage_link; });
+          setTasks(prev => prev.map(t => t.video_id ? { ...t, raw_footage_link: linkMap[t.video_id] || null } : t));
+        }
+      }
     }
     setLoading(false);
   };
@@ -73,25 +90,47 @@ export default function WriterDashboard() {
     setSaving(false);
   };
 
+  const handleSaveScriptDuration = async (taskId: string) => {
+    const secs = parseInt(scriptDuration);
+    if (isNaN(secs) || secs < 0) return;
+    setSavingDuration(true);
+    await supabase.from('writing_tasks').update({ script_duration_seconds: secs }).eq('id', taskId);
+    toast({ title: 'Script duration updated' });
+    await fetchTasks();
+    setSavingDuration(false);
+  };
+
   const openTask = (t: WritingTask) => {
     setSelectedTask(t);
     setDocLink(t.doc_link || '');
     setVersionNotes(t.version_notes || '');
-    setWordCountActual('');
+    setScriptDuration(t.script_duration_seconds?.toString() || '');
   };
 
   const today = new Date().toISOString().split('T')[0];
 
-  // Group by status category
   const activeStatuses: WritingTaskStatus[] = ['briefed', 'drafting'];
   const reviewStatuses: WritingTaskStatus[] = ['review', 'revisions'];
   const approvedStatuses: WritingTaskStatus[] = ['approved'];
 
   const groups = [
-    { label: 'Active', statuses: activeStatuses, tasks: tasks.filter(t => activeStatuses.includes(t.status as WritingTaskStatus)) },
-    { label: 'For Review', statuses: reviewStatuses, tasks: tasks.filter(t => reviewStatuses.includes(t.status as WritingTaskStatus)) },
-    { label: 'Approved', statuses: approvedStatuses, tasks: tasks.filter(t => approvedStatuses.includes(t.status as WritingTaskStatus)) },
+    { label: 'Active', tasks: tasks.filter(t => activeStatuses.includes(t.status as WritingTaskStatus)) },
+    { label: 'For Review', tasks: tasks.filter(t => reviewStatuses.includes(t.status as WritingTaskStatus)) },
+    { label: 'Approved', tasks: tasks.filter(t => approvedStatuses.includes(t.status as WritingTaskStatus)) },
   ];
+
+  const getDurationBarPct = (target: number | null, script: number | null) => {
+    if (!target || !script) return 0;
+    return Math.min(100, (script / target) * 100);
+  };
+
+  const getDurationBarColor = (target: number | null, script: number | null) => {
+    if (!script) return 'bg-muted-foreground/30';
+    if (!target) return 'bg-primary';
+    const ratio = script / target;
+    if (ratio >= 0.9 && ratio <= 1.1) return 'bg-success';
+    return 'bg-warning';
+  };
 
   return (
     <WriterLayout>
@@ -119,31 +158,53 @@ export default function WriterDashboard() {
                 <div className="space-y-2">
                   {group.tasks.map(task => {
                     const isOverdue = task.due_date && task.due_date < today;
+                    const pct = getDurationBarPct(task.target_duration_seconds, task.script_duration_seconds);
+                    const barColor = getDurationBarColor(task.target_duration_seconds, task.script_duration_seconds);
                     return (
-                      <div
-                        key={task.id}
-                        onClick={() => openTask(task)}
-                        className={cn('glass-card-hover p-4 cursor-pointer flex items-center gap-4', selectedTask?.id === task.id && 'ring-1 ring-primary')}
-                      >
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="font-medium text-foreground truncate">{task.title}</p>
-                            <span className="text-[10px] bg-accent text-accent-foreground px-1.5 py-0.5 rounded flex-shrink-0">{taskTypeLabel(task.task_type)}</span>
+                      <div key={task.id} onClick={() => openTask(task)}
+                        className={cn('glass-card-hover p-4 cursor-pointer space-y-2', selectedTask?.id === task.id && 'ring-1 ring-primary')}>
+                        <div className="flex items-center gap-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-medium text-foreground truncate">{task.title}</p>
+                              <span className="text-[10px] bg-accent text-accent-foreground px-1.5 py-0.5 rounded flex-shrink-0">{taskTypeLabel(task.task_type)}</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">{task.client_name}</p>
                           </div>
-                          <p className="text-xs text-muted-foreground">{task.client_name}</p>
+                          <div className="flex items-center gap-3 flex-shrink-0">
+                            <StatusBadge status={task.status as WritingTaskStatus} type="writing" />
+                            {task.due_date && (
+                              <span className={cn('text-xs flex items-center gap-1', isOverdue ? 'text-destructive' : 'text-muted-foreground')}>
+                                <Calendar size={10} />
+                                {new Date(task.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3 flex-shrink-0">
-                          {task.word_count_target && (
-                            <span className="text-xs text-muted-foreground">{task.word_count_target.toLocaleString()}w target</span>
-                          )}
-                          <StatusBadge status={task.status as WritingTaskStatus} type="writing" />
-                          {task.due_date && (
-                            <span className={cn('text-xs flex items-center gap-1', isOverdue ? 'text-destructive' : 'text-muted-foreground')}>
-                              <Calendar size={10} />
-                              {new Date(task.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                            </span>
-                          )}
-                        </div>
+
+                        {/* Duration bar */}
+                        {task.target_duration_seconds && (
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                              <span className="flex items-center gap-1"><Clock size={9} /> Duration</span>
+                              <span>
+                                {task.script_duration_seconds ? formatDurationShort(task.script_duration_seconds) : '—'} / {formatDurationShort(task.target_duration_seconds)}
+                              </span>
+                            </div>
+                            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                              <div className={cn('h-full rounded-full transition-all', barColor)} style={{ width: `${pct}%` }} />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Raw footage link if available */}
+                        {task.raw_footage_link && (
+                          <a href={task.raw_footage_link} target="_blank" rel="noopener noreferrer"
+                            onClick={e => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 text-[11px] text-amber-400 hover:underline">
+                            <FolderOpen size={10} /> Raw Footage →
+                          </a>
+                        )}
                       </div>
                     );
                   })}
@@ -164,11 +225,37 @@ export default function WriterDashboard() {
               <button onClick={() => setSelectedTask(null)} className="text-muted-foreground hover:text-foreground text-lg leading-none">×</button>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-5">
-              {/* Word count */}
-              {selectedTask.word_count_target && (
-                <div className="p-3 bg-primary/10 rounded-lg">
-                  <p className="text-xs text-muted-foreground">Word Count Target</p>
-                  <p className="text-lg font-bold text-primary">{selectedTask.word_count_target.toLocaleString()} words</p>
+              {/* Duration card */}
+              {selectedTask.target_duration_seconds && (
+                <div className="p-3 bg-primary/10 rounded-lg space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Target Duration</p>
+                      <p className="text-lg font-bold text-primary">{formatDuration(selectedTask.target_duration_seconds)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-muted-foreground">Script Duration</p>
+                      <p className="text-lg font-bold text-foreground">
+                        {selectedTask.script_duration_seconds ? formatDuration(selectedTask.script_duration_seconds) : '—'}
+                      </p>
+                    </div>
+                  </div>
+                  {/* Inline edit script duration */}
+                  <div className="flex gap-2 items-center">
+                    <Input
+                      type="number" min="0"
+                      value={scriptDuration}
+                      onChange={e => setScriptDuration(e.target.value)}
+                      placeholder="sec"
+                      className="h-7 text-xs flex-1"
+                    />
+                    <span className="text-xs text-muted-foreground">sec</span>
+                    <Button size="sm" variant="outline" onClick={() => handleSaveScriptDuration(selectedTask.id)}
+                      disabled={savingDuration} className="h-7 px-2 gap-1">
+                      {savingDuration ? <Loader2 size={10} className="animate-spin" /> : <Save size={10} />}
+                      Save
+                    </Button>
+                  </div>
                 </div>
               )}
 
@@ -213,6 +300,12 @@ export default function WriterDashboard() {
                 <a href={selectedTask.doc_link} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-1.5 text-xs text-primary hover:underline">
                   <ExternalLink size={10} /> Open Google Doc
+                </a>
+              )}
+              {selectedTask.raw_footage_link && (
+                <a href={selectedTask.raw_footage_link} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs text-amber-400 hover:underline">
+                  <FolderOpen size={10} /> Raw Footage →
                 </a>
               )}
             </div>

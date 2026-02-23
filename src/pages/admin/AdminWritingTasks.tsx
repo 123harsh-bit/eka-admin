@@ -7,32 +7,27 @@ import { Label } from '@/components/ui/label';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { ConfirmDeleteModal } from '@/components/shared/ConfirmDeleteModal';
 import { useToast } from '@/hooks/use-toast';
-import { WRITING_TASK_STATUSES, WRITING_TASK_STATUS_ORDER, WRITING_TASK_TYPES, type WritingTaskStatus } from '@/lib/statusConfig';
-import { Plus, Search, X, PenTool, Edit2, Trash2, ExternalLink, Loader2 } from 'lucide-react';
+import { WRITING_TASK_STATUSES, WRITING_TASK_STATUS_ORDER, WRITING_TASK_TYPES, DURATION_PRESETS, formatDurationShort, type WritingTaskStatus } from '@/lib/statusConfig';
+import { Plus, Search, X, PenTool, Edit2, Trash2, ExternalLink, Loader2, Clock } from 'lucide-react';
 
 interface WritingTask {
-  id: string;
-  title: string;
-  task_type: string;
-  status: string;
-  client_id: string;
-  assigned_writer: string | null;
-  due_date: string | null;
-  doc_link: string | null;
-  word_count_target: number | null;
-  version_notes: string | null;
-  video_id: string | null;
-  created_at: string;
-  client_name?: string;
-  writer_name?: string;
+  id: string; title: string; task_type: string; status: string;
+  client_id: string; assigned_writer: string | null;
+  due_date: string | null; doc_link: string | null;
+  target_duration_seconds: number | null;
+  script_duration_seconds: number | null;
+  version_notes: string | null; video_id: string | null;
+  created_at: string; client_name?: string; writer_name?: string;
 }
 
 interface Client { id: string; name: string; }
 interface TeamMember { id: string; full_name: string; }
 
 const emptyForm = {
-  title: '', task_type: 'script', status: 'briefed', client_id: '',
-  assigned_writer: '', due_date: '', doc_link: '', word_count_target: '', version_notes: '',
+  title: '', task_type: 'reel_script', status: 'briefed', client_id: '',
+  assigned_writer: '', due_date: '', doc_link: '',
+  target_duration_value: '', target_duration_unit: 'sec' as 'sec' | 'min',
+  version_notes: '',
 };
 
 export default function AdminWritingTasks() {
@@ -59,7 +54,9 @@ export default function AdminWritingTasks() {
   };
 
   const fetchTasks = async () => {
-    const { data } = await supabase.from('writing_tasks').select('*, clients(name), profiles(full_name)').order('created_at', { ascending: false });
+    const { data } = await supabase.from('writing_tasks')
+      .select('id, title, task_type, status, client_id, assigned_writer, due_date, doc_link, target_duration_seconds, script_duration_seconds, version_notes, video_id, created_at, clients(name), profiles(full_name)')
+      .order('created_at', { ascending: false });
     if (data) {
       setTasks((data as unknown[]).map((t: unknown) => {
         const row = t as Record<string, unknown>;
@@ -85,14 +82,33 @@ export default function AdminWritingTasks() {
     }
   };
 
+  const getTargetSeconds = (): number | null => {
+    if (!form.target_duration_value) return null;
+    const val = parseFloat(form.target_duration_value);
+    if (isNaN(val)) return null;
+    return form.target_duration_unit === 'min' ? Math.round(val * 60) : Math.round(val);
+  };
+
   const openAdd = () => { setEditingTask(null); setForm({ ...emptyForm }); setPanelOpen(true); };
   const openEdit = (task: WritingTask) => {
     setEditingTask(task);
+    const targetSec = task.target_duration_seconds;
+    let durVal = '';
+    let durUnit: 'sec' | 'min' = 'sec';
+    if (targetSec) {
+      if (targetSec >= 60 && targetSec % 60 === 0) {
+        durVal = String(targetSec / 60);
+        durUnit = 'min';
+      } else {
+        durVal = String(targetSec);
+        durUnit = 'sec';
+      }
+    }
     setForm({
       title: task.title, task_type: task.task_type, status: task.status,
       client_id: task.client_id, assigned_writer: task.assigned_writer || '',
       due_date: task.due_date || '', doc_link: task.doc_link || '',
-      word_count_target: task.word_count_target?.toString() || '',
+      target_duration_value: durVal, target_duration_unit: durUnit,
       version_notes: task.version_notes || '',
     });
     setPanelOpen(true);
@@ -107,7 +123,7 @@ export default function AdminWritingTasks() {
         title: form.title.trim(), task_type: form.task_type, status: form.status,
         client_id: form.client_id, assigned_writer: form.assigned_writer || null,
         due_date: form.due_date || null, doc_link: form.doc_link || null,
-        word_count_target: form.word_count_target ? parseInt(form.word_count_target) : null,
+        target_duration_seconds: getTargetSeconds(),
         version_notes: form.version_notes || null,
       };
       if (editingTask) {
@@ -147,6 +163,13 @@ export default function AdminWritingTasks() {
 
   const taskTypeLabel = (type: string) => WRITING_TASK_TYPES.find(t => t.value === type)?.label || type;
 
+  const durationDisplay = (target: number | null, script: number | null) => {
+    if (!target && !script) return '—';
+    const s = script ? formatDurationShort(script) : '—';
+    const t = target ? formatDurationShort(target) : '—';
+    return `${s} / ${t}`;
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -177,7 +200,7 @@ export default function AdminWritingTasks() {
           <table className="w-full text-sm">
             <thead className="bg-card/80 border-b border-glass-border">
               <tr>
-                {['Task', 'Type', 'Client', 'Status', 'Writer', 'Words', 'Due', 'Doc', ''].map(h => (
+                {['Task', 'Type', 'Client', 'Status', 'Writer', 'Duration', 'Due', 'Doc', ''].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
@@ -197,7 +220,12 @@ export default function AdminWritingTasks() {
                   <td className="px-4 py-3 text-muted-foreground">{task.client_name}</td>
                   <td className="px-4 py-3"><StatusBadge status={task.status as WritingTaskStatus} type="writing" /></td>
                   <td className="px-4 py-3 text-muted-foreground">{task.writer_name || '—'}</td>
-                  <td className="px-4 py-3 text-muted-foreground text-xs">{task.word_count_target ? `${task.word_count_target.toLocaleString()}w` : '—'}</td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs">
+                    <span className="flex items-center gap-1">
+                      <Clock size={10} />
+                      {durationDisplay(task.target_duration_seconds, task.script_duration_seconds)}
+                    </span>
+                  </td>
                   <td className="px-4 py-3 text-muted-foreground text-xs">{task.due_date ? new Date(task.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '—'}</td>
                   <td className="px-4 py-3">{task.doc_link && <a href={task.doc_link} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1"><ExternalLink size={10} />Doc</a>}</td>
                   <td className="px-4 py-3">
@@ -249,10 +277,42 @@ export default function AdminWritingTasks() {
                   {WRITING_TASK_STATUS_ORDER.map(s => <option key={s} value={s}>{WRITING_TASK_STATUSES[s].label}</option>)}
                 </select>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5"><Label>Due Date</Label><Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} /></div>
-                <div className="space-y-1.5"><Label>Word Count Target</Label><Input type="number" min="0" value={form.word_count_target} onChange={e => setForm(f => ({ ...f, word_count_target: e.target.value }))} placeholder="1500" /></div>
+
+              {/* Duration section */}
+              <div className="space-y-2">
+                <Label>Target Duration</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number" min="0" step="1"
+                    value={form.target_duration_value}
+                    onChange={e => setForm(f => ({ ...f, target_duration_value: e.target.value }))}
+                    placeholder="e.g. 30"
+                    className="flex-1"
+                  />
+                  <select
+                    value={form.target_duration_unit}
+                    onChange={e => setForm(f => ({ ...f, target_duration_unit: e.target.value as 'sec' | 'min' }))}
+                    className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground w-20"
+                  >
+                    <option value="sec">sec</option>
+                    <option value="min">min</option>
+                  </select>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {DURATION_PRESETS.map(p => (
+                    <button
+                      key={p.value}
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, target_duration_value: String(p.value), target_duration_unit: 'sec' }))}
+                      className="text-xs px-2.5 py-1 rounded-md border border-input bg-background hover:bg-primary/20 hover:border-primary text-foreground transition-colors"
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
               </div>
+
+              <div className="space-y-1.5"><Label>Due Date</Label><Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} /></div>
               <div className="space-y-1.5"><Label>Google Doc Link</Label><Input value={form.doc_link} onChange={e => setForm(f => ({ ...f, doc_link: e.target.value }))} placeholder="https://docs.google.com/…" /></div>
               <div className="space-y-1.5">
                 <Label>Version Notes</Label>

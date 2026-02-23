@@ -26,10 +26,13 @@ import AdminDailyTasks from "@/pages/admin/AdminDailyTasks";
 import EditorDashboard from "@/pages/editor/EditorDashboard";
 import EditorAllVideos from "@/pages/editor/EditorAllVideos";
 import EditorClients from "@/pages/editor/EditorClients";
+import EditorDailyTasks from "@/pages/editor/EditorDailyTasks";
 import DesignerDashboard from "@/pages/designer/DesignerDashboard";
 import DesignerBrandKits from "@/pages/designer/DesignerBrandKits";
+import DesignerDailyTasks from "@/pages/designer/DesignerDailyTasks";
 import WriterDashboard from "@/pages/writer/WriterDashboard";
 import WriterClientBriefs from "@/pages/writer/WriterClientBriefs";
+import WriterDailyTasks from "@/pages/writer/WriterDailyTasks";
 import ClientDashboard from "@/pages/client/ClientDashboard";
 
 const queryClient = new QueryClient();
@@ -62,15 +65,18 @@ const App = () => (
 
             {/* Editor routes */}
             <Route path="/editor" element={<ProtectedRoute allowedRoles={['editor']}><EditorDashboard /></ProtectedRoute>} />
+            <Route path="/editor/daily-tasks" element={<ProtectedRoute allowedRoles={['editor']}><EditorDailyTasks /></ProtectedRoute>} />
             <Route path="/editor/videos" element={<ProtectedRoute allowedRoles={['editor']}><EditorAllVideos /></ProtectedRoute>} />
             <Route path="/editor/clients" element={<ProtectedRoute allowedRoles={['editor']}><EditorClients /></ProtectedRoute>} />
 
             {/* Designer routes */}
             <Route path="/designer" element={<ProtectedRoute allowedRoles={['designer']}><DesignerDashboard /></ProtectedRoute>} />
+            <Route path="/designer/daily-tasks" element={<ProtectedRoute allowedRoles={['designer']}><DesignerDailyTasks /></ProtectedRoute>} />
             <Route path="/designer/brand-kits" element={<ProtectedRoute allowedRoles={['designer']}><DesignerBrandKits /></ProtectedRoute>} />
 
             {/* Writer routes */}
             <Route path="/writer" element={<ProtectedRoute allowedRoles={['writer']}><WriterDashboard /></ProtectedRoute>} />
+            <Route path="/writer/daily-tasks" element={<ProtectedRoute allowedRoles={['writer']}><WriterDailyTasks /></ProtectedRoute>} />
             <Route path="/writer/briefs" element={<ProtectedRoute allowedRoles={['writer']}><WriterClientBriefs /></ProtectedRoute>} />
 
             {/* Client routes */}

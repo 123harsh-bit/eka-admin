@@ -5,10 +5,11 @@ import { EkaLogo } from '@/components/shared/EkaLogo';
 import { useAuth } from '@/hooks/useAuth';
 import { NotificationBell } from '@/components/shared/NotificationBell';
 import { Button } from '@/components/ui/button';
-import { Palette, BookOpen, LogOut, Menu, X } from 'lucide-react';
+import { Palette, BookOpen, LogOut, Menu, X, ListTodo } from 'lucide-react';
 
 const navItems = [
   { to: '/designer', icon: Palette, label: 'My Design Tasks', end: true },
+  { to: '/designer/daily-tasks', icon: ListTodo, label: 'My Daily Tasks' },
   { to: '/designer/brand-kits', icon: BookOpen, label: 'Brand Kits' },
 ];
 
