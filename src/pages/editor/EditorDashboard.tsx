@@ -8,23 +8,17 @@ import { VIDEO_STATUSES, VIDEO_STATUS_ORDER, type VideoStatus } from '@/lib/stat
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Video, Calendar, ExternalLink, Loader2, X, ChevronRight } from 'lucide-react';
+import { Video, Calendar, ExternalLink, Loader2, X, ChevronRight, FolderOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
 interface AssignedVideo {
-  id: string;
-  title: string;
-  status: string;
-  client_id: string;
-  drive_link: string | null;
-  internal_notes: string | null;
-  date_planned: string | null;
-  date_delivered: string | null;
-  client_name?: string;
+  id: string; title: string; status: string; client_id: string;
+  drive_link: string | null; raw_footage_link: string | null;
+  internal_notes: string | null; date_planned: string | null;
+  date_delivered: string | null; client_name?: string;
 }
 
-// Editor can only move to these stages
 const EDITOR_STAGES: VideoStatus[] = ['shooting', 'editing', 'internal_review'];
 
 export default function EditorDashboard() {
@@ -51,7 +45,7 @@ export default function EditorDashboard() {
     setLoading(true);
     const { data } = await supabase
       .from('videos')
-      .select('*, clients(name)')
+      .select('id, title, status, client_id, drive_link, raw_footage_link, internal_notes, date_planned, date_delivered, clients(name)')
       .eq('assigned_editor', user.id)
       .not('status', 'eq', 'live')
       .order('date_planned', { ascending: true, nullsFirst: false });
@@ -94,7 +88,6 @@ export default function EditorDashboard() {
     setNotes(v.internal_notes || '');
   };
 
-  // Group by urgency
   const today = new Date().toISOString().split('T')[0];
   const weekFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const groups = [
@@ -106,9 +99,7 @@ export default function EditorDashboard() {
   return (
     <EditorLayout>
       <div className="space-y-6">
-        {/* Performance Section */}
         <MyPerformance role="editor" />
-
         <div className="flex gap-6 h-[calc(100vh-10rem)]">
         <div className={cn('flex flex-col space-y-4', selectedVideo ? 'flex-1 min-w-0' : 'w-full')}>
           <div>
@@ -134,31 +125,37 @@ export default function EditorDashboard() {
                     {group.items.map(video => {
                       const isOverdue = video.date_planned && video.date_planned < today;
                       return (
-                        <div
-                          key={video.id}
-                          onClick={() => openVideo(video)}
-                          className={cn(
-                            'glass-card-hover p-4 cursor-pointer flex items-center gap-4',
-                            selectedVideo?.id === video.id && 'ring-1 ring-primary'
+                        <div key={video.id} onClick={() => openVideo(video)}
+                          className={cn('glass-card-hover p-4 cursor-pointer space-y-2', selectedVideo?.id === video.id && 'ring-1 ring-primary')}>
+                          <div className="flex items-center gap-4">
+                            <div className="h-10 w-10 rounded-lg bg-blue-500/20 flex items-center justify-center text-sm font-bold text-blue-400 flex-shrink-0">
+                              {video.client_name?.charAt(0)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-foreground truncate">{video.title}</p>
+                              <p className="text-xs text-muted-foreground">{video.client_name}</p>
+                            </div>
+                            <div className="flex items-center gap-3 flex-shrink-0">
+                              <StatusBadge status={video.status as VideoStatus} type="video" />
+                              {video.date_planned && (
+                                <span className={cn('text-xs flex items-center gap-1', isOverdue ? 'text-destructive' : 'text-muted-foreground')}>
+                                  <Calendar size={10} />
+                                  {new Date(video.date_planned).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                                </span>
+                              )}
+                              <ChevronRight size={14} className="text-muted-foreground" />
+                            </div>
+                          </div>
+                          {/* Raw footage button - prominent */}
+                          {video.raw_footage_link ? (
+                            <a href={video.raw_footage_link} target="_blank" rel="noopener noreferrer"
+                              onClick={e => e.stopPropagation()}
+                              className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors font-medium">
+                              <FolderOpen size={12} /> Open Raw Footage
+                            </a>
+                          ) : (
+                            <p className="text-[11px] text-muted-foreground/60">Raw footage not uploaded yet</p>
                           )}
-                        >
-                          <div className="h-10 w-10 rounded-lg bg-blue-500/20 flex items-center justify-center text-sm font-bold text-blue-400 flex-shrink-0">
-                            {video.client_name?.charAt(0)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-foreground truncate">{video.title}</p>
-                            <p className="text-xs text-muted-foreground">{video.client_name}</p>
-                          </div>
-                          <div className="flex items-center gap-3 flex-shrink-0">
-                            <StatusBadge status={video.status as VideoStatus} type="video" />
-                            {video.date_planned && (
-                              <span className={cn('text-xs flex items-center gap-1', isOverdue ? 'text-destructive' : 'text-muted-foreground')}>
-                                <Calendar size={10} />
-                                {new Date(video.date_planned).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                              </span>
-                            )}
-                            <ChevronRight size={14} className="text-muted-foreground" />
-                          </div>
                         </div>
                       );
                     })}
@@ -180,7 +177,20 @@ export default function EditorDashboard() {
               <button onClick={() => setSelectedVideo(null)} className="text-muted-foreground hover:text-foreground"><X size={16} /></button>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-5">
-              {/* Status Stepper — editor only moves within their stages */}
+              {/* Raw Footage - most prominent */}
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Internal Links</p>
+                {selectedVideo.raw_footage_link ? (
+                  <a href={selectedVideo.raw_footage_link} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm text-amber-400 hover:underline font-medium py-2 px-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                    <FolderOpen size={14} /> Open Raw Footage
+                  </a>
+                ) : (
+                  <p className="text-xs text-muted-foreground">No raw footage link</p>
+                )}
+              </div>
+
+              {/* Status Stepper */}
               <div>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Workflow Stage</p>
                 <div className="space-y-1">
@@ -190,19 +200,15 @@ export default function EditorDashboard() {
                     const isCurrent = s === selectedVideo.status;
                     const isEditable = EDITOR_STAGES.includes(s);
                     return (
-                      <button
-                        key={s}
-                        onClick={() => isEditable && handleStatusChange(selectedVideo.id, s)}
+                      <button key={s} onClick={() => isEditable && handleStatusChange(selectedVideo.id, s)}
                         disabled={!isEditable}
-                        className={cn(
-                          'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-all',
+                        className={cn('w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-all',
                           isCurrent && 'bg-primary/20 text-primary font-semibold',
                           isPast && 'text-muted-foreground',
                           !isCurrent && !isPast && 'text-foreground/50',
                           isEditable && !isCurrent && 'hover:bg-muted/30 cursor-pointer',
                           !isEditable && 'cursor-default opacity-60',
-                        )}
-                      >
+                        )}>
                         <span className={cn('h-2 w-2 rounded-full flex-shrink-0', isCurrent ? 'bg-primary' : isPast ? 'bg-success' : 'bg-muted-foreground/30')} />
                         {VIDEO_STATUSES[s].emoji} {VIDEO_STATUSES[s].label}
                         {isEditable && <span className="ml-auto text-[10px] text-primary/60">editable</span>}
@@ -212,22 +218,14 @@ export default function EditorDashboard() {
                 </div>
               </div>
 
-              {/* Drive Link */}
               <div className="space-y-1.5">
                 <Label className="text-xs">Google Drive Link</Label>
                 <Input value={driveLink} onChange={e => setDriveLink(e.target.value)} placeholder="https://drive.google.com/…" className="text-xs h-8" />
               </div>
-
-              {/* Internal Notes */}
               <div className="space-y-1.5">
                 <Label className="text-xs">Internal Notes</Label>
-                <textarea
-                  value={notes}
-                  onChange={e => setNotes(e.target.value)}
-                  rows={4}
-                  placeholder="Notes for the team…"
-                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-xs text-foreground resize-none"
-                />
+                <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={4} placeholder="Notes for the team…"
+                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-xs text-foreground resize-none" />
               </div>
 
               <Button size="sm" onClick={handleSaveDetails} disabled={saving} className="w-full gap-2">

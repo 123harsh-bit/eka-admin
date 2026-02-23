@@ -9,37 +9,28 @@ import { ConfirmDeleteModal } from '@/components/shared/ConfirmDeleteModal';
 import { useToast } from '@/hooks/use-toast';
 import { VIDEO_STATUSES, VIDEO_STATUS_ORDER, type VideoStatus } from '@/lib/statusConfig';
 import { getDirectDownloadLink } from '@/lib/driveUtils';
-import { Plus, Search, X, Video, Filter, Edit2, Trash2, ChevronRight, ExternalLink, MessageSquare, Loader2 } from 'lucide-react';
+import { Plus, Search, X, Video, Edit2, Trash2, ExternalLink, MessageSquare, Loader2, FolderOpen, Lock } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 interface VideoRow {
-  id: string;
-  title: string;
-  description: string | null;
-  status: string;
-  client_id: string;
-  assigned_editor: string | null;
-  drive_link: string | null;
-  live_url: string | null;
-  internal_notes: string | null;
-  is_internal_note_visible_to_client: boolean;
-  date_planned: string | null;
-  date_delivered: string | null;
-  created_at: string;
-  client_name?: string;
-  editor_name?: string;
-  feedback_count?: number;
+  id: string; title: string; description: string | null; status: string;
+  client_id: string; assigned_editor: string | null;
+  drive_link: string | null; live_url: string | null; raw_footage_link: string | null;
+  internal_notes: string | null; is_internal_note_visible_to_client: boolean;
+  date_planned: string | null; date_delivered: string | null; created_at: string;
+  client_name?: string; editor_name?: string; feedback_count?: number;
 }
 
 interface Client { id: string; name: string; }
 interface TeamMember { id: string; full_name: string; }
-interface FeedbackItem { id: string; content: string | null; type: string; created_at: string; }
+interface FeedbackItem { id: string; content: string | null; type: string; created_at: string; is_resolved?: boolean; }
 
 const emptyForm = {
   title: '', description: '', client_id: '', assigned_editor: '',
-  status: 'idea', drive_link: '', live_url: '', internal_notes: '',
-  is_internal_note_visible_to_client: false, date_planned: '', date_delivered: '',
+  status: 'idea', drive_link: '', live_url: '', raw_footage_link: '',
+  internal_notes: '', is_internal_note_visible_to_client: false,
+  date_planned: '', date_delivered: '',
 };
 
 export default function AdminVideos() {
@@ -85,7 +76,6 @@ export default function AdminVideos() {
           editor_name: (row.profiles as { full_name: string } | null)?.full_name || null,
         };
       });
-      // Get feedback counts
       const ids = vids.map(v => v.id);
       if (ids.length > 0) {
         const { data: fbData } = await supabase.from('feedback').select('video_id').in('video_id', ids);
@@ -118,6 +108,7 @@ export default function AdminVideos() {
       title: video.title, description: video.description || '', client_id: video.client_id,
       assigned_editor: video.assigned_editor || '', status: video.status,
       drive_link: video.drive_link || '', live_url: video.live_url || '',
+      raw_footage_link: video.raw_footage_link || '',
       internal_notes: video.internal_notes || '',
       is_internal_note_visible_to_client: video.is_internal_note_visible_to_client,
       date_planned: video.date_planned || '', date_delivered: video.date_delivered || '',
@@ -145,6 +136,7 @@ export default function AdminVideos() {
         status: form.status,
         drive_link: form.drive_link ? getDirectDownloadLink(form.drive_link) : null,
         live_url: form.live_url || null,
+        raw_footage_link: form.raw_footage_link || null,
         internal_notes: form.internal_notes || null,
         is_internal_note_visible_to_client: form.is_internal_note_visible_to_client,
         date_planned: form.date_planned || null,
@@ -206,7 +198,6 @@ export default function AdminVideos() {
       <div className="flex h-[calc(100vh-8rem)] gap-6">
         {/* Main list */}
         <div className={cn('flex flex-col space-y-4', detailVideo ? 'flex-1 min-w-0' : 'w-full')}>
-          {/* Header */}
           <div className="flex items-center justify-between flex-shrink-0">
             <div>
               <h1 className="text-3xl font-display font-bold gradient-text">Videos</h1>
@@ -215,7 +206,6 @@ export default function AdminVideos() {
             <Button onClick={openAdd} className="gap-2"><Plus size={16} /> Add Video</Button>
           </div>
 
-          {/* Filters */}
           <div className="flex gap-2 flex-wrap flex-shrink-0">
             <div className="relative flex-1 min-w-40">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -231,7 +221,6 @@ export default function AdminVideos() {
             </select>
           </div>
 
-          {/* Table */}
           <div className="glass-card flex-1 overflow-auto">
             <table className="w-full text-sm">
               <thead className="sticky top-0 bg-card/90 backdrop-blur border-b border-glass-border">
@@ -240,15 +229,16 @@ export default function AdminVideos() {
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Client</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Editor</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Links</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Feedback</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
               <tbody>
                 {loading ? [...Array(6)].map((_, i) => (
-                  <tr key={i}><td colSpan={6} className="px-4 py-3"><div className="h-8 bg-muted/50 rounded animate-pulse" /></td></tr>
+                  <tr key={i}><td colSpan={7} className="px-4 py-3"><div className="h-8 bg-muted/50 rounded animate-pulse" /></td></tr>
                 )) : filtered.length === 0 ? (
-                  <tr><td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
+                  <tr><td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">
                     <Video size={32} className="mx-auto mb-2 opacity-40" />
                     No videos found.
                   </td></tr>
@@ -266,6 +256,22 @@ export default function AdminVideos() {
                       <StatusBadge status={video.status as VideoStatus} type="video" />
                     </td>
                     <td className="px-4 py-3 text-muted-foreground hidden lg:table-cell">{video.editor_name || '—'}</td>
+                    <td className="px-4 py-3 hidden lg:table-cell">
+                      <div className="flex items-center gap-1.5">
+                        {video.raw_footage_link ? (
+                          <a href={video.raw_footage_link} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} title="Raw footage available">
+                            <FolderOpen size={14} className="text-primary" />
+                          </a>
+                        ) : (
+                          <FolderOpen size={14} className="text-muted-foreground/30" />
+                        )}
+                        {video.drive_link && (
+                          <a href={video.drive_link} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} title="Drive link">
+                            <ExternalLink size={14} className="text-muted-foreground hover:text-primary" />
+                          </a>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-4 py-3 hidden lg:table-cell">
                       {video.feedback_count ? (
                         <span className="flex items-center gap-1 text-muted-foreground">
@@ -307,16 +313,12 @@ export default function AdminVideos() {
                     const isPast = i < currentIdx;
                     const isCurrent = s === detailVideo.status;
                     return (
-                      <button
-                        key={s}
-                        onClick={() => handleStatusChange(detailVideo.id, s)}
-                        className={cn(
-                          'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-all',
+                      <button key={s} onClick={() => handleStatusChange(detailVideo.id, s)}
+                        className={cn('w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-all',
                           isCurrent && 'bg-primary/20 text-primary font-semibold',
                           isPast && 'text-muted-foreground',
                           !isCurrent && !isPast && 'text-foreground/50 hover:bg-muted/30',
-                        )}
-                      >
+                        )}>
                         <span className={cn('h-2 w-2 rounded-full flex-shrink-0', isCurrent ? 'bg-primary' : isPast ? 'bg-success' : 'bg-muted-foreground/30')} />
                         {VIDEO_STATUSES[s].emoji} {VIDEO_STATUSES[s].label}
                       </button>
@@ -325,9 +327,18 @@ export default function AdminVideos() {
                 </div>
               </div>
 
-              {/* Links */}
+              {/* Internal Links section */}
               <div className="space-y-2">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Links</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Internal Links</p>
+                  <Lock size={10} className="text-muted-foreground" />
+                  <span className="text-[10px] text-muted-foreground">Team Only</span>
+                </div>
+                {detailVideo.raw_footage_link ? (
+                  <a href={detailVideo.raw_footage_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-amber-400 hover:underline font-medium">
+                    <FolderOpen size={12} /> Raw Footage
+                  </a>
+                ) : <p className="text-xs text-muted-foreground">No raw footage link</p>}
                 {detailVideo.drive_link ? (
                   <a href={detailVideo.drive_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-primary hover:underline">
                     <ExternalLink size={12} /> Drive File
@@ -358,11 +369,15 @@ export default function AdminVideos() {
                 ) : (
                   <div className="space-y-2">
                     {feedback.map(f => (
-                      <div key={f.id} className={cn('p-3 rounded-lg text-xs', (f as FeedbackItem & { is_resolved?: boolean }).is_resolved ? 'bg-muted/20 opacity-60' : 'bg-muted/40')}>
-                        <p className="text-foreground/80">{f.content || '[Voice note]'}</p>
+                      <div key={f.id} className={cn('p-3 rounded-lg text-xs', f.is_resolved ? 'bg-muted/20 opacity-60' : 'bg-muted/40')}>
+                        {f.type === 'voice' && f.content ? (
+                          <audio src={f.content} controls className="w-full h-8" />
+                        ) : (
+                          <p className="text-foreground/80">{f.content || '[Voice note]'}</p>
+                        )}
                         <div className="flex items-center justify-between mt-1">
                           <span className="text-muted-foreground">{formatDistanceToNow(new Date(f.created_at), { addSuffix: true })}</span>
-                          {!(f as FeedbackItem & { is_resolved?: boolean }).is_resolved && (
+                          {!f.is_resolved && (
                             <button onClick={() => handleResolveFeedback(f.id)} className="text-success hover:underline">Resolve</button>
                           )}
                         </div>
@@ -431,6 +446,11 @@ export default function AdminVideos() {
                 <Label>Drive Link</Label>
                 <Input value={form.drive_link} onChange={e => setForm(f => ({ ...f, drive_link: e.target.value }))} placeholder="https://drive.google.com/…" />
                 <p className="text-xs text-muted-foreground">Auto-converted to direct download link</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Raw Footage Link</Label>
+                <Input value={form.raw_footage_link} onChange={e => setForm(f => ({ ...f, raw_footage_link: e.target.value }))} placeholder="https://drive.google.com/…" />
+                <p className="text-xs text-muted-foreground">Google Drive link to raw footage — visible to team only 🔒</p>
               </div>
               <div className="space-y-1.5">
                 <Label>Live URL</Label>
