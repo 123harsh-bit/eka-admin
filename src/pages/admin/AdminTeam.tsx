@@ -79,6 +79,9 @@ export default function AdminTeam() {
         } else if (m.role === 'writer') {
           const { count: c } = await supabase.from('writing_tasks').select('*', { count: 'exact', head: true }).eq('assigned_writer', m.id).not('status', 'eq', 'delivered');
           count = c || 0;
+        } else if (m.role === 'camera_operator') {
+          const { count: c } = await supabase.from('videos').select('*', { count: 'exact', head: true }).eq('assigned_camera_operator', m.id).in('status', ['shoot_assigned', 'shooting']);
+          count = c || 0;
         }
         return { ...m, taskCount: count };
       })
@@ -114,7 +117,7 @@ export default function AdminTeam() {
         if (profileError) throw profileError;
 
         if (editingMember.role !== form.role) {
-          await supabase.from('user_roles').update({ role: form.role as 'admin' | 'editor' | 'designer' | 'writer' | 'client' }).eq('user_id', editingMember.id);
+          await supabase.from('user_roles').update({ role: form.role as 'admin' | 'editor' | 'designer' | 'writer' | 'client' | 'camera_operator' }).eq('user_id', editingMember.id);
         }
 
         toast({ title: 'Team member updated' });
