@@ -5,12 +5,13 @@ import { EkaLogo } from '@/components/shared/EkaLogo';
 import { useAuth } from '@/hooks/useAuth';
 import { NotificationBell } from '@/components/shared/NotificationBell';
 import { Button } from '@/components/ui/button';
-import { PenTool, BookOpen, LogOut, Menu, X, ListTodo } from 'lucide-react';
+import { PenTool, BookOpen, LogOut, Menu, X, ListTodo, Calendar } from 'lucide-react';
 
 const navItems = [
   { to: '/writer', icon: PenTool, label: 'My Writing Tasks', end: true },
   { to: '/writer/daily-tasks', icon: ListTodo, label: 'My Daily Tasks' },
   { to: '/writer/briefs', icon: BookOpen, label: 'Client Briefs' },
+  { to: '/writer/attendance', icon: Calendar, label: 'My Attendance' },
 ];
 
 export function WriterLayout({ children }: { children: ReactNode }) {

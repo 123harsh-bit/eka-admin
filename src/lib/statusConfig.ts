@@ -1,6 +1,6 @@
 // Single source of truth for all status labels, colors, and emojis
 
-export type VideoStatus = 'idea' | 'scripting' | 'shooting' | 'editing' | 'internal_review' | 'client_review' | 'revisions' | 'approved' | 'ready_to_upload' | 'live';
+export type VideoStatus = 'idea' | 'scripting' | 'script_approved' | 'shoot_assigned' | 'shooting' | 'footage_delivered' | 'editing' | 'internal_review' | 'client_review' | 'revisions' | 'approved' | 'ready_to_upload' | 'live';
 export type DesignTaskStatus = 'briefed' | 'in_progress' | 'review' | 'revisions' | 'approved' | 'delivered';
 export type WritingTaskStatus = 'briefed' | 'drafting' | 'review' | 'revisions' | 'approved' | 'delivered';
 
@@ -10,42 +10,47 @@ interface StatusConfig {
   emoji: string;
   color: string;
   bgColor: string;
+  progressPct: number;
 }
 
 export const VIDEO_STATUSES: Record<VideoStatus, StatusConfig> = {
-  idea: { label: 'Idea', clientLabel: 'Planning', emoji: '💡', color: 'text-muted-foreground', bgColor: 'bg-muted' },
-  scripting: { label: 'Scripting', clientLabel: 'Writing Script', emoji: '📝', color: 'text-blue-400', bgColor: 'bg-blue-500/20' },
-  shooting: { label: 'Shooting', clientLabel: 'Filming', emoji: '🎬', color: 'text-primary', bgColor: 'bg-primary/20' },
-  editing: { label: 'Editing', clientLabel: 'Editing', emoji: '✂️', color: 'text-orange-400', bgColor: 'bg-orange-500/20' },
-  internal_review: { label: 'Internal Review', clientLabel: 'Being Reviewed Internally', emoji: '🔍', color: 'text-indigo-400', bgColor: 'bg-indigo-500/20' },
-  client_review: { label: 'Client Review', clientLabel: 'Ready for Your Review', emoji: '👀', color: 'text-pink-400', bgColor: 'bg-pink-500/20' },
-  revisions: { label: 'Revisions', clientLabel: 'Revisions in Progress', emoji: '✏️', color: 'text-warning', bgColor: 'bg-warning/20' },
-  approved: { label: 'Approved', clientLabel: 'Approved by You', emoji: '✅', color: 'text-cyan-400', bgColor: 'bg-cyan-500/20' },
-  ready_to_upload: { label: 'Ready to Upload', clientLabel: 'Preparing to Publish', emoji: '⏳', color: 'text-amber-400', bgColor: 'bg-amber-500/20' },
-  live: { label: 'Live', clientLabel: 'Live!', emoji: '🟢', color: 'text-success', bgColor: 'bg-success/20' },
+  idea: { label: 'Idea', clientLabel: "💡 We're Planning This", emoji: '💡', color: 'text-muted-foreground', bgColor: 'bg-muted', progressPct: 5 },
+  scripting: { label: 'Scripting', clientLabel: '📝 Writing Your Script', emoji: '📝', color: 'text-blue-400', bgColor: 'bg-blue-500/20', progressPct: 12 },
+  script_approved: { label: 'Script Approved', clientLabel: '✅ Script Ready — Shoot Coming Up!', emoji: '✅', color: 'text-emerald-400', bgColor: 'bg-emerald-500/20', progressPct: 20 },
+  shoot_assigned: { label: 'Shoot Assigned', clientLabel: '🎬 Shoot Scheduled', emoji: '🎬', color: 'text-violet-400', bgColor: 'bg-violet-500/20', progressPct: 28 },
+  shooting: { label: 'Shooting', clientLabel: '🎥 Being Filmed Right Now!', emoji: '🎥', color: 'text-primary', bgColor: 'bg-primary/20', progressPct: 38 },
+  footage_delivered: { label: 'Footage Delivered', clientLabel: '📁 Footage In — Editing Starting Soon', emoji: '📁', color: 'text-amber-400', bgColor: 'bg-amber-500/20', progressPct: 48 },
+  editing: { label: 'Editing', clientLabel: '✂️ Being Edited', emoji: '✂️', color: 'text-orange-400', bgColor: 'bg-orange-500/20', progressPct: 60 },
+  internal_review: { label: 'Internal Review', clientLabel: '🔍 Being Polished Internally', emoji: '🔍', color: 'text-indigo-400', bgColor: 'bg-indigo-500/20', progressPct: 75 },
+  client_review: { label: 'Client Review', clientLabel: '👀 Ready for Your Review ⚡️', emoji: '👀', color: 'text-pink-400', bgColor: 'bg-pink-500/20', progressPct: 82 },
+  revisions: { label: 'Revisions', clientLabel: '✏️ Applying Your Feedback', emoji: '✏️', color: 'text-warning', bgColor: 'bg-warning/20', progressPct: 87 },
+  approved: { label: 'Approved', clientLabel: '✅ You Approved This!', emoji: '✅', color: 'text-cyan-400', bgColor: 'bg-cyan-500/20', progressPct: 92 },
+  ready_to_upload: { label: 'Ready to Upload', clientLabel: '⏳ Almost Live...', emoji: '⏳', color: 'text-amber-400', bgColor: 'bg-amber-500/20', progressPct: 96 },
+  live: { label: 'Live', clientLabel: '🟢 LIVE!', emoji: '🟢', color: 'text-success', bgColor: 'bg-success/20', progressPct: 100 },
 };
 
 export const DESIGN_TASK_STATUSES: Record<DesignTaskStatus, StatusConfig> = {
-  briefed: { label: 'Briefed', clientLabel: 'Briefed', emoji: '📋', color: 'text-muted-foreground', bgColor: 'bg-muted' },
-  in_progress: { label: 'In Progress', clientLabel: 'In Progress', emoji: '🎨', color: 'text-blue-400', bgColor: 'bg-blue-500/20' },
-  review: { label: 'In Review', clientLabel: 'Under Review', emoji: '🔍', color: 'text-indigo-400', bgColor: 'bg-indigo-500/20' },
-  revisions: { label: 'Revisions', clientLabel: 'Revisions', emoji: '✏️', color: 'text-warning', bgColor: 'bg-warning/20' },
-  approved: { label: 'Approved', clientLabel: 'Approved', emoji: '✅', color: 'text-success', bgColor: 'bg-success/20' },
-  delivered: { label: 'Delivered', clientLabel: 'Delivered', emoji: '📦', color: 'text-cyan-400', bgColor: 'bg-cyan-500/20' },
+  briefed: { label: 'Briefed', clientLabel: 'Briefed', emoji: '📋', color: 'text-muted-foreground', bgColor: 'bg-muted', progressPct: 0 },
+  in_progress: { label: 'In Progress', clientLabel: 'In Progress', emoji: '🎨', color: 'text-blue-400', bgColor: 'bg-blue-500/20', progressPct: 25 },
+  review: { label: 'In Review', clientLabel: 'Under Review', emoji: '🔍', color: 'text-indigo-400', bgColor: 'bg-indigo-500/20', progressPct: 50 },
+  revisions: { label: 'Revisions', clientLabel: 'Revisions', emoji: '✏️', color: 'text-warning', bgColor: 'bg-warning/20', progressPct: 65 },
+  approved: { label: 'Approved', clientLabel: 'Approved', emoji: '✅', color: 'text-success', bgColor: 'bg-success/20', progressPct: 85 },
+  delivered: { label: 'Delivered', clientLabel: 'Delivered', emoji: '📦', color: 'text-cyan-400', bgColor: 'bg-cyan-500/20', progressPct: 100 },
 };
 
 export const WRITING_TASK_STATUSES: Record<WritingTaskStatus, StatusConfig> = {
-  briefed: { label: 'Briefed', clientLabel: 'Briefed', emoji: '📋', color: 'text-muted-foreground', bgColor: 'bg-muted' },
-  drafting: { label: 'Drafting', clientLabel: 'Writing in Progress', emoji: '✍️', color: 'text-blue-400', bgColor: 'bg-blue-500/20' },
-  review: { label: 'In Review', clientLabel: 'Under Review', emoji: '🔍', color: 'text-indigo-400', bgColor: 'bg-indigo-500/20' },
-  revisions: { label: 'Revisions', clientLabel: 'Revisions', emoji: '✏️', color: 'text-warning', bgColor: 'bg-warning/20' },
-  approved: { label: 'Approved', clientLabel: 'Approved', emoji: '✅', color: 'text-success', bgColor: 'bg-success/20' },
-  delivered: { label: 'Delivered', clientLabel: 'Delivered', emoji: '📦', color: 'text-cyan-400', bgColor: 'bg-cyan-500/20' },
+  briefed: { label: 'Briefed', clientLabel: 'Briefed', emoji: '📋', color: 'text-muted-foreground', bgColor: 'bg-muted', progressPct: 0 },
+  drafting: { label: 'Drafting', clientLabel: 'Writing in Progress', emoji: '✍️', color: 'text-blue-400', bgColor: 'bg-blue-500/20', progressPct: 25 },
+  review: { label: 'In Review', clientLabel: 'Under Review', emoji: '🔍', color: 'text-indigo-400', bgColor: 'bg-indigo-500/20', progressPct: 50 },
+  revisions: { label: 'Revisions', clientLabel: 'Revisions', emoji: '✏️', color: 'text-warning', bgColor: 'bg-warning/20', progressPct: 65 },
+  approved: { label: 'Approved', clientLabel: 'Approved', emoji: '✅', color: 'text-success', bgColor: 'bg-success/20', progressPct: 85 },
+  delivered: { label: 'Delivered', clientLabel: 'Delivered', emoji: '📦', color: 'text-cyan-400', bgColor: 'bg-cyan-500/20', progressPct: 100 },
 };
 
 export const VIDEO_STATUS_ORDER: VideoStatus[] = [
-  'idea', 'scripting', 'shooting', 'editing', 'internal_review',
-  'client_review', 'revisions', 'approved', 'ready_to_upload', 'live'
+  'idea', 'scripting', 'script_approved', 'shoot_assigned', 'shooting',
+  'footage_delivered', 'editing', 'internal_review', 'client_review',
+  'revisions', 'approved', 'ready_to_upload', 'live'
 ];
 
 export const DESIGN_TASK_STATUS_ORDER: DesignTaskStatus[] = [
@@ -104,3 +109,21 @@ export const DURATION_PRESETS = [
   { label: '3min', value: 180 },
   { label: '5min+', value: 300 },
 ];
+
+// Attendance status config
+export const ATTENDANCE_STATUSES = {
+  on_time: { label: 'On Time', emoji: '🟢', color: 'text-success', bgColor: 'bg-success/20' },
+  late: { label: 'Late', emoji: '🟡', color: 'text-warning', bgColor: 'bg-warning/20' },
+  left_early: { label: 'Left Early', emoji: '🟠', color: 'text-orange-400', bgColor: 'bg-orange-500/20' },
+  half_day: { label: 'Half Day', emoji: '🔵', color: 'text-blue-400', bgColor: 'bg-blue-500/20' },
+  absent: { label: 'Absent', emoji: '🔴', color: 'text-destructive', bgColor: 'bg-destructive/20' },
+};
+
+export const ROLE_LABELS: Record<string, string> = {
+  admin: 'Managing Director',
+  editor: 'Video Editor',
+  designer: 'Graphic Designer',
+  writer: 'Content Writer',
+  camera_operator: 'Camera Operator',
+  client: 'Client',
+};

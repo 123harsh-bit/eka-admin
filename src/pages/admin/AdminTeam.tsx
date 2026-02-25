@@ -24,6 +24,7 @@ const ROLES = [
   { value: 'editor', label: 'Video Editor', color: 'text-blue-400 bg-blue-500/20' },
   { value: 'designer', label: 'Graphic Designer', color: 'text-pink-400 bg-pink-500/20' },
   { value: 'writer', label: 'Content Writer', color: 'text-green-400 bg-green-500/20' },
+  { value: 'camera_operator', label: 'Camera Operator', color: 'text-violet-400 bg-violet-500/20' },
   { value: 'admin', label: 'Managing Director', color: 'text-primary bg-primary/20' },
 ];
 

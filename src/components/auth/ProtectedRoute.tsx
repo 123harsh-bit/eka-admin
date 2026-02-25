@@ -31,6 +31,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
       editor: '/editor',
       designer: '/designer',
       writer: '/writer',
+      camera_operator: '/camera',
       client: '/client',
     };
     return <Navigate to={roleRoutes[role] || '/'} replace />;

@@ -360,7 +360,7 @@ export default function ClientDashboard() {
 
                           {/* Progress bar */}
                           {(() => {
-                            const statusOrder = ['idea', 'scripting', 'shooting', 'editing', 'internal_review', 'client_review', 'revisions', 'approved', 'ready_to_upload', 'live'];
+                            const statusOrder = ['idea', 'scripting', 'script_approved', 'shoot_assigned', 'shooting', 'footage_delivered', 'editing', 'internal_review', 'client_review', 'revisions', 'approved', 'ready_to_upload', 'live'];
                             const idx = statusOrder.indexOf(video.status);
                             const pct = ((idx + 1) / statusOrder.length) * 100;
                             return (
