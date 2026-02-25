@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAttendance } from '@/hooks/useAttendance';
 import { NotificationBell } from '@/components/shared/NotificationBell';
 import { StartWorkday } from '@/components/auth/StartWorkday';
+import { AttendanceBar } from '@/components/shared/AttendanceBar';
 import { Button } from '@/components/ui/button';
 import { PenTool, BookOpen, LogOut, Menu, X, ListTodo, Calendar } from 'lucide-react';
 
@@ -59,7 +60,8 @@ export function WriterLayout({ children }: { children: ReactNode }) {
           </Button>
         </div>
       </aside>
-      <main className="flex-1 min-w-0">
+      <main className="flex-1 min-w-0 flex flex-col">
+        <AttendanceBar />
         <div className="lg:hidden flex items-center justify-between p-4 border-b border-border">
           <button onClick={() => setSidebarOpen(true)}><Menu size={24} /></button>
           <EkaLogo size="sm" />
@@ -68,7 +70,7 @@ export function WriterLayout({ children }: { children: ReactNode }) {
         <div className="hidden lg:flex items-center justify-end px-8 pt-4">
           <NotificationBell />
         </div>
-        <div className="p-4 md:p-6 lg:p-8 fade-in">{children}</div>
+        <div className="p-4 md:p-6 lg:p-8 fade-in flex-1">{children}</div>
       </main>
     </div>
     </StartWorkday>

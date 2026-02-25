@@ -5,7 +5,7 @@ import { NeedHelpButton } from '@/components/shared/NeedHelpButton';
 import { NotificationBell } from '@/components/shared/NotificationBell';
 import { VideoFeedbackModal } from '@/components/client/VideoFeedbackModal';
 import { StatusBadge } from '@/components/shared/StatusBadge';
-import { VIDEO_STATUSES, DESIGN_TASK_STATUSES, WRITING_TASK_STATUSES, type VideoStatus } from '@/lib/statusConfig';
+import { VIDEO_STATUSES, VIDEO_STATUS_ORDER, DESIGN_TASK_STATUSES, WRITING_TASK_STATUSES, type VideoStatus } from '@/lib/statusConfig';
 import { EkaLogo } from '@/components/shared/EkaLogo';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -390,12 +390,57 @@ export default function ClientDashboard() {
                             </div>
                           )}
 
+                          {/* Script review for client */}
+                          {video.status === 'script_client_review' && (
+                            <div className="space-y-2 bg-pink-500/10 rounded-lg p-3">
+                              <p className="text-xs font-semibold text-pink-400">📄 Script Ready for Your Review</p>
+                              <p className="text-xs text-muted-foreground">Review and approve so filming can begin.</p>
+                              <div className="flex gap-2">
+                                <button onClick={async (e) => {
+                                  e.stopPropagation();
+                                  // Find linked writing task drive_link
+                                  const { data: wt } = await supabase.from('writing_tasks').select('doc_link').eq('video_id', video.id).limit(1).single();
+                                  if (wt?.doc_link) window.open(wt.doc_link, '_blank');
+                                  else toast({ title: 'Script not uploaded yet', variant: 'destructive' });
+                                }} className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-foreground transition-colors">
+                                  <Download size={12} /> Download Script
+                                </button>
+                                <button onClick={async (e) => {
+                                  e.stopPropagation();
+                                  setApprovingId(video.id);
+                                  await supabase.from('videos').update({ status: 'script_approved' }).eq('id', video.id);
+                                  await fetchVideos();
+                                  setApprovingId(null);
+                                  toast({ title: '✅ Script approved!' });
+                                }} disabled={approvingId === video.id}
+                                  className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-success/20 text-success hover:bg-success/30 transition-colors font-medium">
+                                  {approvingId === video.id ? '…' : <><Check size={12} /> Approve Script</>}
+                                </button>
+                                <button onClick={() => setFeedbackVideo(video)}
+                                  className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-pink-500/20 text-pink-400 hover:bg-pink-500/30 transition-colors">
+                                  <MessageSquare size={12} /> Request Changes
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Show script download after approval */}
+                          {['script_approved','shoot_assigned','shooting','footage_delivered','editing','internal_review','client_review','revisions','approved','ready_to_upload','live'].includes(video.status) && (
+                            <button onClick={async (e) => {
+                              e.stopPropagation();
+                              const { data: wt } = await supabase.from('writing_tasks').select('doc_link').eq('video_id', video.id).limit(1).single();
+                              if (wt?.doc_link) window.open(wt.doc_link, '_blank');
+                            }} className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground">
+                              <Download size={10} /> ✅ Script Approved — View
+                            </button>
+                          )}
 
                           {/* Progress bar */}
                           {(() => {
-                            const statusOrder = ['idea', 'scripting', 'script_approved', 'shoot_assigned', 'shooting', 'footage_delivered', 'editing', 'internal_review', 'client_review', 'revisions', 'approved', 'ready_to_upload', 'live'];
-                            const idx = statusOrder.indexOf(video.status);
-                            const pct = ((idx + 1) / statusOrder.length) * 100;
+                            const statusOrder = VIDEO_STATUS_ORDER;
+                            const idx = statusOrder.indexOf(video.status as VideoStatus);
+                            const cfg = VIDEO_STATUSES[video.status as VideoStatus];
+                            const pct = cfg?.progressPct || ((idx + 1) / statusOrder.length) * 100;
                             return (
                               <div className="h-1 bg-muted rounded-full overflow-hidden">
                                 <div className="h-full bg-primary rounded-full" style={{ width: `${pct}%` }} />

@@ -1,6 +1,6 @@
 // Single source of truth for all status labels, colors, and emojis
 
-export type VideoStatus = 'idea' | 'scripting' | 'script_approved' | 'shoot_assigned' | 'shooting' | 'footage_delivered' | 'editing' | 'internal_review' | 'client_review' | 'revisions' | 'approved' | 'ready_to_upload' | 'live';
+export type VideoStatus = 'idea' | 'scripting' | 'script_submitted' | 'script_client_review' | 'script_approved' | 'shoot_assigned' | 'shooting' | 'footage_delivered' | 'editing' | 'internal_review' | 'client_review' | 'revisions' | 'approved' | 'ready_to_upload' | 'live';
 export type DesignTaskStatus = 'briefed' | 'in_progress' | 'review' | 'revisions' | 'approved' | 'delivered';
 export type WritingTaskStatus = 'briefed' | 'drafting' | 'review' | 'revisions' | 'approved' | 'delivered';
 
@@ -14,18 +14,20 @@ interface StatusConfig {
 }
 
 export const VIDEO_STATUSES: Record<VideoStatus, StatusConfig> = {
-  idea: { label: 'Idea', clientLabel: "💡 We're Planning This", emoji: '💡', color: 'text-muted-foreground', bgColor: 'bg-muted', progressPct: 5 },
-  scripting: { label: 'Scripting', clientLabel: '📝 Writing Your Script', emoji: '📝', color: 'text-blue-400', bgColor: 'bg-blue-500/20', progressPct: 12 },
-  script_approved: { label: 'Script Approved', clientLabel: '✅ Script Ready — Shoot Coming Up!', emoji: '✅', color: 'text-emerald-400', bgColor: 'bg-emerald-500/20', progressPct: 20 },
-  shoot_assigned: { label: 'Shoot Assigned', clientLabel: '🎬 Shoot Scheduled', emoji: '🎬', color: 'text-violet-400', bgColor: 'bg-violet-500/20', progressPct: 28 },
-  shooting: { label: 'Shooting', clientLabel: '🎥 Being Filmed Right Now!', emoji: '🎥', color: 'text-primary', bgColor: 'bg-primary/20', progressPct: 38 },
-  footage_delivered: { label: 'Footage Delivered', clientLabel: '📁 Footage In — Editing Starting Soon', emoji: '📁', color: 'text-amber-400', bgColor: 'bg-amber-500/20', progressPct: 48 },
-  editing: { label: 'Editing', clientLabel: '✂️ Being Edited', emoji: '✂️', color: 'text-orange-400', bgColor: 'bg-orange-500/20', progressPct: 60 },
-  internal_review: { label: 'Internal Review', clientLabel: '🔍 Being Polished Internally', emoji: '🔍', color: 'text-indigo-400', bgColor: 'bg-indigo-500/20', progressPct: 75 },
-  client_review: { label: 'Client Review', clientLabel: '👀 Ready for Your Review ⚡️', emoji: '👀', color: 'text-pink-400', bgColor: 'bg-pink-500/20', progressPct: 82 },
-  revisions: { label: 'Revisions', clientLabel: '✏️ Applying Your Feedback', emoji: '✏️', color: 'text-warning', bgColor: 'bg-warning/20', progressPct: 87 },
-  approved: { label: 'Approved', clientLabel: '✅ You Approved This!', emoji: '✅', color: 'text-cyan-400', bgColor: 'bg-cyan-500/20', progressPct: 92 },
-  ready_to_upload: { label: 'Ready to Upload', clientLabel: '⏳ Almost Live...', emoji: '⏳', color: 'text-amber-400', bgColor: 'bg-amber-500/20', progressPct: 96 },
+  idea: { label: 'Idea', clientLabel: "💡 Being Planned", emoji: '💡', color: 'text-muted-foreground', bgColor: 'bg-muted', progressPct: 3 },
+  scripting: { label: 'Scripting', clientLabel: '📝 Script Being Written', emoji: '📝', color: 'text-blue-400', bgColor: 'bg-blue-500/20', progressPct: 10 },
+  script_submitted: { label: 'Script Submitted', clientLabel: '📝 Script Under Internal Review', emoji: '📄', color: 'text-indigo-400', bgColor: 'bg-indigo-500/20', progressPct: 16 },
+  script_client_review: { label: 'Script — Client Review', clientLabel: '📄 Script Ready for Your Approval ⚡️', emoji: '👀', color: 'text-pink-400', bgColor: 'bg-pink-500/20', progressPct: 22 },
+  script_approved: { label: 'Script Approved', clientLabel: '✅ Script Approved — Shoot Coming!', emoji: '✅', color: 'text-emerald-400', bgColor: 'bg-emerald-500/20', progressPct: 28 },
+  shoot_assigned: { label: 'Shoot Assigned', clientLabel: '🎬 Shoot Scheduled', emoji: '🎬', color: 'text-violet-400', bgColor: 'bg-violet-500/20', progressPct: 35 },
+  shooting: { label: 'Shooting', clientLabel: '🎥 Being Filmed Right Now!', emoji: '🎥', color: 'text-primary', bgColor: 'bg-primary/20', progressPct: 45 },
+  footage_delivered: { label: 'Footage Delivered', clientLabel: '📁 Footage Ready — Editing Soon', emoji: '📁', color: 'text-amber-400', bgColor: 'bg-amber-500/20', progressPct: 52 },
+  editing: { label: 'Editing', clientLabel: '✂️ Being Edited', emoji: '✂️', color: 'text-orange-400', bgColor: 'bg-orange-500/20', progressPct: 62 },
+  internal_review: { label: 'Internal Review', clientLabel: '🔍 Being Polished', emoji: '🔍', color: 'text-indigo-400', bgColor: 'bg-indigo-500/20', progressPct: 72 },
+  client_review: { label: 'Client Review', clientLabel: '👀 Ready for Your Review ⚡️', emoji: '👀', color: 'text-pink-400', bgColor: 'bg-pink-500/20', progressPct: 80 },
+  revisions: { label: 'Revisions', clientLabel: '✏️ Applying Your Feedback', emoji: '✏️', color: 'text-warning', bgColor: 'bg-warning/20', progressPct: 85 },
+  approved: { label: 'Approved', clientLabel: '✅ Approved by You!', emoji: '✅', color: 'text-cyan-400', bgColor: 'bg-cyan-500/20', progressPct: 90 },
+  ready_to_upload: { label: 'Ready to Upload', clientLabel: '⏳ Almost Live...', emoji: '⏳', color: 'text-amber-400', bgColor: 'bg-amber-500/20', progressPct: 95 },
   live: { label: 'Live', clientLabel: '🟢 LIVE!', emoji: '🟢', color: 'text-success', bgColor: 'bg-success/20', progressPct: 100 },
 };
 
@@ -48,9 +50,9 @@ export const WRITING_TASK_STATUSES: Record<WritingTaskStatus, StatusConfig> = {
 };
 
 export const VIDEO_STATUS_ORDER: VideoStatus[] = [
-  'idea', 'scripting', 'script_approved', 'shoot_assigned', 'shooting',
-  'footage_delivered', 'editing', 'internal_review', 'client_review',
-  'revisions', 'approved', 'ready_to_upload', 'live'
+  'idea', 'scripting', 'script_submitted', 'script_client_review', 'script_approved',
+  'shoot_assigned', 'shooting', 'footage_delivered', 'editing', 'internal_review',
+  'client_review', 'revisions', 'approved', 'ready_to_upload', 'live'
 ];
 
 export const DESIGN_TASK_STATUS_ORDER: DesignTaskStatus[] = [
@@ -127,3 +129,32 @@ export const ROLE_LABELS: Record<string, string> = {
   camera_operator: 'Camera Operator',
   client: 'Client',
 };
+
+// Action required helpers for admin video table
+export function getActionRequired(status: string, video: { assigned_editor?: string | null; assigned_camera_operator?: string | null; editor_name?: string | null; camera_op_name?: string | null; writer_name?: string | null; client_name?: string | null }) {
+  switch (status) {
+    case 'idea':
+    case 'script_submitted':
+    case 'script_approved':
+    case 'footage_delivered':
+    case 'internal_review':
+    case 'approved':
+    case 'ready_to_upload':
+      return { type: 'admin' as const, label: 'Your Action Needed', color: 'bg-primary/20 text-primary' };
+    case 'scripting':
+      return { type: 'team' as const, label: `Waiting for ${video.writer_name || 'Writer'}`, color: 'bg-blue-500/20 text-blue-400' };
+    case 'shoot_assigned':
+    case 'shooting':
+      return { type: 'team' as const, label: `Waiting for ${video.camera_op_name || 'Camera Op'}`, color: 'bg-blue-500/20 text-blue-400' };
+    case 'editing':
+    case 'revisions':
+      return { type: 'team' as const, label: `Waiting for ${video.editor_name || 'Editor'}`, color: 'bg-blue-500/20 text-blue-400' };
+    case 'script_client_review':
+    case 'client_review':
+      return { type: 'client' as const, label: `Waiting for ${video.client_name || 'Client'}`, color: 'bg-pink-500/20 text-pink-400' };
+    case 'live':
+      return { type: 'done' as const, label: '✅ Live', color: 'bg-success/20 text-success' };
+    default:
+      return { type: 'admin' as const, label: 'Unknown', color: 'bg-muted text-muted-foreground' };
+  }
+}
