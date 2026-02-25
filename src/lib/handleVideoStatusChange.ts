@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface StatusChangeResult {
   success: boolean;
   error?: string;
-  requiresInput?: 'shoot_assignment' | 'editor_assignment' | 'live_url';
+  requiresInput?: 'shoot_assignment' | 'editor_assignment' | 'live_url' | 'writer_assignment' | 'script_changes';
   warning?: string;
 }
 
@@ -13,7 +13,6 @@ export async function handleVideoStatusChange(
   currentUserId: string,
   additionalData?: Record<string, unknown>
 ): Promise<StatusChangeResult> {
-  // Fetch current video data
   const { data: video, error: fetchErr } = await supabase
     .from('videos')
     .select('id, title, status, client_id, assigned_editor, assigned_camera_operator, raw_footage_link, drive_link, live_url, date_planned, clients(name)')
@@ -25,26 +24,68 @@ export async function handleVideoStatusChange(
   const clientName = (video.clients as any)?.name || 'Unknown';
   const title = video.title;
 
-  // Transition-specific logic
   switch (newStatus) {
     case 'scripting': {
-      // Allow moving to scripting without pre-checks
+      // Auto-create writing task if writer provided
+      const writerId = additionalData?.assigned_writer as string;
+      if (writerId) {
+        // Check if writing task already exists for this video
+        const { data: existing } = await supabase.from('writing_tasks').select('id').eq('video_id', videoId).limit(1);
+        if (!existing || existing.length === 0) {
+          await supabase.from('writing_tasks').insert({
+            title: `${title} — Script`,
+            client_id: video.client_id,
+            video_id: videoId,
+            assigned_writer: writerId,
+            task_type: 'reel_script',
+            status: 'briefed',
+            due_date: additionalData?.due_date || null,
+          } as any);
+        }
+        await insertNotification(writerId, `📝 New script assignment: '${title}' for ${clientName}. Please begin and share your Google Drive link when ready.`, videoId, video.client_id);
+      }
+      break;
+    }
+    case 'script_submitted': {
+      // Writer submits — notify admin
+      const adminIds = await getAdminIds();
+      const { data: writerProfile } = await supabase.from('profiles').select('full_name').eq('id', currentUserId).single();
+      for (const adminId of adminIds) {
+        await insertNotification(adminId, `📝 ${writerProfile?.full_name || 'Writer'} submitted script for '${title}'. Review it and decide next step.`, videoId, video.client_id);
+      }
+      // Update linked writing task status
+      await supabase.from('writing_tasks').update({ status: 'review' }).eq('video_id', videoId);
+      break;
+    }
+    case 'script_client_review': {
+      // Admin sends script to client
+      if (video.client_id) {
+        const { data: clientData } = await supabase.from('clients').select('user_id').eq('id', video.client_id).single();
+        if (clientData?.user_id) {
+          await insertNotification(clientData.user_id, `📄 Your script for '${title}' is ready for your review. Log in to read and approve it.`, videoId, video.client_id);
+        }
+      }
       break;
     }
     case 'script_approved': {
-      // Notify writer via writing_tasks if one exists for this video
+      // Client approves script
       const { data: writingTask } = await supabase.from('writing_tasks').select('assigned_writer').eq('video_id', videoId).limit(1).single();
       if (writingTask?.assigned_writer) {
         await insertNotification(writingTask.assigned_writer, `✅ Your script for '${title}' has been approved! Great work.`, videoId, video.client_id);
       }
+      // Update writing task
+      await supabase.from('writing_tasks').update({ status: 'approved' }).eq('video_id', videoId);
+      // Notify admin
+      const adminIds = await getAdminIds();
+      for (const adminId of adminIds) {
+        await insertNotification(adminId, `✅ ${clientName} approved the script for '${title}'! Ready to schedule the shoot.`, videoId, video.client_id);
+      }
       break;
     }
     case 'shoot_assigned': {
-      // Requires camera operator, shoot date, location
       const camOp = additionalData?.assigned_camera_operator as string;
       if (!camOp) return { success: false, requiresInput: 'shoot_assignment' };
       
-      // Update shoot fields
       const shootUpdate: Record<string, unknown> = {
         assigned_camera_operator: camOp,
         shoot_date: additionalData?.shoot_date || null,
@@ -53,23 +94,20 @@ export async function handleVideoStatusChange(
         shoot_notes: additionalData?.shoot_notes || null,
         status: newStatus,
       };
-      const { error } = await supabase.from('videos').update(shootUpdate).eq('id', videoId);
+      const { error } = await supabase.from('videos').update(shootUpdate as any).eq('id', videoId);
       if (error) return { success: false, error: error.message };
 
-      // Notify camera operator
       const shootDate = additionalData?.shoot_date ? new Date(additionalData.shoot_date as string).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) : 'TBD';
-      await insertNotification(camOp, 
+      await insertNotification(camOp,
         `🎬 New shoot: '${title}' for ${clientName}. 📅 ${shootDate} · 📍 ${additionalData?.shoot_location || 'TBD'}. Check your dashboard.`,
         videoId, video.client_id
       );
-      
+
       await logActivity(videoId, 'status_changed', { status: newStatus }, currentUserId);
       return { success: true };
     }
     case 'shooting': {
-      // Camera op starts filming
       if (video.assigned_camera_operator) {
-        // Notify admin
         const { data: camProfile } = await supabase.from('profiles').select('full_name').eq('id', currentUserId).single();
         const adminIds = await getAdminIds();
         for (const adminId of adminIds) {
@@ -87,8 +125,6 @@ export async function handleVideoStatusChange(
       if (video.assigned_editor) {
         await insertNotification(video.assigned_editor, `📁 Raw footage for '${title}' is ready — you can start editing.`, videoId, video.client_id);
       }
-      
-      // Also update footage_uploaded_at
       await supabase.from('videos').update({ footage_uploaded_at: new Date().toISOString() } as any).eq('id', videoId);
       break;
     }
@@ -114,7 +150,6 @@ export async function handleVideoStatusChange(
       break;
     }
     case 'client_review': {
-      // Notify client
       if (video.client_id) {
         const { data: clientData } = await supabase.from('clients').select('user_id').eq('id', video.client_id).single();
         if (clientData?.user_id) {
@@ -146,17 +181,15 @@ export async function handleVideoStatusChange(
     case 'live': {
       const liveUrl = additionalData?.live_url as string;
       if (!liveUrl) return { success: false, requiresInput: 'live_url' };
-      
+
       await supabase.from('videos').update({ live_url: liveUrl, status: 'live' }).eq('id', videoId);
-      
-      // Notify client
+
       if (video.client_id) {
         const { data: clientData } = await supabase.from('clients').select('user_id').eq('id', video.client_id).single();
         if (clientData?.user_id) {
           await insertNotification(clientData.user_id, `🟢 Your video '${title}' is now LIVE! ${liveUrl}`, videoId, video.client_id);
         }
       }
-      // Notify all assigned team (editor + camera op; writer found via writing_tasks)
       const teamIds = [video.assigned_editor, video.assigned_camera_operator].filter(Boolean) as string[];
       const { data: linkedWritingTask } = await supabase.from('writing_tasks').select('assigned_writer').eq('video_id', videoId).limit(1).single();
       if (linkedWritingTask?.assigned_writer) teamIds.push(linkedWritingTask.assigned_writer);
@@ -164,7 +197,7 @@ export async function handleVideoStatusChange(
       for (const memberId of uniqueTeamIds) {
         await insertNotification(memberId, `🟢 '${title}' for ${clientName} is now live! Great team effort.`, videoId, video.client_id);
       }
-      
+
       await logActivity(videoId, 'status_changed', { status: 'live' }, currentUserId);
       return { success: true };
     }
@@ -173,7 +206,7 @@ export async function handleVideoStatusChange(
   // Default: just update status
   const { error } = await supabase.from('videos').update({ status: newStatus }).eq('id', videoId);
   if (error) return { success: false, error: error.message };
-  
+
   await logActivity(videoId, 'status_changed', { status: newStatus }, currentUserId);
   return { success: true };
 }

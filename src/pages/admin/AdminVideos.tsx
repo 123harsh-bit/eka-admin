@@ -7,9 +7,12 @@ import { Label } from '@/components/ui/label';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { ConfirmDeleteModal } from '@/components/shared/ConfirmDeleteModal';
 import { useToast } from '@/hooks/use-toast';
-import { VIDEO_STATUSES, VIDEO_STATUS_ORDER, type VideoStatus } from '@/lib/statusConfig';
+import { VIDEO_STATUSES, VIDEO_STATUS_ORDER, type VideoStatus, getActionRequired } from '@/lib/statusConfig';
 import { getDirectDownloadLink } from '@/lib/driveUtils';
 import { Plus, Search, X, Video, Edit2, Trash2, ExternalLink, MessageSquare, Loader2, FolderOpen, Lock } from 'lucide-react';
+import { WorkflowPrompt } from '@/components/shared/WorkflowPrompt';
+import { handleVideoStatusChange } from '@/lib/handleVideoStatusChange';
+import { useAuth } from '@/hooks/useAuth';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -22,7 +25,7 @@ interface VideoRow {
   drive_link: string | null; live_url: string | null; raw_footage_link: string | null;
   internal_notes: string | null; is_internal_note_visible_to_client: boolean;
   date_planned: string | null; date_delivered: string | null; created_at: string;
-  client_name?: string; editor_name?: string; camera_op_name?: string; feedback_count?: number;
+  client_name?: string; editor_name?: string; camera_op_name?: string; writer_name?: string; feedback_count?: number;
 }
 
 interface Client { id: string; name: string; }
@@ -53,6 +56,7 @@ export default function AdminVideos() {
   const [videos, setVideos] = useState<VideoRow[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [editors, setEditors] = useState<TeamMember[]>([]);
+  const [writers, setWriters] = useState<TeamMember[]>([]);
   const [cameraOps, setCameraOps] = useState<CameraOp[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -65,6 +69,8 @@ export default function AdminVideos() {
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<FeedbackItem[]>([]);
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; video: VideoRow | null }>({ open: false, video: null });
+  const [workflowLoading, setWorkflowLoading] = useState(false);
+  const { user } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -78,7 +84,7 @@ export default function AdminVideos() {
 
   const fetchAll = async () => {
     setLoading(true);
-    await Promise.all([fetchVideos(), fetchClients(), fetchEditors(), fetchCameraOps()]);
+    await Promise.all([fetchVideos(), fetchClients(), fetchEditors(), fetchCameraOps(), fetchWriters()]);
     setLoading(false);
   };
 
@@ -88,7 +94,6 @@ export default function AdminVideos() {
       .select('id, title, description, status, client_id, assigned_editor, assigned_camera_operator, shoot_date, shoot_start_time, shoot_location, shoot_notes, drive_link, live_url, raw_footage_link, internal_notes, is_internal_note_visible_to_client, date_planned, date_delivered, created_at, clients(name)')
       .order('created_at', { ascending: false });
     if (data) {
-      // Gather all editor and camera op IDs for name resolution
       const editorIds = [...new Set((data as any[]).map(v => v.assigned_editor).filter(Boolean))];
       const camOpIds = [...new Set((data as any[]).map(v => v.assigned_camera_operator).filter(Boolean))];
       const allIds = [...new Set([...editorIds, ...camOpIds])];
@@ -99,11 +104,28 @@ export default function AdminVideos() {
         profiles?.forEach(p => { profileMap[p.id] = p.full_name; });
       }
 
+      // Resolve writer names from writing_tasks
+      const videoIds = (data as any[]).map(v => v.id);
+      let writerMap: Record<string, string> = {};
+      if (videoIds.length > 0) {
+        const { data: wTasks } = await supabase.from('writing_tasks').select('video_id, assigned_writer').in('video_id', videoIds).not('assigned_writer', 'is', null);
+        if (wTasks && wTasks.length > 0) {
+          const writerIds = [...new Set(wTasks.map(w => w.assigned_writer!))];
+          const { data: wProfiles } = await supabase.from('profiles').select('id, full_name').in('id', writerIds);
+          const wProfileMap: Record<string, string> = {};
+          wProfiles?.forEach(p => { wProfileMap[p.id] = p.full_name; });
+          wTasks.forEach(w => {
+            if (w.video_id && w.assigned_writer) writerMap[w.video_id] = wProfileMap[w.assigned_writer] || '';
+          });
+        }
+      }
+
       const vids: VideoRow[] = (data as any[]).map(v => ({
         ...v,
         client_name: v.clients?.name || 'Unknown',
         editor_name: v.assigned_editor ? profileMap[v.assigned_editor] || null : null,
         camera_op_name: v.assigned_camera_operator ? profileMap[v.assigned_camera_operator] || null : null,
+        writer_name: writerMap[v.id] || null,
       }));
 
       const ids = vids.map(v => v.id);
@@ -135,6 +157,14 @@ export default function AdminVideos() {
     if (camRoles && camRoles.length > 0) {
       const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', camRoles.map(r => r.user_id));
       if (profiles) setCameraOps(profiles.map(p => ({ id: p.id, full_name: p.full_name })));
+    }
+  };
+
+  const fetchWriters = async () => {
+    const { data: writerRoles } = await supabase.from('user_roles').select('user_id').eq('role', 'writer');
+    if (writerRoles && writerRoles.length > 0) {
+      const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', writerRoles.map(r => r.user_id));
+      if (profiles) setWriters(profiles.map(p => ({ id: p.id, full_name: p.full_name })));
     }
   };
 
@@ -255,6 +285,12 @@ export default function AdminVideos() {
     const matchStatus = !statusFilter || v.status === statusFilter;
     const matchClient = !clientFilter || v.client_id === clientFilter;
     return matchSearch && matchStatus && matchClient;
+  }).sort((a, b) => {
+    // Admin actions float to top
+    const aReq = getActionRequired(a.status, a);
+    const bReq = getActionRequired(b.status, b);
+    const priority = { admin: 0, team: 1, client: 2, done: 3 };
+    return (priority[aReq.type] ?? 9) - (priority[bReq.type] ?? 9);
   });
 
   return (
@@ -291,10 +327,10 @@ export default function AdminVideos() {
                 <tr>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Video</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Client</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
-                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Editor</th>
-                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Camera Op</th>
-                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Links</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stage</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Action Required</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Assigned To</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Links</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Feedback</th>
                   <th className="px-4 py-3" />
                 </tr>
@@ -318,12 +354,19 @@ export default function AdminVideos() {
                     <td className="px-4 py-3 font-medium text-foreground">{video.title}</td>
                     <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{video.client_name}</td>
                     <td className="px-4 py-3">
-                      <StatusBadge status={video.status as VideoStatus} type="video" />
+                      <div className="flex items-center gap-1.5">
+                        <StatusBadge status={video.status as VideoStatus} type="video" />
+                        <span className="text-[10px] text-muted-foreground">{VIDEO_STATUS_ORDER.indexOf(video.status as VideoStatus) + 1}/{VIDEO_STATUS_ORDER.length}</span>
+                      </div>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground hidden lg:table-cell">{video.editor_name || '—'}</td>
-                    <td className="px-4 py-3 text-muted-foreground hidden lg:table-cell">
-                      {video.camera_op_name || '—'}
-                      {video.shoot_date && <span className="block text-[10px]">{new Date(video.shoot_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>}
+                    <td className="px-4 py-3">
+                      {(() => {
+                        const ar = getActionRequired(video.status, video);
+                        return <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium whitespace-nowrap', ar.color)}>{ar.label}</span>;
+                      })()}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground text-xs hidden lg:table-cell">
+                      {video.writer_name || video.camera_op_name || video.editor_name || '—'}
                     </td>
                     <td className="px-4 py-3 hidden lg:table-cell">
                       <div className="flex items-center gap-1.5">
@@ -373,6 +416,29 @@ export default function AdminVideos() {
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-5">
+              {/* Workflow Prompt */}
+              <WorkflowPrompt
+                video={detailVideo}
+                loading={workflowLoading}
+                onAction={async (action, data) => {
+                  if (!user) return;
+                  setWorkflowLoading(true);
+                  if (action === 'mark_live' && data?.live_url) {
+                    await handleVideoStatusChange(detailVideo.id, 'live', user.id, data);
+                  } else if (action === 'send_script_to_client') {
+                    await handleVideoStatusChange(detailVideo.id, 'script_client_review', user.id);
+                  } else if (action === 'send_to_client') {
+                    await handleVideoStatusChange(detailVideo.id, 'client_review', user.id);
+                  }
+                  await fetchVideos();
+                  if (detailVideo) {
+                    const updated = videos.find(v => v.id === detailVideo.id);
+                    if (updated) setDetailVideo(updated);
+                  }
+                  setWorkflowLoading(false);
+                }}
+              />
+
               {/* Status stepper */}
               <div>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Status</p>

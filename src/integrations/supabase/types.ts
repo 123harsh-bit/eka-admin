@@ -48,10 +48,15 @@ export type Database = {
         Row: {
           admin_note: string | null
           created_at: string | null
+          current_state: string | null
           date: string
           id: string
           login_time: string
           logout_time: string | null
+          lunch_duration_minutes: number | null
+          lunch_end: string | null
+          lunch_skipped: boolean | null
+          lunch_start: string | null
           status: string | null
           total_hours_worked: number | null
           user_id: string
@@ -59,10 +64,15 @@ export type Database = {
         Insert: {
           admin_note?: string | null
           created_at?: string | null
+          current_state?: string | null
           date: string
           id?: string
           login_time: string
           logout_time?: string | null
+          lunch_duration_minutes?: number | null
+          lunch_end?: string | null
+          lunch_skipped?: boolean | null
+          lunch_start?: string | null
           status?: string | null
           total_hours_worked?: number | null
           user_id: string
@@ -70,10 +80,15 @@ export type Database = {
         Update: {
           admin_note?: string | null
           created_at?: string | null
+          current_state?: string | null
           date?: string
           id?: string
           login_time?: string
           logout_time?: string | null
+          lunch_duration_minutes?: number | null
+          lunch_end?: string | null
+          lunch_skipped?: boolean | null
+          lunch_start?: string | null
           status?: string | null
           total_hours_worked?: number | null
           user_id?: string
