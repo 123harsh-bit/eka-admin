@@ -11,20 +11,15 @@ export function useAttendance() {
   useEffect(() => {
     if (!user || !role || !TEAM_ROLES.includes(role)) return;
 
-    // Record attendance on mount (login)
-    recordLogin();
-    
-    // Set online
-    supabase.from('profiles').update({ is_online: true, last_seen: new Date().toISOString() } as any).eq('id', user.id).then(() => {});
-
-    // Ping every 5 minutes
-    pingRef.current = setInterval(() => {
+    // Ping every 5 minutes to keep last_seen updated
+    const ping = () => {
       supabase.from('profiles').update({ last_seen: new Date().toISOString() } as any).eq('id', user.id).then(() => {});
-    }, 5 * 60 * 1000);
+    };
+    ping(); // initial ping
+    pingRef.current = setInterval(ping, 5 * 60 * 1000);
 
     // Cleanup: set offline
     const handleBeforeUnload = () => {
-      // Can't await in beforeunload, use sendBeacon-style or just fire-and-forget
       supabase.from('profiles').update({ is_online: false } as any).eq('id', user.id).then(() => {});
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
@@ -35,20 +30,6 @@ export function useAttendance() {
       supabase.from('profiles').update({ is_online: false } as any).eq('id', user.id).then(() => {});
     };
   }, [user?.id, role]);
-
-  const recordLogin = async () => {
-    if (!user) return;
-    const now = new Date();
-    const today = now.toISOString().split('T')[0];
-    const minuteOfDay = now.getHours() * 60 + now.getMinutes();
-    const status = minuteOfDay > 555 ? 'late' : 'on_time'; // 9:15 AM
-
-    // ON CONFLICT DO NOTHING — won't overwrite if already logged in today
-    await supabase.from('attendance_logs').upsert(
-      { user_id: user.id, date: today, login_time: now.toISOString(), status },
-      { onConflict: 'user_id,date', ignoreDuplicates: true }
-    );
-  };
 
   const recordLogout = async () => {
     if (!user) return;

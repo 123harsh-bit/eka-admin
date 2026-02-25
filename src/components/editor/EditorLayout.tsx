@@ -3,7 +3,9 @@ import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { EkaLogo } from '@/components/shared/EkaLogo';
 import { useAuth } from '@/hooks/useAuth';
+import { useAttendance } from '@/hooks/useAttendance';
 import { NotificationBell } from '@/components/shared/NotificationBell';
+import { StartWorkday } from '@/components/auth/StartWorkday';
 import { Button } from '@/components/ui/button';
 import { Video, Users, LogOut, Menu, X, ListTodo, Calendar } from 'lucide-react';
 
@@ -17,9 +19,11 @@ const navItems = [
 
 export function EditorLayout({ children }: { children: ReactNode }) {
   const { signOut, profile } = useAuth();
+  useAttendance();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
+    <StartWorkday>
     <div className="flex min-h-screen bg-background">
       {sidebarOpen && <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
       <aside className={cn(
@@ -68,5 +72,6 @@ export function EditorLayout({ children }: { children: ReactNode }) {
         <div className="p-4 md:p-6 lg:p-8 fade-in">{children}</div>
       </main>
     </div>
+    </StartWorkday>
   );
 }

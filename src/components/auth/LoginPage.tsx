@@ -12,6 +12,7 @@ const roleRoutes: Record<string, string> = {
   editor: '/editor',
   designer: '/designer',
   writer: '/writer',
+  camera_operator: '/camera',
   client: '/client',
 };
 

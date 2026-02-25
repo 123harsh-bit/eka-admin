@@ -16,27 +16,44 @@ import { cn } from '@/lib/utils';
 interface VideoRow {
   id: string; title: string; description: string | null; status: string;
   client_id: string; assigned_editor: string | null;
+  assigned_camera_operator: string | null;
+  shoot_date: string | null; shoot_start_time: string | null;
+  shoot_location: string | null; shoot_notes: string | null;
   drive_link: string | null; live_url: string | null; raw_footage_link: string | null;
   internal_notes: string | null; is_internal_note_visible_to_client: boolean;
   date_planned: string | null; date_delivered: string | null; created_at: string;
-  client_name?: string; editor_name?: string; feedback_count?: number;
+  client_name?: string; editor_name?: string; camera_op_name?: string; feedback_count?: number;
 }
 
 interface Client { id: string; name: string; }
 interface TeamMember { id: string; full_name: string; }
+interface CameraOp { id: string; full_name: string; }
 interface FeedbackItem { id: string; content: string | null; type: string; created_at: string; is_resolved?: boolean; }
 
 const emptyForm = {
   title: '', description: '', client_id: '', assigned_editor: '',
+  assigned_camera_operator: '', shoot_date: '', shoot_start_time: '',
+  shoot_location: '', shoot_notes: '',
   status: 'idea', drive_link: '', live_url: '', raw_footage_link: '',
   internal_notes: '', is_internal_note_visible_to_client: false,
   date_planned: '', date_delivered: '',
 };
 
+// Assignment gate rules
+const ASSIGNMENT_GATES: Record<string, number> = {
+  assigned_camera_operator: VIDEO_STATUS_ORDER.indexOf('script_approved'),
+  assigned_editor: VIDEO_STATUS_ORDER.indexOf('footage_delivered'),
+};
+
+function statusIndex(status: string): number {
+  return VIDEO_STATUS_ORDER.indexOf(status as VideoStatus);
+}
+
 export default function AdminVideos() {
   const [videos, setVideos] = useState<VideoRow[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [editors, setEditors] = useState<TeamMember[]>([]);
+  const [cameraOps, setCameraOps] = useState<CameraOp[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -61,21 +78,34 @@ export default function AdminVideos() {
 
   const fetchAll = async () => {
     setLoading(true);
-    await Promise.all([fetchVideos(), fetchClients(), fetchEditors()]);
+    await Promise.all([fetchVideos(), fetchClients(), fetchEditors(), fetchCameraOps()]);
     setLoading(false);
   };
 
   const fetchVideos = async () => {
-    const { data } = await supabase.from('videos').select('*, clients(name), profiles(full_name)').order('created_at', { ascending: false });
+    const { data } = await supabase
+      .from('videos')
+      .select('id, title, description, status, client_id, assigned_editor, assigned_camera_operator, shoot_date, shoot_start_time, shoot_location, shoot_notes, drive_link, live_url, raw_footage_link, internal_notes, is_internal_note_visible_to_client, date_planned, date_delivered, created_at, clients(name)')
+      .order('created_at', { ascending: false });
     if (data) {
-      const vids: VideoRow[] = (data as unknown[]).map((v: unknown) => {
-        const row = v as Record<string, unknown>;
-        return {
-          ...(row as unknown as VideoRow),
-          client_name: (row.clients as { name: string } | null)?.name || 'Unknown',
-          editor_name: (row.profiles as { full_name: string } | null)?.full_name || null,
-        };
-      });
+      // Gather all editor and camera op IDs for name resolution
+      const editorIds = [...new Set((data as any[]).map(v => v.assigned_editor).filter(Boolean))];
+      const camOpIds = [...new Set((data as any[]).map(v => v.assigned_camera_operator).filter(Boolean))];
+      const allIds = [...new Set([...editorIds, ...camOpIds])];
+      
+      let profileMap: Record<string, string> = {};
+      if (allIds.length > 0) {
+        const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', allIds);
+        profiles?.forEach(p => { profileMap[p.id] = p.full_name; });
+      }
+
+      const vids: VideoRow[] = (data as any[]).map(v => ({
+        ...v,
+        client_name: v.clients?.name || 'Unknown',
+        editor_name: v.assigned_editor ? profileMap[v.assigned_editor] || null : null,
+        camera_op_name: v.assigned_camera_operator ? profileMap[v.assigned_camera_operator] || null : null,
+      }));
+
       const ids = vids.map(v => v.id);
       if (ids.length > 0) {
         const { data: fbData } = await supabase.from('feedback').select('video_id').in('video_id', ids);
@@ -100,13 +130,25 @@ export default function AdminVideos() {
     }
   };
 
+  const fetchCameraOps = async () => {
+    const { data: camRoles } = await supabase.from('user_roles').select('user_id').eq('role', 'camera_operator');
+    if (camRoles && camRoles.length > 0) {
+      const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', camRoles.map(r => r.user_id));
+      if (profiles) setCameraOps(profiles.map(p => ({ id: p.id, full_name: p.full_name })));
+    }
+  };
+
   const openAdd = () => { setEditingVideo(null); setForm({ ...emptyForm }); setPanelOpen(true); setDetailVideo(null); };
 
   const openEdit = (video: VideoRow) => {
     setEditingVideo(video);
     setForm({
       title: video.title, description: video.description || '', client_id: video.client_id,
-      assigned_editor: video.assigned_editor || '', status: video.status,
+      assigned_editor: video.assigned_editor || '',
+      assigned_camera_operator: video.assigned_camera_operator || '',
+      shoot_date: video.shoot_date || '', shoot_start_time: video.shoot_start_time || '',
+      shoot_location: video.shoot_location || '', shoot_notes: video.shoot_notes || '',
+      status: video.status,
       drive_link: video.drive_link || '', live_url: video.live_url || '',
       raw_footage_link: video.raw_footage_link || '',
       internal_notes: video.internal_notes || '',
@@ -126,13 +168,24 @@ export default function AdminVideos() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title.trim() || !form.client_id) return;
+    
+    const si = statusIndex(form.status);
+    // Workflow enforcement
+    if (si >= statusIndex('shoot_assigned') && !form.assigned_camera_operator) {
+      toast({ title: 'Please assign a camera operator and shoot date before scheduling the shoot.', variant: 'destructive' });
+      return;
+    }
+    if (si >= statusIndex('editing') && !form.assigned_editor) {
+      toast({ title: 'Please assign an editor. Editor assignment is only available after footage has been delivered.', variant: 'destructive' });
+      return;
+    }
+
     setSaving(true);
     try {
-      const payload = {
+      const payload: Record<string, unknown> = {
         title: form.title.trim(),
         description: form.description || null,
         client_id: form.client_id,
-        assigned_editor: form.assigned_editor || null,
         status: form.status,
         drive_link: form.drive_link ? getDirectDownloadLink(form.drive_link) : null,
         live_url: form.live_url || null,
@@ -142,14 +195,25 @@ export default function AdminVideos() {
         date_planned: form.date_planned || null,
         date_delivered: form.date_delivered || null,
       };
+      // Only include gated assignments if status allows
+      if (si >= statusIndex('footage_delivered')) {
+        payload.assigned_editor = form.assigned_editor || null;
+      }
+      if (si >= statusIndex('script_approved')) {
+        payload.assigned_camera_operator = form.assigned_camera_operator || null;
+        payload.shoot_date = form.shoot_date || null;
+        payload.shoot_start_time = form.shoot_start_time || null;
+        payload.shoot_location = form.shoot_location || null;
+        payload.shoot_notes = form.shoot_notes || null;
+      }
 
       if (editingVideo) {
-        const { error } = await supabase.from('videos').update(payload).eq('id', editingVideo.id);
+        const { error } = await supabase.from('videos').update(payload as any).eq('id', editingVideo.id);
         if (error) throw error;
         await supabase.from('activity_log').insert({ entity_type: 'video', entity_id: editingVideo.id, action: 'updated', details: { title: form.title } });
         toast({ title: 'Video updated' });
       } else {
-        const { data, error } = await supabase.from('videos').insert(payload).select().single();
+        const { data, error } = await supabase.from('videos').insert(payload as any).select().single();
         if (error) throw error;
         await supabase.from('activity_log').insert({ entity_type: 'video', entity_id: data.id, action: 'created', details: { title: form.title } });
         toast({ title: 'Video added' });
@@ -228,8 +292,9 @@ export default function AdminVideos() {
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Video</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Client</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Editor</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Links</th>
+                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Editor</th>
+                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Camera Op</th>
+                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Links</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Feedback</th>
                   <th className="px-4 py-3" />
                 </tr>
@@ -256,6 +321,10 @@ export default function AdminVideos() {
                       <StatusBadge status={video.status as VideoStatus} type="video" />
                     </td>
                     <td className="px-4 py-3 text-muted-foreground hidden lg:table-cell">{video.editor_name || '—'}</td>
+                    <td className="px-4 py-3 text-muted-foreground hidden lg:table-cell">
+                      {video.camera_op_name || '—'}
+                      {video.shoot_date && <span className="block text-[10px]">{new Date(video.shoot_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>}
+                    </td>
                     <td className="px-4 py-3 hidden lg:table-cell">
                       <div className="flex items-center gap-1.5">
                         {video.raw_footage_link ? (
@@ -419,13 +488,50 @@ export default function AdminVideos() {
                   {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
-              <div className="space-y-1.5">
-                <Label>Assigned Editor</Label>
-                <select value={form.assigned_editor} onChange={e => setForm(f => ({ ...f, assigned_editor: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground">
-                  <option value="">Unassigned</option>
-                  {editors.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
-                </select>
-              </div>
+              {/* Camera Op fields — only visible at script_approved+ */}
+              {statusIndex(form.status) >= statusIndex('script_approved') && (
+                <>
+                  <div className="border-t border-glass-border pt-4 mt-2">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">🎬 Shoot Assignment</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Camera Operator</Label>
+                    <select value={form.assigned_camera_operator} onChange={e => setForm(f => ({ ...f, assigned_camera_operator: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground">
+                      <option value="">Unassigned</option>
+                      {cameraOps.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label>Shoot Date</Label>
+                      <Input type="date" value={form.shoot_date} onChange={e => setForm(f => ({ ...f, shoot_date: e.target.value }))} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Shoot Time</Label>
+                      <Input type="time" value={form.shoot_start_time} onChange={e => setForm(f => ({ ...f, shoot_start_time: e.target.value }))} />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Shoot Location</Label>
+                    <Input value={form.shoot_location} onChange={e => setForm(f => ({ ...f, shoot_location: e.target.value }))} placeholder="Location address" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Shoot Notes</Label>
+                    <textarea value={form.shoot_notes} onChange={e => setForm(f => ({ ...f, shoot_notes: e.target.value }))} placeholder="Notes for camera operator…" rows={2} className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground resize-none" />
+                  </div>
+                </>
+              )}
+
+              {/* Editor field — only visible at footage_delivered+ */}
+              {statusIndex(form.status) >= statusIndex('footage_delivered') && (
+                <div className="space-y-1.5">
+                  <Label>Assigned Editor</Label>
+                  <select value={form.assigned_editor} onChange={e => setForm(f => ({ ...f, assigned_editor: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground">
+                    <option value="">Unassigned</option>
+                    {editors.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
+                  </select>
+                </div>
+              )}
               <div className="space-y-1.5">
                 <Label>Status</Label>
                 <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground">

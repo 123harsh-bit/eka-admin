@@ -29,6 +29,8 @@ interface VideoData {
   drive_link: string | null; live_url: string | null;
   date_delivered: string | null; date_planned: string | null;
   description: string | null;
+  shoot_date: string | null; shoot_start_time: string | null;
+  camera_op_first_name: string | null;
 }
 
 interface ActivityItem {
@@ -86,8 +88,24 @@ export default function ClientDashboard() {
     if (!user) return;
     const clientData = await supabase.from('clients').select('id').eq('user_id', user.id).single();
     if (!clientData.data) return;
-    const { data } = await supabase.from('videos').select('id, title, status, thumbnail_url, drive_link, live_url, date_delivered, date_planned, description').eq('client_id', clientData.data.id).order('created_at', { ascending: false });
-    if (data) setVideos(data);
+    // Explicitly exclude raw_footage_link — never send to client
+    const { data } = await supabase.from('videos')
+      .select('id, title, status, thumbnail_url, drive_link, live_url, date_delivered, date_planned, description, shoot_date, shoot_start_time, assigned_camera_operator')
+      .eq('client_id', clientData.data.id)
+      .order('created_at', { ascending: false });
+    if (data) {
+      // Resolve camera op first name
+      const camOpIds = [...new Set(data.map((v: any) => v.assigned_camera_operator).filter(Boolean))];
+      let camOpNames: Record<string, string> = {};
+      if (camOpIds.length > 0) {
+        const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', camOpIds);
+        profiles?.forEach(p => { camOpNames[p.id] = p.full_name.split(' ')[0]; });
+      }
+      setVideos(data.map((v: any) => ({
+        ...v,
+        camera_op_first_name: v.assigned_camera_operator ? camOpNames[v.assigned_camera_operator] || null : null,
+      })));
+    }
   };
 
   const fetchDesignTasks = async () => {
@@ -357,6 +375,21 @@ export default function ClientDashboard() {
                               </span>
                             )}
                           </div>
+
+                          {/* Shoot info for client */}
+                          {(video.status === 'shoot_assigned' || video.status === 'shooting') && video.shoot_date && (
+                            <div className="space-y-1 text-xs">
+                              {video.status === 'shooting' ? (
+                                <p className="text-primary font-medium">🎥 Your video is being filmed today!</p>
+                              ) : (
+                                <p className="text-foreground">🎬 Your shoot is scheduled for {new Date(video.shoot_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}{video.shoot_start_time ? ` at ${video.shoot_start_time}` : ''}</p>
+                              )}
+                              {video.camera_op_first_name && (
+                                <p className="text-muted-foreground">📸 {video.camera_op_first_name} is your camera operator for this shoot</p>
+                              )}
+                            </div>
+                          )}
+
 
                           {/* Progress bar */}
                           {(() => {
