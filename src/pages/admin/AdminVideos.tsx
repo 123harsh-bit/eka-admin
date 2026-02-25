@@ -25,27 +25,20 @@ interface VideoRow {
   drive_link: string | null; live_url: string | null; raw_footage_link: string | null;
   internal_notes: string | null; is_internal_note_visible_to_client: boolean;
   date_planned: string | null; date_delivered: string | null; created_at: string;
-  client_name?: string; editor_name?: string; camera_op_name?: string; writer_name?: string; feedback_count?: number;
+  client_name?: string; editor_name?: string; camera_op_name?: string; writer_name?: string; writer_id?: string | null; feedback_count?: number;
 }
 
 interface Client { id: string; name: string; }
 interface TeamMember { id: string; full_name: string; }
-interface CameraOp { id: string; full_name: string; }
-interface FeedbackItem { id: string; content: string | null; type: string; created_at: string; is_resolved?: boolean; }
 
 const emptyForm = {
   title: '', description: '', client_id: '', assigned_editor: '',
+  assigned_writer: '',
   assigned_camera_operator: '', shoot_date: '', shoot_start_time: '',
   shoot_location: '', shoot_notes: '',
   status: 'idea', drive_link: '', live_url: '', raw_footage_link: '',
   internal_notes: '', is_internal_note_visible_to_client: false,
   date_planned: '', date_delivered: '',
-};
-
-// Assignment gate rules
-const ASSIGNMENT_GATES: Record<string, number> = {
-  assigned_camera_operator: VIDEO_STATUS_ORDER.indexOf('script_approved'),
-  assigned_editor: VIDEO_STATUS_ORDER.indexOf('footage_delivered'),
 };
 
 function statusIndex(status: string): number {
@@ -57,7 +50,7 @@ export default function AdminVideos() {
   const [clients, setClients] = useState<Client[]>([]);
   const [editors, setEditors] = useState<TeamMember[]>([]);
   const [writers, setWriters] = useState<TeamMember[]>([]);
-  const [cameraOps, setCameraOps] = useState<CameraOp[]>([]);
+  const [cameraOps, setCameraOps] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -67,7 +60,7 @@ export default function AdminVideos() {
   const [editingVideo, setEditingVideo] = useState<VideoRow | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
-  const [feedback, setFeedback] = useState<FeedbackItem[]>([]);
+  const [feedback, setFeedback] = useState<{ id: string; content: string | null; type: string; created_at: string; is_resolved?: boolean }[]>([]);
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; video: VideoRow | null }>({ open: false, video: null });
   const [workflowLoading, setWorkflowLoading] = useState(false);
   const { user } = useAuth();
@@ -106,7 +99,7 @@ export default function AdminVideos() {
 
       // Resolve writer names from writing_tasks
       const videoIds = (data as any[]).map(v => v.id);
-      let writerMap: Record<string, string> = {};
+      let writerMap: Record<string, { name: string; id: string }> = {};
       if (videoIds.length > 0) {
         const { data: wTasks } = await supabase.from('writing_tasks').select('video_id, assigned_writer').in('video_id', videoIds).not('assigned_writer', 'is', null);
         if (wTasks && wTasks.length > 0) {
@@ -115,7 +108,7 @@ export default function AdminVideos() {
           const wProfileMap: Record<string, string> = {};
           wProfiles?.forEach(p => { wProfileMap[p.id] = p.full_name; });
           wTasks.forEach(w => {
-            if (w.video_id && w.assigned_writer) writerMap[w.video_id] = wProfileMap[w.assigned_writer] || '';
+            if (w.video_id && w.assigned_writer) writerMap[w.video_id] = { name: wProfileMap[w.assigned_writer] || '', id: w.assigned_writer };
           });
         }
       }
@@ -125,7 +118,8 @@ export default function AdminVideos() {
         client_name: v.clients?.name || 'Unknown',
         editor_name: v.assigned_editor ? profileMap[v.assigned_editor] || null : null,
         camera_op_name: v.assigned_camera_operator ? profileMap[v.assigned_camera_operator] || null : null,
-        writer_name: writerMap[v.id] || null,
+        writer_name: writerMap[v.id]?.name || null,
+        writer_id: writerMap[v.id]?.id || null,
       }));
 
       const ids = vids.map(v => v.id);
@@ -175,6 +169,7 @@ export default function AdminVideos() {
     setForm({
       title: video.title, description: video.description || '', client_id: video.client_id,
       assigned_editor: video.assigned_editor || '',
+      assigned_writer: video.writer_id || '',
       assigned_camera_operator: video.assigned_camera_operator || '',
       shoot_date: video.shoot_date || '', shoot_start_time: video.shoot_start_time || '',
       shoot_location: video.shoot_location || '', shoot_notes: video.shoot_notes || '',
@@ -201,6 +196,10 @@ export default function AdminVideos() {
     
     const si = statusIndex(form.status);
     // Workflow enforcement
+    if (si >= statusIndex('scripting') && !form.assigned_writer) {
+      toast({ title: 'Please assign a writer before moving to scripting.', variant: 'destructive' });
+      return;
+    }
     if (si >= statusIndex('shoot_assigned') && !form.assigned_camera_operator) {
       toast({ title: 'Please assign a camera operator and shoot date before scheduling the shoot.', variant: 'destructive' });
       return;
@@ -240,11 +239,62 @@ export default function AdminVideos() {
       if (editingVideo) {
         const { error } = await supabase.from('videos').update(payload as any).eq('id', editingVideo.id);
         if (error) throw error;
+
+        // Handle writer assignment — create/update writing task
+        if (form.assigned_writer && si >= statusIndex('idea')) {
+          const { data: existingTask } = await supabase.from('writing_tasks').select('id, assigned_writer').eq('video_id', editingVideo.id).maybeSingle();
+          if (existingTask) {
+            if (existingTask.assigned_writer !== form.assigned_writer) {
+              await supabase.from('writing_tasks').update({ assigned_writer: form.assigned_writer }).eq('id', existingTask.id);
+            }
+          } else {
+            const client = clients.find(c => c.id === form.client_id);
+            await supabase.from('writing_tasks').insert({
+              video_id: editingVideo.id,
+              client_id: form.client_id,
+              assigned_writer: form.assigned_writer,
+              title: `${form.title.trim()} — Script`,
+              task_type: 'reel_script',
+              status: 'briefed',
+            });
+            // Notify writer
+            const writerProfile = writers.find(w => w.id === form.assigned_writer);
+            await supabase.from('notifications').insert({
+              recipient_id: form.assigned_writer,
+              message: `📝 New script assignment: '${form.title.trim()}' for ${client?.name || 'client'}. Please begin writing.`,
+              type: 'assignment',
+              related_video_id: editingVideo.id,
+              related_client_id: form.client_id,
+            });
+          }
+        }
+
         await supabase.from('activity_log').insert({ entity_type: 'video', entity_id: editingVideo.id, action: 'updated', details: { title: form.title } });
         toast({ title: 'Video updated' });
       } else {
         const { data, error } = await supabase.from('videos').insert(payload as any).select().single();
         if (error) throw error;
+
+        // Create writing task if writer assigned on creation
+        if (form.assigned_writer) {
+          const client = clients.find(c => c.id === form.client_id);
+          await supabase.from('writing_tasks').insert({
+            video_id: data.id,
+            client_id: form.client_id,
+            assigned_writer: form.assigned_writer,
+            title: `${form.title.trim()} — Script`,
+            task_type: 'reel_script',
+            status: 'briefed',
+          });
+          await supabase.from('notifications').insert({
+            recipient_id: form.assigned_writer,
+            message: `📝 New script assignment: '${form.title.trim()}' for ${client?.name || 'client'}. Please begin writing.`,
+            type: 'assignment',
+            related_video_id: data.id,
+            related_client_id: form.client_id,
+          });
+        }
+
         await supabase.from('activity_log').insert({ entity_type: 'video', entity_id: data.id, action: 'created', details: { title: form.title } });
         toast({ title: 'Video added' });
       }
@@ -280,18 +330,73 @@ export default function AdminVideos() {
     setFeedback(prev => prev.map(f => f.id === fbId ? { ...f, is_resolved: true } : f));
   };
 
+  // Handle WorkflowPrompt actions — open edit panel with correct context
+  const handleWorkflowAction = async (action: string, data?: Record<string, unknown>) => {
+    if (!user || !detailVideo) return;
+    setWorkflowLoading(true);
+    try {
+      switch (action) {
+        case 'assign_writer':
+          openEdit(detailVideo);
+          // Set status to scripting so writer field shows
+          setTimeout(() => setForm(f => ({ ...f, status: f.status === 'idea' ? 'scripting' : f.status })), 100);
+          break;
+        case 'assign_camera_op':
+          openEdit(detailVideo);
+          setTimeout(() => setForm(f => ({ ...f, status: f.status === 'script_approved' ? 'shoot_assigned' : f.status })), 100);
+          break;
+        case 'assign_editor':
+          openEdit(detailVideo);
+          setTimeout(() => setForm(f => ({ ...f, status: f.status === 'footage_delivered' ? 'editing' : f.status })), 100);
+          break;
+        case 'send_script_to_client':
+          await handleVideoStatusChange(detailVideo.id, 'script_client_review', user.id);
+          await fetchVideos();
+          break;
+        case 'send_to_client':
+          await handleVideoStatusChange(detailVideo.id, 'client_review', user.id);
+          await fetchVideos();
+          break;
+        case 'mark_live':
+          if (data?.live_url) {
+            await handleVideoStatusChange(detailVideo.id, 'live', user.id, data);
+            await fetchVideos();
+          }
+          break;
+        case 'request_script_changes':
+          // Move back to scripting
+          await handleStatusChange(detailVideo.id, 'scripting');
+          break;
+        case 'request_editor_revisions':
+          await handleStatusChange(detailVideo.id, 'editing');
+          break;
+        default:
+          break;
+      }
+      // Refresh detail
+      const { data: updatedData } = await supabase.from('videos').select('*, clients(name)').eq('id', detailVideo.id).single();
+      if (updatedData) {
+        const updated = videos.find(v => v.id === detailVideo.id);
+        if (updated) setDetailVideo({ ...updated, ...updatedData, client_name: (updatedData as any).clients?.name });
+      }
+    } finally {
+      setWorkflowLoading(false);
+    }
+  };
+
   const filtered = videos.filter(v => {
     const matchSearch = v.title.toLowerCase().includes(search.toLowerCase()) || v.client_name?.toLowerCase().includes(search.toLowerCase());
     const matchStatus = !statusFilter || v.status === statusFilter;
     const matchClient = !clientFilter || v.client_id === clientFilter;
     return matchSearch && matchStatus && matchClient;
   }).sort((a, b) => {
-    // Admin actions float to top
     const aReq = getActionRequired(a.status, a);
     const bReq = getActionRequired(b.status, b);
     const priority = { admin: 0, team: 1, client: 2, done: 3 };
     return (priority[aReq.type] ?? 9) - (priority[bReq.type] ?? 9);
   });
+
+  const si = statusIndex(form.status);
 
   return (
     <AdminLayout>
@@ -337,9 +442,9 @@ export default function AdminVideos() {
               </thead>
               <tbody>
                 {loading ? [...Array(6)].map((_, i) => (
-                  <tr key={i}><td colSpan={7} className="px-4 py-3"><div className="h-8 bg-muted/50 rounded animate-pulse" /></td></tr>
+                  <tr key={i}><td colSpan={8} className="px-4 py-3"><div className="h-8 bg-muted/50 rounded animate-pulse" /></td></tr>
                 )) : filtered.length === 0 ? (
-                  <tr><td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">
+                  <tr><td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
                     <Video size={32} className="mx-auto mb-2 opacity-40" />
                     No videos found.
                   </td></tr>
@@ -420,28 +525,22 @@ export default function AdminVideos() {
               <WorkflowPrompt
                 video={detailVideo}
                 loading={workflowLoading}
-                onAction={async (action, data) => {
-                  if (!user) return;
-                  setWorkflowLoading(true);
-                  if (action === 'mark_live' && data?.live_url) {
-                    await handleVideoStatusChange(detailVideo.id, 'live', user.id, data);
-                  } else if (action === 'send_script_to_client') {
-                    await handleVideoStatusChange(detailVideo.id, 'script_client_review', user.id);
-                  } else if (action === 'send_to_client') {
-                    await handleVideoStatusChange(detailVideo.id, 'client_review', user.id);
-                  }
-                  await fetchVideos();
-                  if (detailVideo) {
-                    const updated = videos.find(v => v.id === detailVideo.id);
-                    if (updated) setDetailVideo(updated);
-                  }
-                  setWorkflowLoading(false);
-                }}
+                onAction={handleWorkflowAction}
               />
+
+              {/* Assignments Summary */}
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Assignments</p>
+                <div className="space-y-1.5 text-xs">
+                  <div className="flex justify-between"><span className="text-muted-foreground">Writer:</span><span className="text-foreground">{detailVideo.writer_name || '—'}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Camera Op:</span><span className="text-foreground">{detailVideo.camera_op_name || '—'}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Editor:</span><span className="text-foreground">{detailVideo.editor_name || '—'}</span></div>
+                </div>
+              </div>
 
               {/* Status stepper */}
               <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Status</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Pipeline</p>
                 <div className="space-y-1">
                   {VIDEO_STATUS_ORDER.map((s, i) => {
                     const currentIdx = VIDEO_STATUS_ORDER.indexOf(detailVideo.status as VideoStatus);
@@ -467,7 +566,6 @@ export default function AdminVideos() {
                 <div className="flex items-center gap-1.5">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Internal Links</p>
                   <Lock size={10} className="text-muted-foreground" />
-                  <span className="text-[10px] text-muted-foreground">Team Only</span>
                 </div>
                 {detailVideo.raw_footage_link ? (
                   <a href={detailVideo.raw_footage_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-amber-400 hover:underline font-medium">
@@ -543,6 +641,7 @@ export default function AdminVideos() {
             </div>
 
             <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-6 space-y-4">
+              {/* Always visible fields */}
               <div className="space-y-1.5">
                 <Label>Title *</Label>
                 <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Video title" required />
@@ -554,8 +653,46 @@ export default function AdminVideos() {
                   {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
+              <div className="space-y-1.5">
+                <Label>Description / Brief</Label>
+                <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Brief description…" rows={2} className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground resize-none" />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Status</Label>
+                <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground">
+                  {VIDEO_STATUS_ORDER.map(s => <option key={s} value={s}>{VIDEO_STATUSES[s].emoji} {VIDEO_STATUSES[s].label}</option>)}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>Date Planned</Label>
+                  <Input type="date" value={form.date_planned} onChange={e => setForm(f => ({ ...f, date_planned: e.target.value }))} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Date Delivered</Label>
+                  <Input type="date" value={form.date_delivered} onChange={e => setForm(f => ({ ...f, date_delivered: e.target.value }))} />
+                </div>
+              </div>
+
+              {/* Writer assignment — visible at idea+ */}
+              <div className="border-t border-glass-border pt-4 mt-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">📝 Writer Assignment</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Assigned Writer</Label>
+                <select value={form.assigned_writer} onChange={e => setForm(f => ({ ...f, assigned_writer: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground">
+                  <option value="">Unassigned</option>
+                  {writers.map(w => <option key={w.id} value={w.id}>{w.full_name}</option>)}
+                </select>
+                {si >= statusIndex('scripting') && !form.assigned_writer && (
+                  <p className="text-xs text-destructive">⚠️ Writer is required at scripting stage</p>
+                )}
+              </div>
+
               {/* Camera Op fields — only visible at script_approved+ */}
-              {statusIndex(form.status) >= statusIndex('script_approved') && (
+              {si >= statusIndex('script_approved') ? (
                 <>
                   <div className="border-t border-glass-border pt-4 mt-2">
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">🎬 Shoot Assignment</p>
@@ -586,33 +723,39 @@ export default function AdminVideos() {
                     <textarea value={form.shoot_notes} onChange={e => setForm(f => ({ ...f, shoot_notes: e.target.value }))} placeholder="Notes for camera operator…" rows={2} className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground resize-none" />
                   </div>
                 </>
-              )}
+              ) : si >= statusIndex('scripting') ? (
+                <div className="border-t border-glass-border pt-4 mt-2">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <Lock size={12} /> 🎬 Shoot assignment unlocks after script is approved by client
+                  </p>
+                </div>
+              ) : null}
 
               {/* Editor field — only visible at footage_delivered+ */}
-              {statusIndex(form.status) >= statusIndex('footage_delivered') && (
-                <div className="space-y-1.5">
-                  <Label>Assigned Editor</Label>
-                  <select value={form.assigned_editor} onChange={e => setForm(f => ({ ...f, assigned_editor: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground">
-                    <option value="">Unassigned</option>
-                    {editors.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
-                  </select>
+              {si >= statusIndex('footage_delivered') ? (
+                <>
+                  <div className="border-t border-glass-border pt-4 mt-2">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">✂️ Editor Assignment</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Assigned Editor</Label>
+                    <select value={form.assigned_editor} onChange={e => setForm(f => ({ ...f, assigned_editor: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground">
+                      <option value="">Unassigned</option>
+                      {editors.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
+                    </select>
+                  </div>
+                </>
+              ) : si >= statusIndex('script_approved') ? (
+                <div className="border-t border-glass-border pt-4 mt-2">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <Lock size={12} /> ✂️ Editor assignment unlocks after footage is delivered
+                  </p>
                 </div>
-              )}
-              <div className="space-y-1.5">
-                <Label>Status</Label>
-                <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground">
-                  {VIDEO_STATUS_ORDER.map(s => <option key={s} value={s}>{VIDEO_STATUSES[s].label}</option>)}
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label>Date Planned</Label>
-                  <Input type="date" value={form.date_planned} onChange={e => setForm(f => ({ ...f, date_planned: e.target.value }))} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Date Delivered</Label>
-                  <Input type="date" value={form.date_delivered} onChange={e => setForm(f => ({ ...f, date_delivered: e.target.value }))} />
-                </div>
+              ) : null}
+
+              {/* Links */}
+              <div className="border-t border-glass-border pt-4 mt-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">🔗 Links</p>
               </div>
               <div className="space-y-1.5">
                 <Label>Drive Link</Label>
@@ -622,15 +765,15 @@ export default function AdminVideos() {
               <div className="space-y-1.5">
                 <Label>Raw Footage Link</Label>
                 <Input value={form.raw_footage_link} onChange={e => setForm(f => ({ ...f, raw_footage_link: e.target.value }))} placeholder="https://drive.google.com/…" />
-                <p className="text-xs text-muted-foreground">Google Drive link to raw footage — visible to team only 🔒</p>
               </div>
               <div className="space-y-1.5">
                 <Label>Live URL</Label>
                 <Input value={form.live_url} onChange={e => setForm(f => ({ ...f, live_url: e.target.value }))} placeholder="https://youtube.com/…" />
               </div>
-              <div className="space-y-1.5">
-                <Label>Description</Label>
-                <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Brief description…" rows={2} className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground resize-none" />
+
+              {/* Notes */}
+              <div className="border-t border-glass-border pt-4 mt-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">📝 Notes</p>
               </div>
               <div className="space-y-1.5">
                 <Label>Internal Notes</Label>
