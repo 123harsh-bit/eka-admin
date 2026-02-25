@@ -22,6 +22,8 @@ import AdminNotifications from "@/pages/admin/AdminNotifications";
 import AdminSettings from "@/pages/admin/AdminSettings";
 import AdminDailyTasks from "@/pages/admin/AdminDailyTasks";
 import AdminAttendance from "@/pages/admin/AdminAttendance";
+import AdminEditorTasks from "@/pages/admin/AdminEditorTasks";
+import AdminCameraShoots from "@/pages/admin/AdminCameraShoots";
 
 // Role dashboards
 import EditorDashboard from "@/pages/editor/EditorDashboard";
@@ -70,6 +72,8 @@ const App = () => (
             <Route path="/admin/videos" element={<ProtectedRoute allowedRoles={['admin']}><AdminVideos /></ProtectedRoute>} />
             <Route path="/admin/design-tasks" element={<ProtectedRoute allowedRoles={['admin']}><AdminDesignTasks /></ProtectedRoute>} />
             <Route path="/admin/writing-tasks" element={<ProtectedRoute allowedRoles={['admin']}><AdminWritingTasks /></ProtectedRoute>} />
+            <Route path="/admin/editor-tasks" element={<ProtectedRoute allowedRoles={['admin']}><AdminEditorTasks /></ProtectedRoute>} />
+            <Route path="/admin/camera-shoots" element={<ProtectedRoute allowedRoles={['admin']}><AdminCameraShoots /></ProtectedRoute>} />
             <Route path="/admin/attendance" element={<ProtectedRoute allowedRoles={['admin']}><AdminAttendance /></ProtectedRoute>} />
             <Route path="/admin/team" element={<ProtectedRoute allowedRoles={['admin']}><AdminTeam /></ProtectedRoute>} />
             <Route path="/admin/notifications" element={<ProtectedRoute allowedRoles={['admin']}><AdminNotifications /></ProtectedRoute>} />
