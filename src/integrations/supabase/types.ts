@@ -44,6 +44,50 @@ export type Database = {
         }
         Relationships: []
       }
+      attendance_logs: {
+        Row: {
+          admin_note: string | null
+          created_at: string | null
+          date: string
+          id: string
+          login_time: string
+          logout_time: string | null
+          status: string | null
+          total_hours_worked: number | null
+          user_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          created_at?: string | null
+          date: string
+          id?: string
+          login_time: string
+          logout_time?: string | null
+          status?: string | null
+          total_hours_worked?: number | null
+          user_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          login_time?: string
+          logout_time?: string | null
+          status?: string | null
+          total_hours_worked?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           brand_colors: Json | null
@@ -320,6 +364,8 @@ export type Database = {
           full_name: string
           id: string
           is_active: boolean
+          is_online: boolean | null
+          last_seen: string | null
           phone: string | null
           updated_at: string
         }
@@ -330,6 +376,8 @@ export type Database = {
           full_name?: string
           id: string
           is_active?: boolean
+          is_online?: boolean | null
+          last_seen?: string | null
           phone?: string | null
           updated_at?: string
         }
@@ -340,6 +388,8 @@ export type Database = {
           full_name?: string
           id?: string
           is_active?: boolean
+          is_online?: boolean | null
+          last_seen?: string | null
           phone?: string | null
           updated_at?: string
         }
@@ -368,6 +418,7 @@ export type Database = {
       }
       videos: {
         Row: {
+          assigned_camera_operator: string | null
           assigned_editor: string | null
           client_id: string
           created_at: string
@@ -375,17 +426,23 @@ export type Database = {
           date_planned: string | null
           description: string | null
           drive_link: string | null
+          footage_uploaded_at: string | null
           id: string
           internal_notes: string | null
           is_internal_note_visible_to_client: boolean
           live_url: string | null
           raw_footage_link: string | null
+          shoot_date: string | null
+          shoot_location: string | null
+          shoot_notes: string | null
+          shoot_start_time: string | null
           status: string
           thumbnail_url: string | null
           title: string
           updated_at: string
         }
         Insert: {
+          assigned_camera_operator?: string | null
           assigned_editor?: string | null
           client_id: string
           created_at?: string
@@ -393,17 +450,23 @@ export type Database = {
           date_planned?: string | null
           description?: string | null
           drive_link?: string | null
+          footage_uploaded_at?: string | null
           id?: string
           internal_notes?: string | null
           is_internal_note_visible_to_client?: boolean
           live_url?: string | null
           raw_footage_link?: string | null
+          shoot_date?: string | null
+          shoot_location?: string | null
+          shoot_notes?: string | null
+          shoot_start_time?: string | null
           status?: string
           thumbnail_url?: string | null
           title: string
           updated_at?: string
         }
         Update: {
+          assigned_camera_operator?: string | null
           assigned_editor?: string | null
           client_id?: string
           created_at?: string
@@ -411,17 +474,29 @@ export type Database = {
           date_planned?: string | null
           description?: string | null
           drive_link?: string | null
+          footage_uploaded_at?: string | null
           id?: string
           internal_notes?: string | null
           is_internal_note_visible_to_client?: boolean
           live_url?: string | null
           raw_footage_link?: string | null
+          shoot_date?: string | null
+          shoot_location?: string | null
+          shoot_notes?: string | null
+          shoot_start_time?: string | null
           status?: string
           thumbnail_url?: string | null
           title?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "videos_assigned_camera_operator_fkey"
+            columns: ["assigned_camera_operator"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "videos_assigned_editor_fkey"
             columns: ["assigned_editor"]
@@ -534,7 +609,13 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "editor" | "designer" | "writer" | "client"
+      app_role:
+        | "admin"
+        | "editor"
+        | "designer"
+        | "writer"
+        | "client"
+        | "camera_operator"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -662,7 +743,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "editor", "designer", "writer", "client"],
+      app_role: [
+        "admin",
+        "editor",
+        "designer",
+        "writer",
+        "client",
+        "camera_operator",
+      ],
     },
   },
 } as const

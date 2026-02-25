@@ -5,13 +5,14 @@ import { EkaLogo } from '@/components/shared/EkaLogo';
 import { useAuth } from '@/hooks/useAuth';
 import { NotificationBell } from '@/components/shared/NotificationBell';
 import { Button } from '@/components/ui/button';
-import { Video, Users, LogOut, Menu, X, ListTodo } from 'lucide-react';
+import { Video, Users, LogOut, Menu, X, ListTodo, Calendar } from 'lucide-react';
 
 const navItems = [
   { to: '/editor', icon: Video, label: 'My Tasks', end: true },
   { to: '/editor/daily-tasks', icon: ListTodo, label: 'My Daily Tasks' },
   { to: '/editor/videos', icon: Video, label: 'All Videos' },
   { to: '/editor/clients', icon: Users, label: 'Clients' },
+  { to: '/editor/attendance', icon: Calendar, label: 'My Attendance' },
 ];
 
 export function EditorLayout({ children }: { children: ReactNode }) {

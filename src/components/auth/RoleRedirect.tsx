@@ -24,6 +24,7 @@ export function RoleRedirect() {
     editor: '/editor',
     designer: '/designer',
     writer: '/writer',
+    camera_operator: '/camera',
     client: '/client',
   };
 

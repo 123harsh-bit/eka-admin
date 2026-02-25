@@ -21,19 +21,30 @@ import AdminTeam from "@/pages/admin/AdminTeam";
 import AdminNotifications from "@/pages/admin/AdminNotifications";
 import AdminSettings from "@/pages/admin/AdminSettings";
 import AdminDailyTasks from "@/pages/admin/AdminDailyTasks";
+import AdminAttendance from "@/pages/admin/AdminAttendance";
 
 // Role dashboards
 import EditorDashboard from "@/pages/editor/EditorDashboard";
 import EditorAllVideos from "@/pages/editor/EditorAllVideos";
 import EditorClients from "@/pages/editor/EditorClients";
 import EditorDailyTasks from "@/pages/editor/EditorDailyTasks";
+import EditorAttendance from "@/pages/editor/EditorAttendance";
 import DesignerDashboard from "@/pages/designer/DesignerDashboard";
 import DesignerBrandKits from "@/pages/designer/DesignerBrandKits";
 import DesignerDailyTasks from "@/pages/designer/DesignerDailyTasks";
+import DesignerAttendance from "@/pages/designer/DesignerAttendance";
 import WriterDashboard from "@/pages/writer/WriterDashboard";
 import WriterClientBriefs from "@/pages/writer/WriterClientBriefs";
 import WriterDailyTasks from "@/pages/writer/WriterDailyTasks";
+import WriterAttendance from "@/pages/writer/WriterAttendance";
 import ClientDashboard from "@/pages/client/ClientDashboard";
+
+// Camera operator pages
+import CameraShoots from "@/pages/camera/CameraShoots";
+import CameraFootage from "@/pages/camera/CameraFootage";
+import CameraClients from "@/pages/camera/CameraClients";
+import CameraDailyTasks from "@/pages/camera/CameraDailyTasks";
+import CameraAttendance from "@/pages/camera/CameraAttendance";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +70,7 @@ const App = () => (
             <Route path="/admin/videos" element={<ProtectedRoute allowedRoles={['admin']}><AdminVideos /></ProtectedRoute>} />
             <Route path="/admin/design-tasks" element={<ProtectedRoute allowedRoles={['admin']}><AdminDesignTasks /></ProtectedRoute>} />
             <Route path="/admin/writing-tasks" element={<ProtectedRoute allowedRoles={['admin']}><AdminWritingTasks /></ProtectedRoute>} />
+            <Route path="/admin/attendance" element={<ProtectedRoute allowedRoles={['admin']}><AdminAttendance /></ProtectedRoute>} />
             <Route path="/admin/team" element={<ProtectedRoute allowedRoles={['admin']}><AdminTeam /></ProtectedRoute>} />
             <Route path="/admin/notifications" element={<ProtectedRoute allowedRoles={['admin']}><AdminNotifications /></ProtectedRoute>} />
             <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin']}><AdminSettings /></ProtectedRoute>} />
@@ -68,16 +80,26 @@ const App = () => (
             <Route path="/editor/daily-tasks" element={<ProtectedRoute allowedRoles={['editor']}><EditorDailyTasks /></ProtectedRoute>} />
             <Route path="/editor/videos" element={<ProtectedRoute allowedRoles={['editor']}><EditorAllVideos /></ProtectedRoute>} />
             <Route path="/editor/clients" element={<ProtectedRoute allowedRoles={['editor']}><EditorClients /></ProtectedRoute>} />
+            <Route path="/editor/attendance" element={<ProtectedRoute allowedRoles={['editor']}><EditorAttendance /></ProtectedRoute>} />
 
             {/* Designer routes */}
             <Route path="/designer" element={<ProtectedRoute allowedRoles={['designer']}><DesignerDashboard /></ProtectedRoute>} />
             <Route path="/designer/daily-tasks" element={<ProtectedRoute allowedRoles={['designer']}><DesignerDailyTasks /></ProtectedRoute>} />
             <Route path="/designer/brand-kits" element={<ProtectedRoute allowedRoles={['designer']}><DesignerBrandKits /></ProtectedRoute>} />
+            <Route path="/designer/attendance" element={<ProtectedRoute allowedRoles={['designer']}><DesignerAttendance /></ProtectedRoute>} />
 
             {/* Writer routes */}
             <Route path="/writer" element={<ProtectedRoute allowedRoles={['writer']}><WriterDashboard /></ProtectedRoute>} />
             <Route path="/writer/daily-tasks" element={<ProtectedRoute allowedRoles={['writer']}><WriterDailyTasks /></ProtectedRoute>} />
             <Route path="/writer/briefs" element={<ProtectedRoute allowedRoles={['writer']}><WriterClientBriefs /></ProtectedRoute>} />
+            <Route path="/writer/attendance" element={<ProtectedRoute allowedRoles={['writer']}><WriterAttendance /></ProtectedRoute>} />
+
+            {/* Camera operator routes */}
+            <Route path="/camera" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraShoots /></ProtectedRoute>} />
+            <Route path="/camera/footage" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraFootage /></ProtectedRoute>} />
+            <Route path="/camera/clients" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraClients /></ProtectedRoute>} />
+            <Route path="/camera/daily-tasks" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraDailyTasks /></ProtectedRoute>} />
+            <Route path="/camera/attendance" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraAttendance /></ProtectedRoute>} />
 
             {/* Client routes */}
             <Route path="/client" element={<ProtectedRoute allowedRoles={['client']}><ClientDashboard /></ProtectedRoute>} />

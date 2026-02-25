@@ -5,16 +5,17 @@ import { EkaLogo } from '@/components/shared/EkaLogo';
 import { useAuth } from '@/hooks/useAuth';
 import { NotificationBell } from '@/components/shared/NotificationBell';
 import { Button } from '@/components/ui/button';
-import { Palette, BookOpen, LogOut, Menu, X, ListTodo, Calendar } from 'lucide-react';
+import { Camera, FolderOpen, Users, Calendar, Bell, LogOut, Menu, X, ListTodo } from 'lucide-react';
 
 const navItems = [
-  { to: '/designer', icon: Palette, label: 'My Design Tasks', end: true },
-  { to: '/designer/daily-tasks', icon: ListTodo, label: 'My Daily Tasks' },
-  { to: '/designer/brand-kits', icon: BookOpen, label: 'Brand Kits' },
-  { to: '/designer/attendance', icon: Calendar, label: 'My Attendance' },
+  { to: '/camera', icon: Camera, label: 'My Shoots', end: true },
+  { to: '/camera/footage', icon: FolderOpen, label: 'Footage Uploads' },
+  { to: '/camera/clients', icon: Users, label: 'Clients' },
+  { to: '/camera/daily-tasks', icon: ListTodo, label: 'My Daily Tasks' },
+  { to: '/camera/attendance', icon: Calendar, label: 'My Attendance' },
 ];
 
-export function DesignerLayout({ children }: { children: ReactNode }) {
+export function CameraLayout({ children }: { children: ReactNode }) {
   const { signOut, profile } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -29,7 +30,7 @@ export function DesignerLayout({ children }: { children: ReactNode }) {
           <EkaLogo size="md" />
           <button className="lg:hidden text-muted-foreground" onClick={() => setSidebarOpen(false)}><X size={20} /></button>
         </div>
-        <nav className="flex-1 px-3 space-y-1">
+        <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
           {navItems.map(item => (
             <NavLink key={item.to} to={item.to} end={item.end} onClick={() => setSidebarOpen(false)}
               className={({ isActive }) => cn(
@@ -42,12 +43,12 @@ export function DesignerLayout({ children }: { children: ReactNode }) {
         </nav>
         <div className="p-4 border-t border-sidebar-border">
           <div className="flex items-center gap-3 mb-3 px-2">
-            <div className="h-8 w-8 rounded-full bg-pink-500/20 flex items-center justify-center text-xs font-bold text-pink-400">
-              {profile?.full_name?.charAt(0) || 'D'}
+            <div className="h-8 w-8 rounded-full bg-violet-500/20 flex items-center justify-center text-xs font-bold text-violet-400">
+              {profile?.full_name?.charAt(0) || 'C'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-sidebar-foreground truncate">{profile?.full_name || 'Designer'}</p>
-              <p className="text-xs text-muted-foreground">Graphic Designer</p>
+              <p className="text-sm font-medium text-sidebar-foreground truncate">{profile?.full_name || 'Camera Op'}</p>
+              <p className="text-xs text-muted-foreground">Camera Operator</p>
             </div>
           </div>
           <Button variant="ghost" size="sm" onClick={signOut} className="w-full justify-start gap-2 text-muted-foreground hover:text-destructive">

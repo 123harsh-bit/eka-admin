@@ -3,6 +3,7 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { TableSkeleton } from '@/components/shared/SkeletonLoader';
 import { StatusBadge } from '@/components/shared/StatusBadge';
+import { TeamLiveStatus } from '@/components/admin/TeamLiveStatus';
 import { formatDistanceToNow } from 'date-fns';
 import { Users, Video, Clock, CheckCircle, TrendingUp, AlertTriangle } from 'lucide-react';
 
@@ -205,6 +206,9 @@ export default function AdminDashboard() {
           <h1 className="text-3xl font-display font-bold gradient-text">Agency Overview</h1>
           <p className="text-muted-foreground mt-1">Welcome back. Here's what's happening at Eka.</p>
         </div>
+
+        {/* Team Live Status */}
+        <TeamLiveStatus />
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
