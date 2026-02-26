@@ -231,33 +231,61 @@ export default function AdminTeam() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map(member => {
               const roleConfig = getRoleConfig(member.role);
+              const TASK_LABELS: Record<string, string> = {
+                editor: 'videos in pipeline',
+                designer: 'design tasks',
+                writer: 'writing tasks',
+                camera_operator: 'upcoming shoots',
+                admin: 'tasks',
+              };
+              const taskLabel = TASK_LABELS[member.role] || 'tasks';
               return (
-                <div key={member.id} className="glass-card-hover p-5 space-y-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-sm font-bold text-primary">
-                        {member.full_name.charAt(0)}
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-foreground">{member.full_name}</h3>
-                        <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium', roleConfig.color)}>
-                          {roleConfig.label}
-                        </span>
-                      </div>
+                <div key={member.id} className="glass-card-hover p-5 space-y-3 relative overflow-hidden">
+                  {/* Role accent bar */}
+                  <div className={cn('absolute top-0 left-0 right-0 h-1', 
+                    member.role === 'editor' ? 'bg-blue-500' : 
+                    member.role === 'designer' ? 'bg-pink-500' : 
+                    member.role === 'writer' ? 'bg-green-500' : 
+                    member.role === 'camera_operator' ? 'bg-violet-500' : 'bg-primary'
+                  )} />
+                  
+                  <div className="flex items-start gap-3 pt-1">
+                    <div className={cn('h-11 w-11 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0',
+                      member.role === 'editor' ? 'bg-blue-500/20 text-blue-400' : 
+                      member.role === 'designer' ? 'bg-pink-500/20 text-pink-400' : 
+                      member.role === 'writer' ? 'bg-green-500/20 text-green-400' : 
+                      member.role === 'camera_operator' ? 'bg-violet-500/20 text-violet-400' : 'bg-primary/20 text-primary'
+                    )}>
+                      {member.full_name.charAt(0).toUpperCase()}
                     </div>
-                    <div className="flex items-center gap-1">
-                      {member.taskCount !== undefined && member.taskCount > 0 && (
-                        <span className="text-xs text-warning bg-warning/20 px-2 py-0.5 rounded-full">{member.taskCount} active</span>
-                      )}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-foreground truncate">{member.full_name}</h3>
+                      <span className={cn('text-[11px] px-2 py-0.5 rounded-full font-medium inline-block mt-0.5', roleConfig.color)}>
+                        {roleConfig.label}
+                      </span>
                     </div>
                   </div>
 
-                  <div className="space-y-1.5 text-xs text-muted-foreground">
-                    <div className="flex items-center gap-2"><Mail size={12} />{member.email}</div>
-                    {member.phone && <div className="flex items-center gap-2"><Phone size={12} />{member.phone}</div>}
+                  {/* Contact info */}
+                  <div className="space-y-1 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2 truncate"><Mail size={11} /><span className="truncate">{member.email}</span></div>
+                    {member.phone && <div className="flex items-center gap-2"><Phone size={11} />{member.phone}</div>}
                   </div>
 
-                  <div className="flex gap-2 pt-1">
+                  {/* Workload indicator */}
+                  <div className={cn('flex items-center justify-between p-2.5 rounded-lg text-xs',
+                    member.taskCount && member.taskCount > 0 ? 'bg-warning/10' : 'bg-muted/30'
+                  )}>
+                    <span className="text-muted-foreground font-medium">Workload</span>
+                    <span className={cn('font-semibold',
+                      member.taskCount && member.taskCount > 3 ? 'text-destructive' :
+                      member.taskCount && member.taskCount > 0 ? 'text-warning' : 'text-success'
+                    )}>
+                      {member.taskCount || 0} {taskLabel}
+                    </span>
+                  </div>
+
+                  <div className="flex gap-2">
                     <Button size="sm" variant="outline" onClick={() => openEdit(member)} className="flex-1 gap-1.5 text-xs">
                       <Edit2 size={12} /> Edit
                     </Button>
