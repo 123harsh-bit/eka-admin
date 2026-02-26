@@ -360,9 +360,11 @@ export default function AdminClients() {
                 </div>
               </div>
 
-              {/* Client Portal Access - only show when editing */}
+            </form>
+
+              {/* Client Portal Access - outside form to prevent submit conflicts */}
               {editingClient && (
-                <div className="border-t border-glass-border pt-4">
+                <div className="px-6 pb-4 border-t border-glass-border pt-4">
                   <ClientPortalAccess
                     clientId={editingClient.id}
                     clientEmail={editingClient.email}
@@ -372,7 +374,6 @@ export default function AdminClients() {
                   />
                 </div>
               )}
-            </form>
 
             <div className="p-6 border-t border-sidebar-border flex gap-3">
               <Button variant="outline" onClick={() => setPanelOpen(false)} className="flex-1">Cancel</Button>
