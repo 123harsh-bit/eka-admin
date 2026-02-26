@@ -242,14 +242,15 @@ export default function AdminVideos() {
 
         // Handle writer assignment — create/update writing task
         if (form.assigned_writer && si >= statusIndex('idea')) {
-          const { data: existingTask } = await supabase.from('writing_tasks').select('id, assigned_writer').eq('video_id', editingVideo.id).maybeSingle();
+          const { data: existingTask, error: queryErr } = await supabase.from('writing_tasks').select('id, assigned_writer').eq('video_id', editingVideo.id).maybeSingle();
+          if (queryErr) console.error('Error checking writing task:', queryErr);
           if (existingTask) {
             if (existingTask.assigned_writer !== form.assigned_writer) {
               await supabase.from('writing_tasks').update({ assigned_writer: form.assigned_writer }).eq('id', existingTask.id);
             }
           } else {
             const client = clients.find(c => c.id === form.client_id);
-            await supabase.from('writing_tasks').insert({
+            const { error: insertErr } = await supabase.from('writing_tasks').insert({
               video_id: editingVideo.id,
               client_id: form.client_id,
               assigned_writer: form.assigned_writer,
@@ -257,15 +258,19 @@ export default function AdminVideos() {
               task_type: 'reel_script',
               status: 'briefed',
             });
-            // Notify writer
-            const writerProfile = writers.find(w => w.id === form.assigned_writer);
-            await supabase.from('notifications').insert({
-              recipient_id: form.assigned_writer,
-              message: `📝 New script assignment: '${form.title.trim()}' for ${client?.name || 'client'}. Please begin writing.`,
-              type: 'assignment',
-              related_video_id: editingVideo.id,
-              related_client_id: form.client_id,
-            });
+            if (insertErr) {
+              console.error('Error creating writing task:', insertErr);
+              toast({ title: 'Warning', description: 'Video saved but writing task could not be created: ' + insertErr.message, variant: 'destructive' });
+            } else {
+              // Notify writer
+              await supabase.from('notifications').insert({
+                recipient_id: form.assigned_writer,
+                message: `📝 New script assignment: '${form.title.trim()}' for ${client?.name || 'client'}. Please begin writing.`,
+                type: 'assignment',
+                related_video_id: editingVideo.id,
+                related_client_id: form.client_id,
+              });
+            }
           }
         }
 
@@ -278,7 +283,7 @@ export default function AdminVideos() {
         // Create writing task if writer assigned on creation
         if (form.assigned_writer) {
           const client = clients.find(c => c.id === form.client_id);
-          await supabase.from('writing_tasks').insert({
+          const { error: insertErr } = await supabase.from('writing_tasks').insert({
             video_id: data.id,
             client_id: form.client_id,
             assigned_writer: form.assigned_writer,
@@ -286,13 +291,18 @@ export default function AdminVideos() {
             task_type: 'reel_script',
             status: 'briefed',
           });
-          await supabase.from('notifications').insert({
-            recipient_id: form.assigned_writer,
-            message: `📝 New script assignment: '${form.title.trim()}' for ${client?.name || 'client'}. Please begin writing.`,
-            type: 'assignment',
-            related_video_id: data.id,
-            related_client_id: form.client_id,
-          });
+          if (insertErr) {
+            console.error('Error creating writing task:', insertErr);
+            toast({ title: 'Warning', description: 'Video created but writing task failed: ' + insertErr.message, variant: 'destructive' });
+          } else {
+            await supabase.from('notifications').insert({
+              recipient_id: form.assigned_writer,
+              message: `📝 New script assignment: '${form.title.trim()}' for ${client?.name || 'client'}. Please begin writing.`,
+              type: 'assignment',
+              related_video_id: data.id,
+              related_client_id: form.client_id,
+            });
+          }
         }
 
         await supabase.from('activity_log').insert({ entity_type: 'video', entity_id: data.id, action: 'created', details: { title: form.title } });
@@ -308,11 +318,38 @@ export default function AdminVideos() {
   };
 
   const handleStatusChange = async (videoId: string, newStatus: string) => {
-    const { error } = await supabase.from('videos').update({ status: newStatus }).eq('id', videoId);
-    if (!error) {
+    const video = videos.find(v => v.id === videoId);
+    const newSi = statusIndex(newStatus);
+
+    // Enforce workflow gates — redirect to edit panel if assignments are missing
+    if (newSi >= statusIndex('scripting') && !video?.writer_name && !video?.writer_id) {
+      toast({ title: 'Assign a writer first', description: 'Open the edit panel and select a writer before moving to scripting.', variant: 'destructive' });
+      if (video) openEdit(video);
+      return;
+    }
+    if (newSi >= statusIndex('shoot_assigned') && !video?.assigned_camera_operator) {
+      toast({ title: 'Assign a camera operator first', description: 'Open the edit panel and assign a camera operator.', variant: 'destructive' });
+      if (video) openEdit(video);
+      return;
+    }
+    if (newSi >= statusIndex('editing') && !video?.assigned_editor) {
+      toast({ title: 'Assign an editor first', description: 'Open the edit panel and assign an editor.', variant: 'destructive' });
+      if (video) openEdit(video);
+      return;
+    }
+
+    if (!user) return;
+    const result = await handleVideoStatusChange(videoId, newStatus, user.id);
+    if (result.success) {
       await fetchVideos();
       if (detailVideo?.id === videoId) setDetailVideo(v => v ? { ...v, status: newStatus } : v);
-      await supabase.from('activity_log').insert({ entity_type: 'video', entity_id: videoId, action: 'status_changed', details: { status: newStatus } });
+      toast({ title: `Status updated to ${VIDEO_STATUSES[newStatus as VideoStatus]?.label || newStatus}` });
+    } else if (result.requiresInput) {
+      // Open edit panel for required input
+      if (video) openEdit(video);
+      toast({ title: 'Additional info required', description: `Please fill in the required fields.`, variant: 'destructive' });
+    } else {
+      toast({ title: 'Error', description: result.error, variant: 'destructive' });
     }
   };
 
