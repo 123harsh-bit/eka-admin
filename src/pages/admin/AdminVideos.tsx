@@ -283,7 +283,7 @@ export default function AdminVideos() {
         // Create writing task if writer assigned on creation
         if (form.assigned_writer) {
           const client = clients.find(c => c.id === form.client_id);
-          await supabase.from('writing_tasks').insert({
+          const { error: insertErr } = await supabase.from('writing_tasks').insert({
             video_id: data.id,
             client_id: form.client_id,
             assigned_writer: form.assigned_writer,
@@ -291,13 +291,18 @@ export default function AdminVideos() {
             task_type: 'reel_script',
             status: 'briefed',
           });
-          await supabase.from('notifications').insert({
-            recipient_id: form.assigned_writer,
-            message: `📝 New script assignment: '${form.title.trim()}' for ${client?.name || 'client'}. Please begin writing.`,
-            type: 'assignment',
-            related_video_id: data.id,
-            related_client_id: form.client_id,
-          });
+          if (insertErr) {
+            console.error('Error creating writing task:', insertErr);
+            toast({ title: 'Warning', description: 'Video created but writing task failed: ' + insertErr.message, variant: 'destructive' });
+          } else {
+            await supabase.from('notifications').insert({
+              recipient_id: form.assigned_writer,
+              message: `📝 New script assignment: '${form.title.trim()}' for ${client?.name || 'client'}. Please begin writing.`,
+              type: 'assignment',
+              related_video_id: data.id,
+              related_client_id: form.client_id,
+            });
+          }
         }
 
         await supabase.from('activity_log').insert({ entity_type: 'video', entity_id: data.id, action: 'created', details: { title: form.title } });
