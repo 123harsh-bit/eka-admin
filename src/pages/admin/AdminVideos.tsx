@@ -242,14 +242,15 @@ export default function AdminVideos() {
 
         // Handle writer assignment — create/update writing task
         if (form.assigned_writer && si >= statusIndex('idea')) {
-          const { data: existingTask } = await supabase.from('writing_tasks').select('id, assigned_writer').eq('video_id', editingVideo.id).maybeSingle();
+          const { data: existingTask, error: queryErr } = await supabase.from('writing_tasks').select('id, assigned_writer').eq('video_id', editingVideo.id).maybeSingle();
+          if (queryErr) console.error('Error checking writing task:', queryErr);
           if (existingTask) {
             if (existingTask.assigned_writer !== form.assigned_writer) {
               await supabase.from('writing_tasks').update({ assigned_writer: form.assigned_writer }).eq('id', existingTask.id);
             }
           } else {
             const client = clients.find(c => c.id === form.client_id);
-            await supabase.from('writing_tasks').insert({
+            const { error: insertErr } = await supabase.from('writing_tasks').insert({
               video_id: editingVideo.id,
               client_id: form.client_id,
               assigned_writer: form.assigned_writer,
@@ -257,15 +258,19 @@ export default function AdminVideos() {
               task_type: 'reel_script',
               status: 'briefed',
             });
-            // Notify writer
-            const writerProfile = writers.find(w => w.id === form.assigned_writer);
-            await supabase.from('notifications').insert({
-              recipient_id: form.assigned_writer,
-              message: `📝 New script assignment: '${form.title.trim()}' for ${client?.name || 'client'}. Please begin writing.`,
-              type: 'assignment',
-              related_video_id: editingVideo.id,
-              related_client_id: form.client_id,
-            });
+            if (insertErr) {
+              console.error('Error creating writing task:', insertErr);
+              toast({ title: 'Warning', description: 'Video saved but writing task could not be created: ' + insertErr.message, variant: 'destructive' });
+            } else {
+              // Notify writer
+              await supabase.from('notifications').insert({
+                recipient_id: form.assigned_writer,
+                message: `📝 New script assignment: '${form.title.trim()}' for ${client?.name || 'client'}. Please begin writing.`,
+                type: 'assignment',
+                related_video_id: editingVideo.id,
+                related_client_id: form.client_id,
+              });
+            }
           }
         }
 
