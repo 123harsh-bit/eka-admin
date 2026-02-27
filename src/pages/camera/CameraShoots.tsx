@@ -34,26 +34,43 @@ export default function CameraShoots() {
   const { toast } = useToast();
 
   useEffect(() => {
+    if (!user?.id) {
+      setVideos([]);
+      setLoading(false);
+      return;
+    }
+
     fetchShoots();
     const channel = supabase
-      .channel('camera-shoots')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'videos' }, fetchShoots)
+      .channel(`camera-shoots-${user.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'videos', filter: `assigned_camera_operator=eq.${user.id}` }, fetchShoots)
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [user]);
+  }, [user?.id]);
 
   const fetchShoots = async () => {
-    if (!user) return;
+    if (!user?.id) return;
     setLoading(true);
+
     const { data } = await supabase
       .from('videos')
       .select('id, title, status, client_id, shoot_date, shoot_start_time, shoot_location, shoot_notes, raw_footage_link, footage_uploaded_at, date_planned, clients(name)')
       .eq('assigned_camera_operator', user.id)
       .order('shoot_date', { ascending: true, nullsFirst: false });
+
     if (data) {
+      const videoIds = (data as any[]).map(v => v.id);
+      const { data: scriptTasks } = videoIds.length
+        ? await supabase.from('writing_tasks').select('video_id, doc_link').in('video_id', videoIds).not('doc_link', 'is', null)
+        : { data: [] as Array<{ video_id: string; doc_link: string | null }> };
+
+      const scriptMap: Record<string, string | null> = {};
+      (scriptTasks || []).forEach(task => { if (task.video_id) scriptMap[task.video_id] = task.doc_link; });
+
       const mapped = (data as any[]).map(v => ({
         ...v,
         client_name: v.clients?.name || 'Unknown',
+        writing_doc_link: scriptMap[v.id] || null,
       }));
       setVideos(mapped);
     }
@@ -102,9 +119,9 @@ export default function CameraShoots() {
 
   const today = new Date().toISOString().split('T')[0];
   
-  const upcoming = videos.filter(v => ['shoot_assigned'].includes(v.status) && v.shoot_date && v.shoot_date >= today);
-  const active = videos.filter(v => v.status === 'shooting');
-  const overdue = videos.filter(v => ['shoot_assigned', 'shooting'].includes(v.status) && v.shoot_date && v.shoot_date < today);
+  const upcoming = videos.filter(v => v.status === 'shoot_assigned' && v.shoot_date && v.shoot_date > today);
+  const active = videos.filter(v => v.status === 'shooting' && v.shoot_date === today);
+  const overdue = videos.filter(v => ['shoot_assigned', 'shooting'].includes(v.status) && v.shoot_date && v.shoot_date < today && !v.footage_uploaded_at);
   const completed = videos.filter(v => ['footage_delivered', 'editing', 'internal_review', 'client_review', 'revisions', 'approved', 'ready_to_upload', 'live'].includes(v.status));
 
   const ShootCard = ({ video, section }: { video: ShootVideo; section: 'upcoming' | 'active' | 'overdue' | 'completed' }) => {

@@ -23,7 +23,8 @@ export default function CameraDailyTasks() {
   const [shoots, setShoots] = useState<AssignedShoot[]>([]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
+
     const fetchShoots = async () => {
       const { data } = await supabase
         .from('videos')
@@ -44,8 +45,15 @@ export default function CameraDailyTasks() {
         })));
       }
     };
+
     fetchShoots();
-  }, [user]);
+    const channel = supabase
+      .channel(`camera-daily-shoots-${user.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'videos', filter: `assigned_camera_operator=eq.${user.id}` }, fetchShoots)
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user?.id]);
 
   const STATUS_LABELS: Record<string, { label: string; color: string }> = {
     shoot_assigned: { label: 'Assigned', color: 'bg-warning/20 text-warning' },
