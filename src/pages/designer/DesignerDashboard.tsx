@@ -33,13 +33,19 @@ export default function DesignerDashboard() {
   const { toast } = useToast();
 
   useEffect(() => {
+    if (!user?.id) {
+      setTasks([]);
+      setLoading(false);
+      return;
+    }
+
     fetchTasks();
     const channel = supabase
-      .channel('designer-tasks')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'design_tasks', filter: `assigned_designer=eq.${user?.id}` }, fetchTasks)
+      .channel(`designer-tasks-${user.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'design_tasks', filter: `assigned_designer=eq.${user.id}` }, fetchTasks)
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [user]);
+  }, [user?.id]);
 
   const fetchTasks = async () => {
     if (!user) return;

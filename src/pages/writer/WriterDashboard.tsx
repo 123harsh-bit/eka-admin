@@ -35,13 +35,19 @@ export default function WriterDashboard() {
   const { toast } = useToast();
 
   useEffect(() => {
+    if (!user?.id) {
+      setTasks([]);
+      setLoading(false);
+      return;
+    }
+
     fetchTasks();
     const channel = supabase
-      .channel('writer-tasks')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'writing_tasks', filter: `assigned_writer=eq.${user?.id}` }, fetchTasks)
+      .channel(`writer-tasks-${user.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'writing_tasks', filter: `assigned_writer=eq.${user.id}` }, fetchTasks)
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [user]);
+  }, [user?.id]);
 
   const fetchTasks = async () => {
     if (!user) return;
@@ -49,7 +55,6 @@ export default function WriterDashboard() {
     const { data } = await supabase.from('writing_tasks')
       .select('id, title, task_type, status, client_id, due_date, doc_link, target_duration_seconds, script_duration_seconds, version_notes, video_id, clients(name)')
       .eq('assigned_writer', user.id)
-      .not('status', 'eq', 'delivered')
       .order('due_date', { ascending: true, nullsFirst: false });
     if (data) {
       const mapped = (data as unknown[]).map((t: unknown) => {
@@ -109,14 +114,14 @@ export default function WriterDashboard() {
 
   const today = new Date().toISOString().split('T')[0];
 
-  const activeStatuses: WritingTaskStatus[] = ['briefed', 'drafting'];
-  const reviewStatuses: WritingTaskStatus[] = ['review', 'revisions'];
-  const approvedStatuses: WritingTaskStatus[] = ['approved'];
+  const activeStatuses: WritingTaskStatus[] = ['briefed', 'drafting', 'revisions'];
+  const reviewStatuses: WritingTaskStatus[] = ['review'];
+  const completedStatuses: WritingTaskStatus[] = ['approved', 'delivered'];
 
   const groups = [
     { label: 'Active', tasks: tasks.filter(t => activeStatuses.includes(t.status as WritingTaskStatus)) },
-    { label: 'For Review', tasks: tasks.filter(t => reviewStatuses.includes(t.status as WritingTaskStatus)) },
-    { label: 'Approved', tasks: tasks.filter(t => approvedStatuses.includes(t.status as WritingTaskStatus)) },
+    { label: 'Under Review', tasks: tasks.filter(t => reviewStatuses.includes(t.status as WritingTaskStatus)) },
+    { label: 'Completed', tasks: tasks.filter(t => completedStatuses.includes(t.status as WritingTaskStatus)) },
   ];
 
   const getDurationBarPct = (target: number | null, script: number | null) => {
