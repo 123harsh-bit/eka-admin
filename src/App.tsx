@@ -47,6 +47,8 @@ import CameraFootage from "@/pages/camera/CameraFootage";
 import CameraClients from "@/pages/camera/CameraClients";
 import CameraDailyTasks from "@/pages/camera/CameraDailyTasks";
 import CameraAttendance from "@/pages/camera/CameraAttendance";
+import CameraNotifications from "@/pages/camera/CameraNotifications";
+import CameraProfile from "@/pages/camera/CameraProfile";
 
 const queryClient = new QueryClient();
 
@@ -104,6 +106,8 @@ const App = () => (
             <Route path="/camera/clients" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraClients /></ProtectedRoute>} />
             <Route path="/camera/daily-tasks" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraDailyTasks /></ProtectedRoute>} />
             <Route path="/camera/attendance" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraAttendance /></ProtectedRoute>} />
+            <Route path="/camera/notifications" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraNotifications /></ProtectedRoute>} />
+            <Route path="/camera/profile" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraProfile /></ProtectedRoute>} />
 
             {/* Client routes */}
             <Route path="/client" element={<ProtectedRoute allowedRoles={['client']}><ClientDashboard /></ProtectedRoute>} />

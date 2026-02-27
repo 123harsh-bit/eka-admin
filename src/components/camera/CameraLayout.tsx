@@ -8,14 +8,15 @@ import { NotificationBell } from '@/components/shared/NotificationBell';
 import { StartWorkday } from '@/components/auth/StartWorkday';
 import { AttendanceBar } from '@/components/shared/AttendanceBar';
 import { Button } from '@/components/ui/button';
-import { Camera, FolderOpen, Users, Calendar, Bell, LogOut, Menu, X, ListTodo } from 'lucide-react';
+import { Camera, FolderOpen, Users, Calendar, Bell, LogOut, Menu, X, UserCircle } from 'lucide-react';
 
 const navItems = [
   { to: '/camera', icon: Camera, label: 'My Shoots', end: true },
   { to: '/camera/footage', icon: FolderOpen, label: 'Footage Uploads' },
   { to: '/camera/clients', icon: Users, label: 'Clients' },
-  { to: '/camera/daily-tasks', icon: ListTodo, label: 'My Daily Tasks' },
   { to: '/camera/attendance', icon: Calendar, label: 'My Attendance' },
+  { to: '/camera/notifications', icon: Bell, label: 'Notifications' },
+  { to: '/camera/profile', icon: UserCircle, label: 'Profile' },
 ];
 
 export function CameraLayout({ children }: { children: ReactNode }) {
