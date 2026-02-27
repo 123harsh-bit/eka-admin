@@ -48,7 +48,7 @@ export default function EditorDashboard() {
   }, [user?.id]);
 
   const fetchVideos = async () => {
-    if (!user) return;
+    if (!user?.id) return;
     setLoading(true);
     const { data } = await supabase
       .from('videos')
