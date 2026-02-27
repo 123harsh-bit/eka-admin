@@ -48,7 +48,7 @@ export default function DesignerDashboard() {
   }, [user?.id]);
 
   const fetchTasks = async () => {
-    if (!user) return;
+    if (!user?.id) return;
     setLoading(true);
     const { data } = await supabase.from('design_tasks').select('*, clients(name)').eq('assigned_designer', user.id).not('status', 'eq', 'delivered').order('due_date', { ascending: true, nullsFirst: false });
     if (data) {
