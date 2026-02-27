@@ -32,13 +32,20 @@ export default function EditorDashboard() {
   const { toast } = useToast();
 
   useEffect(() => {
+    if (!user?.id) {
+      setVideos([]);
+      setLoading(false);
+      return;
+    }
+
     fetchVideos();
     const channel = supabase
-      .channel('editor-videos')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'videos', filter: `assigned_editor=eq.${user?.id}` }, fetchVideos)
+      .channel(`editor-videos-${user.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'videos', filter: `assigned_editor=eq.${user.id}` }, fetchVideos)
       .subscribe();
+
     return () => { supabase.removeChannel(channel); };
-  }, [user]);
+  }, [user?.id]);
 
   const fetchVideos = async () => {
     if (!user) return;
