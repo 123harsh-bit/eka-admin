@@ -12,7 +12,7 @@ interface PerformanceData {
 }
 
 interface MyPerformanceProps {
-  role: 'editor' | 'designer' | 'writer';
+  role: 'editor' | 'designer' | 'writer' | 'camera_operator';
 }
 
 export function MyPerformance({ role }: MyPerformanceProps) {
@@ -42,10 +42,13 @@ export function MyPerformance({ role }: MyPerformanceProps) {
     } else if (role === 'writer') {
       const { data: d } = await supabase.from('writing_tasks').select('status, client_id, updated_at').eq('assigned_writer', user.id);
       tasks = d || [];
+    } else if (role === 'camera_operator') {
+      const { data: d } = await supabase.from('videos').select('status, client_id, updated_at').eq('assigned_camera_operator', user.id);
+      tasks = d || [];
     }
 
-    const completedStatuses = role === 'editor' ? ['live', 'approved'] : ['delivered'];
-    const notStartedStatuses = role === 'editor' ? ['idea', 'scripting'] : ['briefed'];
+    const completedStatuses = (role === 'editor' || role === 'camera_operator') ? ['live', 'approved', 'footage_delivered'] : ['delivered'];
+    const notStartedStatuses = (role === 'editor' || role === 'camera_operator') ? ['idea', 'scripting'] : ['briefed'];
 
     const completed = tasks.filter(t => completedStatuses.includes(t.status) && t.updated_at >= startOfMonth).length;
     const inProgress = tasks.filter(t => !completedStatuses.includes(t.status) && !notStartedStatuses.includes(t.status)).length;
