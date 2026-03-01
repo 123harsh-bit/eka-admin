@@ -500,6 +500,21 @@ export default function ClientDashboard() {
             </div>
           )}
 
+          {/* IDEAS SECTION */}
+          {section === 'ideas' && client && (
+            showIdeaForm ? (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h1 className="text-3xl font-display font-bold gradient-text">💡 New Idea</h1>
+                  <Button variant="outline" onClick={() => setShowIdeaForm(false)}>← Back to Ideas</Button>
+                </div>
+                <IdeaSubmissionForm clientId={client.id} onSuccess={() => setShowIdeaForm(false)} onCancel={() => setShowIdeaForm(false)} />
+              </div>
+            ) : (
+              <ClientIdeasList clientId={client.id} onNewIdea={() => setShowIdeaForm(true)} />
+            )
+          )}
+
           {/* DESIGN DELIVERABLES */}
           {section === 'design' && (
             <div className="space-y-6">
