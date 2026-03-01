@@ -683,6 +683,16 @@ export default function ClientDashboard() {
         />
       )}
 
+      {/* Floating Share an Idea button */}
+      {client && section !== 'ideas' && (
+        <button
+          onClick={() => { setSection('ideas'); setShowIdeaForm(true); }}
+          className="fixed bottom-24 right-6 z-30 flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-full shadow-xl hover:shadow-2xl transition-all text-sm font-semibold"
+        >
+          <Lightbulb size={18} /> Share an Idea
+        </button>
+      )}
+
       {/* Need Help button */}
       <NeedHelpButton />
     </div>

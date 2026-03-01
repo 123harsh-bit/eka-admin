@@ -24,6 +24,7 @@ import AdminDailyTasks from "@/pages/admin/AdminDailyTasks";
 import AdminAttendance from "@/pages/admin/AdminAttendance";
 import AdminEditorTasks from "@/pages/admin/AdminEditorTasks";
 import AdminCameraShoots from "@/pages/admin/AdminCameraShoots";
+import AdminClientIdeas from "@/pages/admin/AdminClientIdeas";
 
 // Role dashboards
 import EditorDashboard from "@/pages/editor/EditorDashboard";
@@ -69,6 +70,7 @@ const App = () => (
             <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/daily-tasks" element={<ProtectedRoute allowedRoles={['admin']}><AdminDailyTasks /></ProtectedRoute>} />
             <Route path="/admin/clients" element={<ProtectedRoute allowedRoles={['admin']}><AdminClients /></ProtectedRoute>} />
+            <Route path="/admin/client-ideas" element={<ProtectedRoute allowedRoles={['admin']}><AdminClientIdeas /></ProtectedRoute>} />
             <Route path="/admin/videos" element={<ProtectedRoute allowedRoles={['admin']}><AdminVideos /></ProtectedRoute>} />
             <Route path="/admin/design-tasks" element={<ProtectedRoute allowedRoles={['admin']}><AdminDesignTasks /></ProtectedRoute>} />
             <Route path="/admin/writing-tasks" element={<ProtectedRoute allowedRoles={['admin']}><AdminWritingTasks /></ProtectedRoute>} />
