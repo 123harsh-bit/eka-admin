@@ -18,8 +18,12 @@ export function getAuthErrorMessage(error: string | { message?: string; code?: s
     return 'Your session has expired. Please log in again.';
   if (msg.includes('not authorized') || msg.includes('permission'))
     return "You don't have permission to do that.";
+  if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('fetch'))
+    return 'Unable to connect to the server. Please check your internet connection and try again.';
+  if (msg.includes('CORS') || msg.includes('blocked'))
+    return 'Connection blocked. Please try again or contact support.';
 
-  return 'Something went wrong on our end. Please refresh and try again.';
+  return 'Something went wrong. Please try again or contact support.';
 }
 
 export function getGeneralErrorMessage(error: unknown): string {
