@@ -4,6 +4,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { NeedHelpButton } from '@/components/shared/NeedHelpButton';
 import { NotificationBell } from '@/components/shared/NotificationBell';
 import { VideoFeedbackModal } from '@/components/client/VideoFeedbackModal';
+import { IdeaSubmissionForm } from '@/components/client/IdeaSubmissionForm';
+import { ClientIdeasList } from '@/components/client/ClientIdeasList';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { VIDEO_STATUSES, VIDEO_STATUS_ORDER, DESIGN_TASK_STATUSES, WRITING_TASK_STATUSES, type VideoStatus } from '@/lib/statusConfig';
 import { EkaLogo } from '@/components/shared/EkaLogo';
@@ -13,7 +15,7 @@ import {
   Video, Download, Check, MessageSquare, ExternalLink,
   LogOut, LayoutDashboard, Palette, PenTool, BarChart3,
   Settings, Bell, TrendingUp, Clock, CheckCircle, Star,
-  Menu, X, Loader2
+  Menu, X, Loader2, Lightbulb
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth as useAuthHook } from '@/hooks/useAuth';
@@ -40,6 +42,7 @@ interface ActivityItem {
 const CLIENT_NAV = [
   { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { id: 'videos', icon: Video, label: 'Videos' },
+  { id: 'ideas', icon: Lightbulb, label: '💡 My Ideas' },
   { id: 'design', icon: Palette, label: 'Design Deliverables' },
   { id: 'content', icon: PenTool, label: 'Content & Copy' },
   { id: 'report', icon: BarChart3, label: 'Monthly Report' },
@@ -59,6 +62,7 @@ export default function ClientDashboard() {
   const [feedbackVideo, setFeedbackVideo] = useState<VideoData | null>(null);
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showIdeaForm, setShowIdeaForm] = useState(false);
   const [passwordForm, setPasswordForm] = useState({ current: '', newPass: '', confirm: '' });
   const [savingPwd, setSavingPwd] = useState(false);
 
