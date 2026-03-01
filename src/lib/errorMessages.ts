@@ -24,6 +24,7 @@ export function getAuthErrorMessage(error: string | { message?: string; code?: s
     return 'Connection blocked. Please try again or contact support.';
 
   return 'Something went wrong. Please try again or contact support.';
+}
 
 export function getGeneralErrorMessage(error: unknown): string {
   if (error instanceof Error) {
