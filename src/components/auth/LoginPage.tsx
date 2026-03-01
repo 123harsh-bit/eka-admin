@@ -43,8 +43,10 @@ export default function LoginPage() {
       // Redirect immediately using the role returned from signIn
       const target = role ? roleRoutes[role] || '/admin' : '/admin';
       navigate(target, { replace: true });
-    } catch {
-      setError('An unexpected error occurred. Please try again.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'An unexpected error occurred.';
+      console.error('Login error:', err);
+      setError(getAuthErrorMessage(message));
       setIsLoading(false);
     }
   };
