@@ -4,6 +4,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { NeedHelpButton } from '@/components/shared/NeedHelpButton';
 import { NotificationBell } from '@/components/shared/NotificationBell';
 import { VideoFeedbackModal } from '@/components/client/VideoFeedbackModal';
+import { IdeaSubmissionForm } from '@/components/client/IdeaSubmissionForm';
+import { ClientIdeasList } from '@/components/client/ClientIdeasList';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { VIDEO_STATUSES, VIDEO_STATUS_ORDER, DESIGN_TASK_STATUSES, WRITING_TASK_STATUSES, type VideoStatus } from '@/lib/statusConfig';
 import { EkaLogo } from '@/components/shared/EkaLogo';
@@ -13,7 +15,7 @@ import {
   Video, Download, Check, MessageSquare, ExternalLink,
   LogOut, LayoutDashboard, Palette, PenTool, BarChart3,
   Settings, Bell, TrendingUp, Clock, CheckCircle, Star,
-  Menu, X, Loader2
+  Menu, X, Loader2, Lightbulb
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth as useAuthHook } from '@/hooks/useAuth';
@@ -40,6 +42,7 @@ interface ActivityItem {
 const CLIENT_NAV = [
   { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { id: 'videos', icon: Video, label: 'Videos' },
+  { id: 'ideas', icon: Lightbulb, label: '💡 My Ideas' },
   { id: 'design', icon: Palette, label: 'Design Deliverables' },
   { id: 'content', icon: PenTool, label: 'Content & Copy' },
   { id: 'report', icon: BarChart3, label: 'Monthly Report' },
@@ -59,6 +62,7 @@ export default function ClientDashboard() {
   const [feedbackVideo, setFeedbackVideo] = useState<VideoData | null>(null);
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showIdeaForm, setShowIdeaForm] = useState(false);
   const [passwordForm, setPasswordForm] = useState({ current: '', newPass: '', confirm: '' });
   const [savingPwd, setSavingPwd] = useState(false);
 
@@ -496,6 +500,21 @@ export default function ClientDashboard() {
             </div>
           )}
 
+          {/* IDEAS SECTION */}
+          {section === 'ideas' && client && (
+            showIdeaForm ? (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h1 className="text-3xl font-display font-bold gradient-text">💡 New Idea</h1>
+                  <Button variant="outline" onClick={() => setShowIdeaForm(false)}>← Back to Ideas</Button>
+                </div>
+                <IdeaSubmissionForm clientId={client.id} onSuccess={() => setShowIdeaForm(false)} onCancel={() => setShowIdeaForm(false)} />
+              </div>
+            ) : (
+              <ClientIdeasList clientId={client.id} onNewIdea={() => setShowIdeaForm(true)} />
+            )
+          )}
+
           {/* DESIGN DELIVERABLES */}
           {section === 'design' && (
             <div className="space-y-6">
@@ -662,6 +681,16 @@ export default function ClientDashboard() {
           video={{ id: feedbackVideo.id, title: feedbackVideo.title, client_id: client.id }}
           onClose={() => setFeedbackVideo(null)}
         />
+      )}
+
+      {/* Floating Share an Idea button */}
+      {client && section !== 'ideas' && (
+        <button
+          onClick={() => { setSection('ideas'); setShowIdeaForm(true); }}
+          className="fixed bottom-24 right-6 z-30 flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-full shadow-xl hover:shadow-2xl transition-all text-sm font-semibold"
+        >
+          <Lightbulb size={18} /> Share an Idea
+        </button>
       )}
 
       {/* Need Help button */}

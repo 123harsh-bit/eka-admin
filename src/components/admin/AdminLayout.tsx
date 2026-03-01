@@ -7,13 +7,14 @@ import { Button } from '@/components/ui/button';
 import { NotificationBell } from '@/components/shared/NotificationBell';
 import {
   LayoutDashboard, Users, Video, Palette, PenTool, Camera,
-  UserCircle, Bell, Settings, LogOut, Menu, X, ListTodo, Calendar, Scissors
+  UserCircle, Bell, Settings, LogOut, Menu, X, ListTodo, Calendar, Scissors, Lightbulb
 } from 'lucide-react';
 import { useState } from 'react';
 
 const adminNavItems = [
   { to: '/admin', icon: LayoutDashboard, label: 'Overview', end: true },
   { to: '/admin/clients', icon: Users, label: 'Clients' },
+  { to: '/admin/client-ideas', icon: Lightbulb, label: '💡 Client Ideas' },
   { to: '/admin/videos', icon: Video, label: 'Videos' },
   { to: '/admin/design-tasks', icon: Palette, label: 'Design Tasks' },
   { to: '/admin/writing-tasks', icon: PenTool, label: 'Writing Tasks' },

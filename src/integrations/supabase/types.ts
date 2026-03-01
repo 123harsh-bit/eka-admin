@@ -103,6 +103,76 @@ export type Database = {
           },
         ]
       }
+      client_ideas: {
+        Row: {
+          admin_response: string | null
+          client_id: string
+          converted_video_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          photo_urls: Json | null
+          status: string
+          submitted_by: string
+          title: string
+          updated_at: string
+          voice_duration_seconds: number | null
+          voice_note_url: string | null
+        }
+        Insert: {
+          admin_response?: string | null
+          client_id: string
+          converted_video_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          photo_urls?: Json | null
+          status?: string
+          submitted_by: string
+          title: string
+          updated_at?: string
+          voice_duration_seconds?: number | null
+          voice_note_url?: string | null
+        }
+        Update: {
+          admin_response?: string | null
+          client_id?: string
+          converted_video_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          photo_urls?: Json | null
+          status?: string
+          submitted_by?: string
+          title?: string
+          updated_at?: string
+          voice_duration_seconds?: number | null
+          voice_note_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_ideas_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_ideas_converted_video_id_fkey"
+            columns: ["converted_video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_ideas_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           brand_colors: Json | null
