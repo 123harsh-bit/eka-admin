@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.849696e95f184cd68bceccf73b85061f',
+  appId: 'app.lovable.ekaadmin',
   appName: 'Eka',
   webDir: 'dist',
   server: {
