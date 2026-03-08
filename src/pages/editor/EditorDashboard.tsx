@@ -99,6 +99,7 @@ export default function EditorDashboard() {
 
   return (
     <EditorLayout>
+      <PullToRefresh onRefresh={fetchVideos}>
       <div className="space-y-6">
         <MyPerformance role="editor" />
         <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 h-auto lg:h-[calc(100vh-10rem)]">
