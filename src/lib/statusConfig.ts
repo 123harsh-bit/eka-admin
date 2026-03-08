@@ -55,6 +55,35 @@ export const VIDEO_STATUS_ORDER: VideoStatus[] = [
   'client_review', 'revisions', 'approved', 'ready_to_upload', 'live'
 ];
 
+// Editing-only clients: simplified pipeline (no scripting/shooting)
+export const EDITING_ONLY_STATUS_ORDER: VideoStatus[] = [
+  'editing', 'internal_review', 'client_review', 'revisions', 'approved', 'ready_to_upload', 'live'
+];
+
+// Client-facing labels for editing-only pipeline
+export const EDITING_ONLY_CLIENT_LABELS: Partial<Record<VideoStatus, string>> = {
+  editing: '✂️ Being Edited',
+  internal_review: '🔍 Quality Check',
+  client_review: '👀 Ready for Your Review ⚡️',
+  revisions: '✏️ Applying Your Feedback',
+  approved: '✅ Approved',
+  ready_to_upload: '📦 Being Delivered',
+  live: '✅ Delivered!',
+};
+
+export type ClientServiceType = 'full_production' | 'editing_only';
+
+export function getStatusOrderForClient(serviceType: ClientServiceType): VideoStatus[] {
+  return serviceType === 'editing_only' ? EDITING_ONLY_STATUS_ORDER : VIDEO_STATUS_ORDER;
+}
+
+export function getClientLabel(status: VideoStatus, serviceType: ClientServiceType): string {
+  if (serviceType === 'editing_only' && EDITING_ONLY_CLIENT_LABELS[status]) {
+    return EDITING_ONLY_CLIENT_LABELS[status]!;
+  }
+  return VIDEO_STATUSES[status]?.clientLabel || status;
+}
+
 export const DESIGN_TASK_STATUS_ORDER: DesignTaskStatus[] = [
   'briefed', 'in_progress', 'review', 'revisions', 'approved', 'delivered'
 ];
@@ -131,7 +160,26 @@ export const ROLE_LABELS: Record<string, string> = {
 };
 
 // Action required helpers for admin video table
-export function getActionRequired(status: string, video: { assigned_editor?: string | null; assigned_camera_operator?: string | null; editor_name?: string | null; camera_op_name?: string | null; writer_name?: string | null; client_name?: string | null }) {
+export function getActionRequired(status: string, video: { assigned_editor?: string | null; assigned_camera_operator?: string | null; editor_name?: string | null; camera_op_name?: string | null; writer_name?: string | null; client_name?: string | null }, serviceType?: ClientServiceType) {
+  // For editing-only, simplify action labels
+  if (serviceType === 'editing_only') {
+    switch (status) {
+      case 'editing':
+      case 'revisions':
+        return { type: 'team' as const, label: `Waiting for ${video.editor_name || 'Editor'}`, color: 'bg-blue-500/20 text-blue-400' };
+      case 'internal_review':
+      case 'approved':
+      case 'ready_to_upload':
+        return { type: 'admin' as const, label: 'Your Action Needed', color: 'bg-primary/20 text-primary' };
+      case 'client_review':
+        return { type: 'client' as const, label: `Waiting for ${video.client_name || 'Client'}`, color: 'bg-pink-500/20 text-pink-400' };
+      case 'live':
+        return { type: 'done' as const, label: '✅ Delivered', color: 'bg-success/20 text-success' };
+      default:
+        return { type: 'admin' as const, label: 'Your Action Needed', color: 'bg-primary/20 text-primary' };
+    }
+  }
+
   switch (status) {
     case 'idea':
     case 'script_submitted':
