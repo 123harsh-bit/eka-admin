@@ -441,8 +441,8 @@ export default function ClientDashboard() {
                             </div>
                           )}
 
-                          {/* Show script download after approval */}
-                          {['script_approved','shoot_assigned','shooting','footage_delivered','editing','internal_review','client_review','revisions','approved','ready_to_upload','live'].includes(video.status) && (
+                          {/* Show script download after approval — only for full production */}
+                          {!isEditOnly && ['script_approved','shoot_assigned','shooting','footage_delivered','editing','internal_review','client_review','revisions','approved','ready_to_upload','live'].includes(video.status) && (
                             <button onClick={async (e) => {
                               e.stopPropagation();
                               const { data: wt } = await supabase.from('writing_tasks').select('doc_link').eq('video_id', video.id).limit(1).single();
