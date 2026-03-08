@@ -95,6 +95,13 @@ export function getClientLabel(status: VideoStatus, serviceType: ClientServiceTy
   return VIDEO_STATUSES[status]?.clientLabel || status;
 }
 
+export function getAdminLabel(status: VideoStatus, serviceType: ClientServiceType): string {
+  if (serviceType === 'editing_only' && EDITING_ONLY_ADMIN_LABELS[status]) {
+    return EDITING_ONLY_ADMIN_LABELS[status]!;
+  }
+  return VIDEO_STATUSES[status]?.label || status;
+}
+
 export const DESIGN_TASK_STATUS_ORDER: DesignTaskStatus[] = [
   'briefed', 'in_progress', 'review', 'revisions', 'approved', 'delivered'
 ];
