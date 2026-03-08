@@ -225,6 +225,7 @@ export default function DesignerDashboard() {
               </div>
             </div>
           </div>
+          </>
         )}
       </div>
     </DesignerLayout>
