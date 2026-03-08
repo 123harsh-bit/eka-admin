@@ -94,6 +94,7 @@ export default function DesignerDashboard() {
 
   return (
     <DesignerLayout>
+      <PullToRefresh onRefresh={fetchTasks}>
       <div className="space-y-6">
         <MyPerformance role="designer" />
         <div className="flex items-center justify-between">
