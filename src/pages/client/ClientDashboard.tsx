@@ -148,10 +148,42 @@ export default function ClientDashboard() {
 
   const handleApprove = async (video: VideoData) => {
     setApprovingId(video.id);
-    await supabase.from('videos').update({ status: 'approved' }).eq('id', video.id);
-    await fetchVideos();
+    // Optimistic UI update — instantly reflect change
+    setVideos(prev => prev.map(v => v.id === video.id ? { ...v, status: 'approved' } : v));
+    const { error } = await supabase.from('videos').update({ status: 'approved' }).eq('id', video.id);
+    if (error) {
+      // Revert on failure
+      setVideos(prev => prev.map(v => v.id === video.id ? { ...v, status: video.status } : v));
+      toast({ title: 'Failed to approve', variant: 'destructive' });
+    } else {
+      // Notify admin
+      const { data: adminRoles } = await supabase.from('user_roles').select('user_id').eq('role', 'admin');
+      const { data: videoData } = await supabase.from('videos').select('id, title, client_id, assigned_editor, clients(name)').eq('id', video.id).single();
+      if (videoData && adminRoles) {
+        const vd = videoData as any;
+        for (const admin of adminRoles) {
+          await supabase.from('notifications').insert({
+            recipient_id: admin.user_id,
+            message: `✅ ${vd.clients?.name || 'Client'} approved '${vd.title}'! Ready to upload.`,
+            type: 'status_update',
+            related_video_id: video.id,
+            related_client_id: vd.client_id,
+          });
+        }
+        if (vd.assigned_editor) {
+          await supabase.from('notifications').insert({
+            recipient_id: vd.assigned_editor,
+            message: `✅ '${vd.title}' approved by client — great work!`,
+            type: 'status_update',
+            related_video_id: video.id,
+            related_client_id: vd.client_id,
+          });
+        }
+      }
+      await supabase.from('activity_log').insert({ entity_type: 'video', entity_id: video.id, action: 'status_changed', details: { status: 'approved' }, actor_id: user?.id });
+      toast({ title: '✅ Video approved!', description: 'The Eka team has been notified.' });
+    }
     setApprovingId(null);
-    toast({ title: '✅ Video approved!', description: 'The Eka team has been notified.' });
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
