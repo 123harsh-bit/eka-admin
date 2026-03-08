@@ -629,6 +629,7 @@ export default function AdminVideos() {
                       {!isDetailEditingOnly && <div className="flex justify-between"><span className="text-muted-foreground">Writer:</span><span className="text-foreground">{detailVideo.writer_name || '—'}</span></div>}
                       {!isDetailEditingOnly && <div className="flex justify-between"><span className="text-muted-foreground">Camera Op:</span><span className="text-foreground">{detailVideo.camera_op_name || '—'}</span></div>}
                       <div className="flex justify-between"><span className="text-muted-foreground">Editor:</span><span className="text-foreground">{detailVideo.editor_name || '—'}</span></div>
+                      {isDetailEditingOnly && <div className="flex justify-between"><span className="text-muted-foreground">Designer:</span><span className="text-foreground">{detailVideo.designer_name || '—'}</span></div>}
                     </div>
                   );
                 })()}
