@@ -9,7 +9,7 @@ import { StartWorkday } from '@/components/auth/StartWorkday';
 import { AttendanceBar } from '@/components/shared/AttendanceBar';
 import { Button } from '@/components/ui/button';
 import { PenTool, BookOpen, LogOut, Menu, X, ListTodo, Calendar } from 'lucide-react';
-import { TeamChat } from '@/components/shared/TeamChat';
+
 
 const navItems = [
   { to: '/writer', icon: PenTool, label: 'My Writing Tasks', end: true },
