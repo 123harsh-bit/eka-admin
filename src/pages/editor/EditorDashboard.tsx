@@ -100,8 +100,8 @@ export default function EditorDashboard() {
     <EditorLayout>
       <div className="space-y-6">
         <MyPerformance role="editor" />
-        <div className="flex gap-6 h-[calc(100vh-10rem)]">
-        <div className={cn('flex flex-col space-y-4', selectedVideo ? 'flex-1 min-w-0' : 'w-full')}>
+        <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 h-auto lg:h-[calc(100vh-10rem)]">
+        <div className={cn('flex flex-col space-y-4', selectedVideo ? 'flex-1 min-w-0 hidden lg:flex' : 'w-full')}>
           <div>
             <h1 className="text-3xl font-display font-bold gradient-text">My Tasks</h1>
             <p className="text-muted-foreground mt-1">{videos.length} active video{videos.length !== 1 ? 's' : ''} assigned to you</p>
@@ -168,13 +168,16 @@ export default function EditorDashboard() {
 
         {/* Detail Panel */}
         {selectedVideo && (
-          <div className="w-80 flex-shrink-0 glass-card flex flex-col overflow-hidden">
+          <div className="w-full lg:w-80 flex-shrink-0 glass-card flex flex-col overflow-hidden max-h-[80vh] lg:max-h-none">
             <div className="p-4 border-b border-glass-border flex items-start justify-between">
-              <div>
-                <h2 className="font-display font-semibold text-foreground text-sm">{selectedVideo.title}</h2>
-                <p className="text-xs text-muted-foreground">{selectedVideo.client_name}</p>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setSelectedVideo(null)} className="lg:hidden text-muted-foreground hover:text-foreground text-sm">← Back</button>
+                <div>
+                  <h2 className="font-display font-semibold text-foreground text-sm">{selectedVideo.title}</h2>
+                  <p className="text-xs text-muted-foreground">{selectedVideo.client_name}</p>
+                </div>
               </div>
-              <button onClick={() => setSelectedVideo(null)} className="text-muted-foreground hover:text-foreground"><X size={16} /></button>
+              <button onClick={() => setSelectedVideo(null)} className="text-muted-foreground hover:text-foreground hidden lg:block"><X size={16} /></button>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-5">
               {/* Raw Footage - most prominent */}

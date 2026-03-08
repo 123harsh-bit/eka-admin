@@ -159,7 +159,9 @@ export default function DesignerDashboard() {
 
         {/* Detail Panel */}
         {selectedTask && (
-          <div className="fixed right-0 top-0 h-full w-80 bg-sidebar border-l border-sidebar-border z-50 flex flex-col shadow-2xl">
+          <>
+          <div className="fixed inset-0 bg-black/60 z-40 sm:hidden" onClick={() => setSelectedTask(null)} />
+          <div className="fixed right-0 top-0 h-full w-full sm:w-80 bg-sidebar border-l border-sidebar-border z-50 flex flex-col shadow-2xl">
             <div className="p-4 border-b border-glass-border flex items-start justify-between">
               <div>
                 <h2 className="font-display font-semibold text-foreground text-sm">{selectedTask.title}</h2>
@@ -223,6 +225,7 @@ export default function DesignerDashboard() {
               </div>
             </div>
           </div>
+          </>
         )}
       </div>
     </DesignerLayout>

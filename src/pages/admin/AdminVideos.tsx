@@ -529,9 +529,9 @@ export default function AdminVideos() {
 
   return (
     <AdminLayout>
-      <div className="flex h-[calc(100vh-8rem)] gap-6">
+      <div className="flex flex-col lg:flex-row h-auto lg:h-[calc(100vh-8rem)] gap-4 lg:gap-6">
         {/* Main list */}
-        <div className={cn('flex flex-col space-y-4', detailVideo ? 'flex-1 min-w-0' : 'w-full')}>
+        <div className={cn('flex flex-col space-y-4', detailVideo ? 'flex-1 min-w-0 hidden lg:flex' : 'w-full')}>
           <div className="flex items-center justify-between flex-shrink-0">
             <div>
               <h1 className="text-3xl font-display font-bold gradient-text">Videos</h1>
@@ -646,13 +646,16 @@ export default function AdminVideos() {
 
         {/* Detail Panel */}
         {detailVideo && (
-          <div className="w-80 flex-shrink-0 glass-card flex flex-col overflow-hidden">
+          <div className="w-full lg:w-80 flex-shrink-0 glass-card flex flex-col overflow-hidden max-h-[80vh] lg:max-h-none">
             <div className="p-4 border-b border-glass-border flex items-start justify-between">
-              <div>
-                <h2 className="font-display font-semibold text-foreground text-sm">{detailVideo.title}</h2>
-                <p className="text-xs text-muted-foreground">{detailVideo.client_name}</p>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setDetailVideo(null)} className="lg:hidden text-muted-foreground hover:text-foreground text-sm">← Back</button>
+                <div>
+                  <h2 className="font-display font-semibold text-foreground text-sm">{detailVideo.title}</h2>
+                  <p className="text-xs text-muted-foreground">{detailVideo.client_name}</p>
+                </div>
               </div>
-              <button onClick={() => setDetailVideo(null)} className="text-muted-foreground hover:text-foreground"><X size={16} /></button>
+              <button onClick={() => setDetailVideo(null)} className="text-muted-foreground hover:text-foreground hidden lg:block"><X size={16} /></button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-5">
