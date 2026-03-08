@@ -36,6 +36,7 @@ const INDUSTRIES = ['Technology', 'E-commerce', 'Health & Fitness', 'Real Estate
 const emptyForm = {
   name: '', email: '', phone: '', industry: '', contact_person: '',
   project_title: '', notes: '', monthly_deliverables: '', contract_start: '', contract_end: '',
+  service_type: 'full_production',
 };
 
 export default function AdminClients() {
@@ -77,6 +78,7 @@ export default function AdminClients() {
       project_title: client.project_title || '', notes: client.notes || '',
       monthly_deliverables: client.monthly_deliverables?.toString() || '',
       contract_start: client.contract_start || '', contract_end: client.contract_end || '',
+      service_type: (client as any).service_type || 'full_production',
     });
     setLogoPreview(client.logo_url);
     setLogoFile(null);
@@ -121,6 +123,7 @@ export default function AdminClients() {
         contract_start: form.contract_start || null,
         contract_end: form.contract_end || null,
         logo_url: logoUrl,
+        service_type: form.service_type,
       };
 
       if (editingClient) {
