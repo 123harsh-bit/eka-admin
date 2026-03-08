@@ -875,6 +875,21 @@ export default function AdminVideos() {
                 </div>
               ) : null}
 
+              {/* Designer field — for editing-only clients (reel covers) */}
+              {isEditingOnly && (
+                <>
+                  <div className="border-t border-glass-border pt-4 mt-2">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">🎨 Designer Assignment (Reel Cover)</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Assigned Designer</Label>
+                    <select value={form.assigned_designer} onChange={e => setForm(f => ({ ...f, assigned_designer: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground">
+                      <option value="">Unassigned</option>
+                      {designers.map(d => <option key={d.id} value={d.id}>{d.full_name}</option>)}
+                    </select>
+                  </div>
+                </>
+              )}
               {/* Links */}
               <div className="border-t border-glass-border pt-4 mt-2">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">🔗 Links</p>
