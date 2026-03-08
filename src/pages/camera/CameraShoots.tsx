@@ -134,6 +134,7 @@ export default function CameraShoots() {
 
   return (
     <CameraLayout>
+      <PullToRefresh onRefresh={fetchShoots}>
       <div className="space-y-6">
         <MyPerformance role="camera_operator" />
         <div className="flex gap-6 h-[calc(100vh-10rem)]">

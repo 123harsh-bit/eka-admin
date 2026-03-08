@@ -135,6 +135,7 @@ export default function WriterDashboard() {
 
   return (
     <WriterLayout>
+      <PullToRefresh onRefresh={fetchTasks}>
       <div className="space-y-6">
         <MyPerformance role="writer" />
         <div>
