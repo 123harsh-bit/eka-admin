@@ -71,6 +71,7 @@ export default function ClientDashboard() {
   const [loading, setLoading] = useState(true);
   const [section, setSection] = useState('dashboard');
   const [feedbackVideo, setFeedbackVideo] = useState<VideoData | null>(null);
+  const [ratingVideo, setRatingVideo] = useState<VideoData | null>(null);
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showIdeaForm, setShowIdeaForm] = useState(false);
