@@ -369,6 +369,25 @@ export default function AdminVideos() {
           }
         }
 
+        // Handle designer assignment for editing-only on creation
+        if (isEditingOnly && form.assigned_designer) {
+          await supabase.from('design_tasks').insert({
+            video_id: data.id,
+            client_id: form.client_id,
+            assigned_designer: form.assigned_designer,
+            title: `${form.title.trim()} — Reel Cover`,
+            task_type: 'thumbnail',
+            status: 'briefed',
+          });
+          await supabase.from('notifications').insert({
+            recipient_id: form.assigned_designer,
+            message: `🎨 New reel cover assignment: '${form.title.trim()}' for ${selectedClient?.name || 'client'}.`,
+            type: 'assignment',
+            related_video_id: data.id,
+            related_client_id: form.client_id,
+          });
+        }
+
         await supabase.from('activity_log').insert({ entity_type: 'video', entity_id: data.id, action: 'created', details: { title: form.title } });
         toast({ title: 'Video added' });
       }
