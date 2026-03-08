@@ -340,6 +340,7 @@ export default function CameraShoots() {
           )}
         </div>
       </div>
+      </PullToRefresh>
     </CameraLayout>
   );
 }

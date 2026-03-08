@@ -316,6 +316,7 @@ export default function WriterDashboard() {
           </>
         )}
       </div>
+      </PullToRefresh>
     </WriterLayout>
   );
 }

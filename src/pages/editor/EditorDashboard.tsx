@@ -249,6 +249,7 @@ export default function EditorDashboard() {
         )}
       </div>
       </div>
+      </PullToRefresh>
     </EditorLayout>
   );
 }

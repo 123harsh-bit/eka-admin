@@ -333,6 +333,7 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
+      </PullToRefresh>
     </AdminLayout>
   );
 }
