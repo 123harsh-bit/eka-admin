@@ -34,7 +34,7 @@ interface TeamMember { id: string; full_name: string; }
 
 const emptyForm = {
   title: '', description: '', client_id: '', assigned_editor: '',
-  assigned_writer: '',
+  assigned_writer: '', assigned_designer: '',
   assigned_camera_operator: '', shoot_date: '', shoot_start_time: '',
   shoot_location: '', shoot_notes: '',
   status: 'idea', drive_link: '', live_url: '', raw_footage_link: '',
