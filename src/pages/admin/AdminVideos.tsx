@@ -51,6 +51,7 @@ export default function AdminVideos() {
   const [clients, setClients] = useState<Client[]>([]);
   const [editors, setEditors] = useState<TeamMember[]>([]);
   const [writers, setWriters] = useState<TeamMember[]>([]);
+  const [designers, setDesigners] = useState<TeamMember[]>([]);
   const [cameraOps, setCameraOps] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
