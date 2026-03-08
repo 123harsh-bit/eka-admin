@@ -331,17 +331,21 @@ export default function AdminVideos() {
   const handleStatusChange = async (videoId: string, newStatus: string) => {
     const video = videos.find(v => v.id === videoId);
     const newSi = statusIndex(newStatus);
+    const videoClientSvc = clients.find(c => c.id === video?.client_id)?.service_type;
+    const isVideoEditingOnly = videoClientSvc === 'editing_only';
 
-    // Enforce workflow gates — redirect to edit panel if assignments are missing
-    if (newSi >= statusIndex('scripting') && !video?.writer_name && !video?.writer_id) {
-      toast({ title: 'Assign a writer first', description: 'Open the edit panel and select a writer before moving to scripting.', variant: 'destructive' });
-      if (video) openEdit(video);
-      return;
-    }
-    if (newSi >= statusIndex('shoot_assigned') && !video?.assigned_camera_operator) {
-      toast({ title: 'Assign a camera operator first', description: 'Open the edit panel and assign a camera operator.', variant: 'destructive' });
-      if (video) openEdit(video);
-      return;
+    // Enforce workflow gates — skip writer/camera gates for editing-only
+    if (!isVideoEditingOnly) {
+      if (newSi >= statusIndex('scripting') && !video?.writer_name && !video?.writer_id) {
+        toast({ title: 'Assign a writer first', description: 'Open the edit panel and select a writer before moving to scripting.', variant: 'destructive' });
+        if (video) openEdit(video);
+        return;
+      }
+      if (newSi >= statusIndex('shoot_assigned') && !video?.assigned_camera_operator) {
+        toast({ title: 'Assign a camera operator first', description: 'Open the edit panel and assign a camera operator.', variant: 'destructive' });
+        if (video) openEdit(video);
+        return;
+      }
     }
     if (newSi >= statusIndex('editing') && !video?.assigned_editor) {
       toast({ title: 'Assign an editor first', description: 'Open the edit panel and assign an editor.', variant: 'destructive' });
