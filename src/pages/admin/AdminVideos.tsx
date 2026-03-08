@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { ConfirmDeleteModal } from '@/components/shared/ConfirmDeleteModal';
 import { useToast } from '@/hooks/use-toast';
-import { VIDEO_STATUSES, VIDEO_STATUS_ORDER, type VideoStatus, getActionRequired } from '@/lib/statusConfig';
+import { VIDEO_STATUSES, VIDEO_STATUS_ORDER, EDITING_ONLY_STATUS_ORDER, type VideoStatus, type ClientServiceType, getActionRequired, getStatusOrderForClient } from '@/lib/statusConfig';
 import { getDirectDownloadLink } from '@/lib/driveUtils';
 import { Plus, Search, X, Video, Edit2, Trash2, ExternalLink, MessageSquare, Loader2, FolderOpen, Lock } from 'lucide-react';
 import { WorkflowPrompt } from '@/components/shared/WorkflowPrompt';
@@ -29,7 +29,7 @@ interface VideoRow {
   client_name?: string; editor_name?: string; camera_op_name?: string; writer_name?: string; writer_id?: string | null; feedback_count?: number;
 }
 
-interface Client { id: string; name: string; }
+interface Client { id: string; name: string; service_type?: string; }
 interface TeamMember { id: string; full_name: string; }
 
 const emptyForm = {
@@ -135,8 +135,8 @@ export default function AdminVideos() {
   };
 
   const fetchClients = async () => {
-    const { data } = await supabase.from('clients').select('id, name').eq('is_active', true).order('name');
-    if (data) setClients(data);
+    const { data } = await supabase.from('clients').select('id, name, service_type').eq('is_active', true).order('name');
+    if (data) setClients(data as Client[]);
   };
 
   const fetchEditors = async () => {
