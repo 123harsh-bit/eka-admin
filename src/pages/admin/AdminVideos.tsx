@@ -748,48 +748,50 @@ export default function AdminVideos() {
                 </>
               )}
 
-              {/* Camera Op fields — only visible at script_approved+ */}
-              {si >= statusIndex('script_approved') ? (
-                <>
+              {/* Camera Op fields — only for full production clients */}
+              {!isEditingOnly && (
+                si >= statusIndex('script_approved') ? (
+                  <>
+                    <div className="border-t border-glass-border pt-4 mt-2">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">🎬 Shoot Assignment</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Camera Operator</Label>
+                      <select value={form.assigned_camera_operator} onChange={e => setForm(f => ({ ...f, assigned_camera_operator: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground">
+                        <option value="">Unassigned</option>
+                        {cameraOps.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
+                      </select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label>Shoot Date</Label>
+                        <Input type="date" value={form.shoot_date} onChange={e => setForm(f => ({ ...f, shoot_date: e.target.value }))} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Shoot Time</Label>
+                        <Input type="time" value={form.shoot_start_time} onChange={e => setForm(f => ({ ...f, shoot_start_time: e.target.value }))} />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Shoot Location</Label>
+                      <Input value={form.shoot_location} onChange={e => setForm(f => ({ ...f, shoot_location: e.target.value }))} placeholder="Location address" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Shoot Notes</Label>
+                      <textarea value={form.shoot_notes} onChange={e => setForm(f => ({ ...f, shoot_notes: e.target.value }))} placeholder="Notes for camera operator…" rows={2} className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground resize-none" />
+                    </div>
+                  </>
+                ) : si >= statusIndex('scripting') ? (
                   <div className="border-t border-glass-border pt-4 mt-2">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">🎬 Shoot Assignment</p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                      <Lock size={12} /> 🎬 Shoot assignment unlocks after script is approved by client
+                    </p>
                   </div>
-                  <div className="space-y-1.5">
-                    <Label>Camera Operator</Label>
-                    <select value={form.assigned_camera_operator} onChange={e => setForm(f => ({ ...f, assigned_camera_operator: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground">
-                      <option value="">Unassigned</option>
-                      {cameraOps.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
-                    </select>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label>Shoot Date</Label>
-                      <Input type="date" value={form.shoot_date} onChange={e => setForm(f => ({ ...f, shoot_date: e.target.value }))} />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Shoot Time</Label>
-                      <Input type="time" value={form.shoot_start_time} onChange={e => setForm(f => ({ ...f, shoot_start_time: e.target.value }))} />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Shoot Location</Label>
-                    <Input value={form.shoot_location} onChange={e => setForm(f => ({ ...f, shoot_location: e.target.value }))} placeholder="Location address" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Shoot Notes</Label>
-                    <textarea value={form.shoot_notes} onChange={e => setForm(f => ({ ...f, shoot_notes: e.target.value }))} placeholder="Notes for camera operator…" rows={2} className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground resize-none" />
-                  </div>
-                </>
-              ) : si >= statusIndex('scripting') ? (
-                <div className="border-t border-glass-border pt-4 mt-2">
-                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <Lock size={12} /> 🎬 Shoot assignment unlocks after script is approved by client
-                  </p>
-                </div>
-              ) : null}
+                ) : null
+              )}
 
-              {/* Editor field — only visible at footage_delivered+ */}
-              {si >= statusIndex('footage_delivered') ? (
+              {/* Editor field — always visible for editing-only, gated for full production */}
+              {isEditingOnly || si >= statusIndex('footage_delivered') ? (
                 <>
                   <div className="border-t border-glass-border pt-4 mt-2">
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">✂️ Editor Assignment</p>
@@ -802,7 +804,7 @@ export default function AdminVideos() {
                     </select>
                   </div>
                 </>
-              ) : si >= statusIndex('script_approved') ? (
+              ) : !isEditingOnly && si >= statusIndex('script_approved') ? (
                 <div className="border-t border-glass-border pt-4 mt-2">
                   <p className="text-xs text-muted-foreground flex items-center gap-1.5">
                     <Lock size={12} /> ✂️ Editor assignment unlocks after footage is delivered
