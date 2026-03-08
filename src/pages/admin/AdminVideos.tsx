@@ -241,6 +241,11 @@ export default function AdminVideos() {
         const { error } = await supabase.from('videos').update(payload as any).eq('id', editingVideo.id);
         if (error) throw error;
 
+        // Sync status change to linked writing task
+        if (editingVideo.status !== form.status) {
+          await syncVideoToWritingTask(editingVideo.id, form.status);
+        }
+
         // Handle writer assignment — create/update writing task
         if (form.assigned_writer && si >= statusIndex('idea')) {
           const { data: existingTask, error: queryErr } = await supabase.from('writing_tasks').select('id, assigned_writer').eq('video_id', editingVideo.id).maybeSingle();
