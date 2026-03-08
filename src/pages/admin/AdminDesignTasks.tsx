@@ -174,7 +174,8 @@ export default function AdminDesignTasks() {
         </div>
 
         <div className="glass-card overflow-auto">
-          <table className="w-full text-sm">
+          {/* Desktop table */}
+          <table className="w-full text-sm hidden md:table">
             <thead className="bg-card/80 border-b border-glass-border">
               <tr>
                 {['Task', 'Type', 'Client', 'Status', 'Designer', 'Due', 'Links', ''].map(h => (
@@ -222,6 +223,42 @@ export default function AdminDesignTasks() {
               ))}
             </tbody>
           </table>
+
+          {/* Mobile cards */}
+          <div className="md:hidden divide-y divide-glass-border/50">
+            {loading ? [...Array(4)].map((_, i) => (
+              <div key={i} className="p-4"><div className="h-16 bg-muted/50 rounded-lg animate-pulse" /></div>
+            )) : filtered.length === 0 ? (
+              <div className="p-12 text-center text-muted-foreground">
+                <Palette size={32} className="mx-auto mb-2 opacity-40" />
+                <p>No design tasks found.</p>
+              </div>
+            ) : filtered.map(task => (
+              <div key={task.id} className="p-4 space-y-2">
+                <div className="flex items-start gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-pink-500/20 flex items-center justify-center text-sm font-bold text-pink-400 flex-shrink-0">
+                    {task.client_name?.charAt(0)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-foreground text-sm truncate">{task.title}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{task.client_name}</p>
+                    <div className="flex items-center gap-2 mt-2 flex-wrap">
+                      <StatusBadge status={task.status as DesignTaskStatus} type="design" />
+                      <span className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded-full">{taskTypeLabel(task.task_type)}</span>
+                    </div>
+                    <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                      {task.designer_name && <span>👤 {task.designer_name}</span>}
+                      {task.due_date && <span>📅 {new Date(task.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>}
+                    </div>
+                  </div>
+                  <div className="flex gap-1 flex-shrink-0">
+                    <button onClick={() => openEdit(task)} className="p-2 hover:text-primary transition-colors"><Edit2 size={14} /></button>
+                    <button onClick={() => setDeleteModal({ open: true, task })} className="p-2 hover:text-destructive transition-colors"><Trash2 size={14} /></button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 

@@ -145,7 +145,8 @@ export default function AdminAttendance() {
             </div>
 
             <div className="glass-card overflow-auto">
-              <table className="w-full text-sm">
+              {/* Desktop table */}
+              <table className="w-full text-sm hidden md:table">
                 <thead className="bg-card/90 border-b border-glass-border">
                   <tr>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Name</th>
@@ -213,6 +214,77 @@ export default function AdminAttendance() {
                   })}
                 </tbody>
               </table>
+
+              {/* Mobile cards */}
+              <div className="md:hidden divide-y divide-glass-border/50">
+                {loading ? [...Array(4)].map((_, i) => (
+                  <div key={i} className="p-4"><div className="h-16 bg-muted/50 rounded-lg animate-pulse" /></div>
+                )) : teamToday.map(member => {
+                  const cfg = getStatusConfig(member.login_time ? member.status : null);
+                  const liveHours = member.login_time && !member.logout_time 
+                    ? ((Date.now() - new Date(member.login_time).getTime()) / 3600000).toFixed(1) + 'h'
+                    : null;
+                  return (
+                    <div key={member.user_id} className={cn('p-4', !member.login_time && 'bg-destructive/5')}>
+                      <div className="flex items-start gap-3">
+                        <div className="relative">
+                          <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-sm font-bold text-primary flex-shrink-0">
+                            {member.full_name.charAt(0)}
+                          </div>
+                          <div className={cn('absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-card', member.is_online ? 'bg-success' : 'bg-muted-foreground/30')} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium text-foreground text-sm">{member.full_name}</p>
+                            <span className={cn('text-[11px] px-2 py-0.5 rounded-full font-medium', cfg.bgColor, cfg.color)}>
+                              {cfg.emoji} {member.login_time ? cfg.label : 'Absent'}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">{ROLE_LABELS[member.role] || member.role}</p>
+                          <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                            <span>
+                              In: {member.login_time ? (
+                                <span className={member.status === 'late' ? 'text-warning' : 'text-success'}>
+                                  {new Date(member.login_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              ) : <span className="text-destructive">—</span>}
+                            </span>
+                            <span>
+                              Out: {member.logout_time 
+                                ? new Date(member.logout_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+                                : member.login_time ? <span className="text-success">Working</span> : '—'}
+                            </span>
+                            <span>{member.total_hours_worked ? `${member.total_hours_worked}h` : liveHours || '—'}</span>
+                          </div>
+                          {(member.admin_note || editingNote === member.user_id) && (
+                            <div className="mt-2">
+                              {editingNote === member.user_id ? (
+                                <div className="flex gap-1">
+                                  <Input value={noteText} onChange={e => setNoteText(e.target.value)} className="h-7 text-xs flex-1" placeholder="Note…" />
+                                  <Button size="sm" variant="ghost" onClick={() => member.attendance_id && handleSaveNote(member.attendance_id)} disabled={savingNote} className="h-7 px-2">
+                                    {savingNote ? <Loader2 size={10} className="animate-spin" /> : <Save size={10} />}
+                                  </Button>
+                                </div>
+                              ) : (
+                                <button onClick={() => { setEditingNote(member.user_id); setNoteText(member.admin_note || ''); }}
+                                  className="text-xs text-muted-foreground hover:text-foreground italic">
+                                  {member.admin_note}
+                                </button>
+                              )}
+                            </div>
+                          )}
+                          {!member.admin_note && editingNote !== member.user_id && (
+                            <button onClick={() => { setEditingNote(member.user_id); setNoteText(''); }}
+                              className="text-[11px] text-muted-foreground/60 hover:text-foreground mt-1">
+                              + Add note
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </>
         )}
@@ -234,7 +306,8 @@ export default function AdminAttendance() {
             </div>
 
             <div className="glass-card overflow-auto">
-              <table className="w-full text-sm">
+              {/* Desktop table */}
+              <table className="w-full text-sm hidden md:table">
                 <thead className="bg-card/90 border-b border-glass-border">
                   <tr>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Date</th>
@@ -265,6 +338,33 @@ export default function AdminAttendance() {
                   })}
                 </tbody>
               </table>
+
+              {/* Mobile cards */}
+              <div className="md:hidden divide-y divide-glass-border/50">
+                {historyLoading ? [...Array(4)].map((_, i) => (
+                  <div key={i} className="p-4"><div className="h-12 bg-muted/50 rounded-lg animate-pulse" /></div>
+                )) : historyData.length === 0 ? (
+                  <div className="p-12 text-center text-muted-foreground">No records for this period.</div>
+                ) : historyData.map((r: any) => {
+                  const cfg = getStatusConfig(r.status);
+                  return (
+                    <div key={r.id} className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-foreground text-sm">{r.profiles?.full_name || '—'}</p>
+                          <p className="text-xs text-muted-foreground">{new Date(r.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
+                        </div>
+                        <span className={cn('text-[11px] px-2 py-0.5 rounded-full font-medium', cfg.bgColor, cfg.color)}>{cfg.emoji} {cfg.label}</span>
+                      </div>
+                      <div className="flex items-center gap-4 mt-1.5 text-xs text-muted-foreground">
+                        <span>In: {r.login_time ? new Date(r.login_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '—'}</span>
+                        <span>Out: {r.logout_time ? new Date(r.logout_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '—'}</span>
+                        <span>{r.total_hours_worked ? `${r.total_hours_worked}h` : '—'}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </>
         )}

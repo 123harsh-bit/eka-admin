@@ -140,9 +140,10 @@ export default function AdminEditorTasks() {
           })}
         </div>
 
-        {/* Table */}
+        {/* Table + Mobile Cards */}
         <div className="glass-card overflow-auto">
-          <table className="w-full text-sm">
+          {/* Desktop table */}
+          <table className="w-full text-sm hidden md:table">
             <thead className="bg-card/80 border-b border-glass-border">
               <tr>
                 {['Video', 'Client', 'Stage', 'Editor', 'Due Date', 'Links'].map(h => (
@@ -200,6 +201,58 @@ export default function AdminEditorTasks() {
               })}
             </tbody>
           </table>
+
+          {/* Mobile cards */}
+          <div className="md:hidden divide-y divide-glass-border/50">
+            {loading ? [...Array(4)].map((_, i) => (
+              <div key={i} className="p-4"><div className="h-16 bg-muted/50 rounded-lg animate-pulse" /></div>
+            )) : filtered.length === 0 ? (
+              <div className="p-12 text-center text-muted-foreground">
+                <Video size={32} className="mx-auto mb-2 opacity-40" />
+                <p>No editor tasks found.</p>
+              </div>
+            ) : filtered.map(video => {
+              const isOverdue = video.date_planned && video.date_planned < today && !['live', 'approved', 'ready_to_upload'].includes(video.status);
+              const stageIdx = VIDEO_STATUS_ORDER.indexOf(video.status as VideoStatus) + 1;
+              return (
+                <div key={video.id} className="p-4 space-y-2">
+                  <div className="flex items-start gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-blue-500/20 flex items-center justify-center text-sm font-bold text-blue-400 flex-shrink-0">
+                      {video.client_name?.charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-foreground text-sm truncate">{video.title}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{video.client_name}</p>
+                      <div className="flex items-center gap-2 mt-2 flex-wrap">
+                        <StatusBadge status={video.status as VideoStatus} type="video" />
+                        <span className="text-[10px] text-muted-foreground">{stageIdx}/15</span>
+                        {video.editor_name && <span className="text-xs text-muted-foreground">👤 {video.editor_name}</span>}
+                      </div>
+                      <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
+                        {video.date_planned && (
+                          <span className={cn('flex items-center gap-1', isOverdue ? 'text-destructive font-medium' : '')}>
+                            <Calendar size={10} />
+                            {new Date(video.date_planned).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                            {isOverdue && ' ⚠️'}
+                          </span>
+                        )}
+                        {video.raw_footage_link && (
+                          <a href={video.raw_footage_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-amber-400">
+                            <FolderOpen size={10} /> Footage
+                          </a>
+                        )}
+                        {video.drive_link && (
+                          <a href={video.drive_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-primary">
+                            <ExternalLink size={10} /> Drive
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </AdminLayout>

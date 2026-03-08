@@ -137,9 +137,10 @@ export default function AdminCameraShoots() {
           })}
         </div>
 
-        {/* Table */}
+        {/* Table + Mobile Cards */}
         <div className="glass-card overflow-auto">
-          <table className="w-full text-sm">
+          {/* Desktop table */}
+          <table className="w-full text-sm hidden md:table">
             <thead className="bg-card/80 border-b border-glass-border">
               <tr>
                 {['Video', 'Client', 'Status', 'Camera Op', 'Shoot Date', 'Time', 'Location', 'Footage'].map(h => (
@@ -204,6 +205,56 @@ export default function AdminCameraShoots() {
               })}
             </tbody>
           </table>
+
+          {/* Mobile cards */}
+          <div className="md:hidden divide-y divide-glass-border/50">
+            {loading ? [...Array(4)].map((_, i) => (
+              <div key={i} className="p-4"><div className="h-16 bg-muted/50 rounded-lg animate-pulse" /></div>
+            )) : filtered.length === 0 ? (
+              <div className="p-12 text-center text-muted-foreground">
+                <Camera size={32} className="mx-auto mb-2 opacity-40" />
+                <p>No camera shoots found.</p>
+              </div>
+            ) : filtered.map(video => {
+              const isOverdue = video.shoot_date && video.shoot_date < today && ['shoot_assigned', 'shooting'].includes(video.status);
+              const isActive = video.status === 'shooting';
+              return (
+                <div key={video.id} className={cn('p-4 space-y-2', isActive && 'bg-destructive/5', isOverdue && 'bg-warning/5')}>
+                  <div className="flex items-start gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-violet-500/20 flex items-center justify-center text-sm font-bold text-violet-400 flex-shrink-0">
+                      {isActive && <span className="absolute h-2 w-2 rounded-full bg-destructive animate-pulse" />}
+                      {video.client_name?.charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-foreground text-sm truncate">{video.title}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{video.client_name}</p>
+                      <div className="flex items-center gap-2 mt-2 flex-wrap">
+                        <StatusBadge status={video.status as VideoStatus} type="video" />
+                        {video.camera_op_name && <span className="text-xs text-muted-foreground">📷 {video.camera_op_name}</span>}
+                      </div>
+                      <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
+                        {video.shoot_date && (
+                          <span className={cn('flex items-center gap-1', isOverdue ? 'text-destructive font-medium' : '')}>
+                            <Calendar size={10} />
+                            {new Date(video.shoot_date + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
+                            {isOverdue && <AlertTriangle size={10} />}
+                          </span>
+                        )}
+                        {video.shoot_start_time && <span className="flex items-center gap-1"><Clock size={10} /> {video.shoot_start_time}</span>}
+                        {video.shoot_location && <span className="flex items-center gap-1"><MapPin size={10} /> {video.shoot_location}</span>}
+                      </div>
+                      {video.raw_footage_link && (
+                        <a href={video.raw_footage_link} target="_blank" rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 text-xs mt-2 px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors font-medium">
+                          <FolderOpen size={12} /> Open Footage
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </AdminLayout>
