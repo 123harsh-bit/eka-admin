@@ -349,7 +349,10 @@ export default function ClientDashboard() {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {videos.map(video => {
+                    const svcType = (client?.service_type || 'full_production') as ClientServiceType;
+                    const isEditOnly = svcType === 'editing_only';
                     const statusCfg = VIDEO_STATUSES[video.status as VideoStatus];
+                    const clientLabel = getClientLabel(video.status as VideoStatus, svcType);
                     const isReview = video.status === 'client_review';
                     const isLive = video.status === 'live';
                     return (
@@ -376,13 +379,13 @@ export default function ClientDashboard() {
                             <h3 className="font-semibold text-foreground">{video.title}</h3>
                             {statusCfg && (
                               <span className={cn('inline-flex items-center gap-1 text-xs font-medium mt-1', statusCfg.color)}>
-                                {statusCfg.emoji} {statusCfg.clientLabel}
+                                {statusCfg.emoji} {clientLabel}
                               </span>
                             )}
                           </div>
 
-                          {/* Shoot info for client */}
-                          {(video.status === 'shoot_assigned' || video.status === 'shooting') && video.shoot_date && (
+                          {/* Shoot info for client — hide for editing-only */}
+                          {!isEditOnly && (video.status === 'shoot_assigned' || video.status === 'shooting') && video.shoot_date && (
                             <div className="space-y-1 text-xs">
                               {video.status === 'shooting' ? (
                                 <p className="text-primary font-medium">🎥 Your video is being filmed today!</p>
