@@ -777,7 +777,7 @@ export default function AdminVideos() {
               <div className="space-y-1.5">
                 <Label>Status</Label>
                 <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground">
-                  {activeStatusOrder.map(s => <option key={s} value={s}>{VIDEO_STATUSES[s].emoji} {VIDEO_STATUSES[s].label}</option>)}
+                  {activeStatusOrder.map(s => <option key={s} value={s}>{VIDEO_STATUSES[s].emoji} {isEditingOnly ? (EDITING_ONLY_ADMIN_LABELS[s] || VIDEO_STATUSES[s].label) : VIDEO_STATUSES[s].label}</option>)}
                 </select>
               </div>
 
