@@ -25,6 +25,7 @@ import AdminAttendance from "@/pages/admin/AdminAttendance";
 import AdminEditorTasks from "@/pages/admin/AdminEditorTasks";
 import AdminCameraShoots from "@/pages/admin/AdminCameraShoots";
 import AdminClientIdeas from "@/pages/admin/AdminClientIdeas";
+import AdminWeeklyReport from "@/pages/admin/AdminWeeklyReport";
 
 // Role dashboards
 import EditorDashboard from "@/pages/editor/EditorDashboard";
