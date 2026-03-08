@@ -2,16 +2,16 @@ import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Maps writing task status changes to video status updates.
- * When a writing task status changes and it's linked to a video,
- * update the video status to match the pipeline stage.
+ * Writing task statuses: briefed, drafting, review, revisions, approved, delivered
+ * Video statuses: idea, scripting, script_submitted, script_client_review, script_approved, ...
  */
 const WRITING_TO_VIDEO_STATUS: Record<string, string> = {
   briefed: 'scripting',
-  in_progress: 'scripting',
+  drafting: 'scripting',
   review: 'script_submitted',
-  client_review: 'script_client_review',
   revisions: 'scripting',
   approved: 'script_approved',
+  delivered: 'script_approved',
 };
 
 /**
@@ -23,7 +23,6 @@ export async function syncWritingTaskToVideo(videoId: string | null, newTaskStat
   const targetVideoStatus = WRITING_TO_VIDEO_STATUS[newTaskStatus];
   if (!targetVideoStatus) return;
 
-  // Only update video if it's currently in a scripting-related stage
   const scriptingStages = ['idea', 'scripting', 'script_submitted', 'script_client_review', 'script_approved'];
   const { data: video } = await supabase
     .from('videos')
@@ -38,12 +37,10 @@ export async function syncWritingTaskToVideo(videoId: string | null, newTaskStat
 
 /**
  * Sync video status change back to linked writing task.
- * Called when admin changes video status directly in Videos section.
  */
 const VIDEO_TO_WRITING_STATUS: Record<string, string> = {
-  scripting: 'in_progress',
+  scripting: 'drafting',
   script_submitted: 'review',
-  script_client_review: 'client_review',
   script_approved: 'approved',
 };
 
