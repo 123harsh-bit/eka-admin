@@ -719,9 +719,22 @@ export default function AdminVideos() {
               </div>
               <div className="space-y-1.5">
                 <Label>Client *</Label>
-                <select value={form.client_id} onChange={e => setForm(f => ({ ...f, client_id: e.target.value }))} required className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground">
+                <select value={form.client_id} onChange={e => {
+                  const cid = e.target.value;
+                  const cl = clients.find(c => c.id === cid);
+                  setForm(f => ({
+                    ...f,
+                    client_id: cid,
+                    // Auto-set status to editing for editing-only clients on new video
+                    ...(!editingVideo && cl?.service_type === 'editing_only' ? { status: 'editing' } : {}),
+                  }));
+                }} required className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground">
                   <option value="">Select client…</option>
-                  {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  {clients.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} {c.service_type === 'editing_only' ? '(✂️ Edit Only)' : ''}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="space-y-1.5">
