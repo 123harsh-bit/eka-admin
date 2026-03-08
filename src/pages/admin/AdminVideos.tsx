@@ -729,20 +729,24 @@ export default function AdminVideos() {
                 </div>
               </div>
 
-              {/* Writer assignment — visible at idea+ */}
-              <div className="border-t border-glass-border pt-4 mt-2">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">📝 Writer Assignment</p>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Assigned Writer</Label>
-                <select value={form.assigned_writer} onChange={e => setForm(f => ({ ...f, assigned_writer: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground">
-                  <option value="">Unassigned</option>
-                  {writers.map(w => <option key={w.id} value={w.id}>{w.full_name}</option>)}
-                </select>
-                {si >= statusIndex('scripting') && !form.assigned_writer && (
-                  <p className="text-xs text-destructive">⚠️ Writer is required at scripting stage</p>
-                )}
-              </div>
+              {/* Writer assignment — visible at idea+ (NOT for editing-only) */}
+              {!isEditingOnly && (
+                <>
+                  <div className="border-t border-glass-border pt-4 mt-2">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">📝 Writer Assignment</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Assigned Writer</Label>
+                    <select value={form.assigned_writer} onChange={e => setForm(f => ({ ...f, assigned_writer: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground">
+                      <option value="">Unassigned</option>
+                      {writers.map(w => <option key={w.id} value={w.id}>{w.full_name}</option>)}
+                    </select>
+                    {si >= statusIndex('scripting') && !form.assigned_writer && (
+                      <p className="text-xs text-destructive">⚠️ Writer is required at scripting stage</p>
+                    )}
+                  </div>
+                </>
+              )}
 
               {/* Camera Op fields — only visible at script_approved+ */}
               {si >= statusIndex('script_approved') ? (
