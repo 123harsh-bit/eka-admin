@@ -529,9 +529,9 @@ export default function AdminVideos() {
 
   return (
     <AdminLayout>
-      <div className="flex h-[calc(100vh-8rem)] gap-6">
+      <div className="flex flex-col lg:flex-row h-auto lg:h-[calc(100vh-8rem)] gap-4 lg:gap-6">
         {/* Main list */}
-        <div className={cn('flex flex-col space-y-4', detailVideo ? 'flex-1 min-w-0' : 'w-full')}>
+        <div className={cn('flex flex-col space-y-4', detailVideo ? 'flex-1 min-w-0 hidden lg:flex' : 'w-full')}>
           <div className="flex items-center justify-between flex-shrink-0">
             <div>
               <h1 className="text-3xl font-display font-bold gradient-text">Videos</h1>
