@@ -57,18 +57,29 @@ export const VIDEO_STATUS_ORDER: VideoStatus[] = [
 
 // Editing-only clients: simplified pipeline (no scripting/shooting)
 export const EDITING_ONLY_STATUS_ORDER: VideoStatus[] = [
-  'editing', 'internal_review', 'client_review', 'revisions', 'approved', 'ready_to_upload', 'live'
+  'idea', 'editing', 'internal_review', 'approved', 'client_review', 'ready_to_upload', 'live'
 ];
+
+// Admin-facing labels for editing-only pipeline
+export const EDITING_ONLY_ADMIN_LABELS: Partial<Record<VideoStatus, string>> = {
+  idea: 'Not Started',
+  editing: 'Editing Started',
+  internal_review: 'Internal Review',
+  approved: 'Internal Approved',
+  client_review: 'Client Review',
+  ready_to_upload: 'Client Approved',
+  live: 'Delivered',
+};
 
 // Client-facing labels for editing-only pipeline
 export const EDITING_ONLY_CLIENT_LABELS: Partial<Record<VideoStatus, string>> = {
+  idea: '📋 Received — Not Started Yet',
   editing: '✂️ Being Edited',
   internal_review: '🔍 Quality Check',
+  approved: '✅ Passed Internal Review',
   client_review: '👀 Ready for Your Review ⚡️',
-  revisions: '✏️ Applying Your Feedback',
-  approved: '✅ Approved',
-  ready_to_upload: '📦 Being Delivered',
-  live: '✅ Delivered!',
+  ready_to_upload: '✅ Approved by You!',
+  live: '📦 Delivered!',
 };
 
 export type ClientServiceType = 'full_production' | 'editing_only';
