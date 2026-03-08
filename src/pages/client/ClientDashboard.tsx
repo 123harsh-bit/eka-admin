@@ -18,7 +18,7 @@ import {
   Video, Download, Check, MessageSquare, ExternalLink,
   LogOut, LayoutDashboard, Palette, PenTool, BarChart3,
   Settings, Bell, TrendingUp, Clock, CheckCircle, Star,
-  Menu, X, Loader2, Lightbulb
+  Menu, X, Loader2, Lightbulb, GitBranch, CalendarDays
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth as useAuthHook } from '@/hooks/useAuth';
