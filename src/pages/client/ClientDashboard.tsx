@@ -40,12 +40,21 @@ interface ActivityItem {
   id: string; entity_type: string; action: string; details: Record<string, unknown>; created_at: string;
 }
 
-const CLIENT_NAV = [
+const FULL_PRODUCTION_NAV = [
   { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { id: 'videos', icon: Video, label: 'Videos' },
   { id: 'ideas', icon: Lightbulb, label: '💡 My Ideas' },
   { id: 'design', icon: Palette, label: 'Design Deliverables' },
   { id: 'content', icon: PenTool, label: 'Content & Copy' },
+  { id: 'report', icon: BarChart3, label: 'Monthly Report' },
+  { id: 'account', icon: Settings, label: 'Account' },
+];
+
+const EDITING_ONLY_NAV = [
+  { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { id: 'videos', icon: Video, label: 'Videos' },
+  { id: 'ideas', icon: Lightbulb, label: '💡 My Ideas' },
+  { id: 'design', icon: Palette, label: 'Design Deliverables' },
   { id: 'report', icon: BarChart3, label: 'Monthly Report' },
   { id: 'account', icon: Settings, label: 'Account' },
 ];
