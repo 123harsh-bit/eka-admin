@@ -7,7 +7,7 @@ import { VideoFeedbackModal } from '@/components/client/VideoFeedbackModal';
 import { IdeaSubmissionForm } from '@/components/client/IdeaSubmissionForm';
 import { ClientIdeasList } from '@/components/client/ClientIdeasList';
 import { StatusBadge } from '@/components/shared/StatusBadge';
-import { VIDEO_STATUSES, VIDEO_STATUS_ORDER, DESIGN_TASK_STATUSES, WRITING_TASK_STATUSES, type VideoStatus } from '@/lib/statusConfig';
+import { VIDEO_STATUSES, VIDEO_STATUS_ORDER, EDITING_ONLY_STATUS_ORDER, DESIGN_TASK_STATUSES, WRITING_TASK_STATUSES, type VideoStatus, type ClientServiceType, getClientLabel, getStatusOrderForClient } from '@/lib/statusConfig';
 import { EkaLogo } from '@/components/shared/EkaLogo';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +24,7 @@ import { formatDistanceToNow } from 'date-fns';
 interface ClientData {
   id: string; name: string; logo_url: string | null;
   monthly_deliverables: number | null; is_active: boolean;
+  service_type?: string;
 }
 
 interface VideoData {
@@ -84,8 +85,8 @@ export default function ClientDashboard() {
 
   const fetchClient = async () => {
     if (!user) return;
-    const { data } = await supabase.from('clients').select('id, name, logo_url, monthly_deliverables, is_active').eq('user_id', user.id).single();
-    if (data) setClient(data);
+    const { data } = await supabase.from('clients').select('id, name, logo_url, monthly_deliverables, is_active, service_type').eq('user_id', user.id).single();
+    if (data) setClient(data as ClientData);
   };
 
   const fetchVideos = async () => {
