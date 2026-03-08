@@ -58,6 +58,8 @@ const FULL_PRODUCTION_NAV = [
 const EDITING_ONLY_NAV = [
   { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { id: 'videos', icon: Video, label: 'Videos' },
+  { id: 'tracker', icon: GitBranch, label: 'Progress Tracker' },
+  { id: 'calendar', icon: CalendarDays, label: 'Calendar' },
   { id: 'ideas', icon: Lightbulb, label: '💡 My Ideas' },
   { id: 'design', icon: Palette, label: 'Design Deliverables' },
   { id: 'report', icon: BarChart3, label: 'Monthly Report' },
