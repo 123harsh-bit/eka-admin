@@ -442,6 +442,9 @@ export default function AdminVideos() {
   });
 
   const si = statusIndex(form.status);
+  const selectedClient = clients.find(c => c.id === form.client_id);
+  const isEditingOnly = selectedClient?.service_type === 'editing_only';
+  const activeStatusOrder = isEditingOnly ? EDITING_ONLY_STATUS_ORDER : VIDEO_STATUS_ORDER;
 
   return (
     <AdminLayout>
