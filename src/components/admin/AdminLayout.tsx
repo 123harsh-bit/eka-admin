@@ -101,6 +101,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
           {children}
         </div>
       </main>
+      <TeamChat />
     </div>
   );
 }
