@@ -9,7 +9,7 @@ import { ConfirmDeleteModal } from '@/components/shared/ConfirmDeleteModal';
 import { useToast } from '@/hooks/use-toast';
 import {
   Plus, Search, X, Users, Building2, Phone, Mail,
-  Calendar, Edit2, Trash2, ToggleLeft, ToggleRight, Upload, Loader2, KeyRound
+  Calendar, Edit2, Trash2, ToggleLeft, ToggleRight, Upload, Loader2, KeyRound, Scissors, Film
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -302,6 +302,41 @@ export default function AdminClients() {
               </div>
 
               <div className="grid grid-cols-1 gap-4">
+                {/* Service Type Selection */}
+                <div className="space-y-2">
+                  <Label>Service Type *</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, service_type: 'full_production' }))}
+                      className={cn(
+                        'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-center',
+                        form.service_type === 'full_production'
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-glass-border bg-muted/20 text-muted-foreground hover:border-primary/40'
+                      )}
+                    >
+                      <Film size={24} />
+                      <span className="text-sm font-semibold">Full Production</span>
+                      <span className="text-[10px] leading-tight">Script → Shoot → Edit → Deliver</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, service_type: 'editing_only' }))}
+                      className={cn(
+                        'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-center',
+                        form.service_type === 'editing_only'
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-glass-border bg-muted/20 text-muted-foreground hover:border-primary/40'
+                      )}
+                    >
+                      <Scissors size={24} />
+                      <span className="text-sm font-semibold">Editing Only</span>
+                      <span className="text-[10px] leading-tight">Client provides footage → Edit → Deliver</span>
+                    </button>
+                  </div>
+                </div>
+
                 <div className="space-y-1.5">
                   <Label htmlFor="name">Client Name *</Label>
                   <Input id="name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Acme Corp" required />
