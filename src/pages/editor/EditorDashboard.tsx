@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Video, Calendar, ExternalLink, Loader2, X, ChevronRight, FolderOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { PullToRefresh } from '@/components/shared/PullToRefresh';
 
 interface AssignedVideo {
   id: string; title: string; status: string; client_id: string;
@@ -98,6 +99,7 @@ export default function EditorDashboard() {
 
   return (
     <EditorLayout>
+      <PullToRefresh onRefresh={fetchVideos}>
       <div className="space-y-6">
         <MyPerformance role="editor" />
         <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 h-auto lg:h-[calc(100vh-10rem)]">
@@ -247,6 +249,7 @@ export default function EditorDashboard() {
         )}
       </div>
       </div>
+      </PullToRefresh>
     </EditorLayout>
   );
 }

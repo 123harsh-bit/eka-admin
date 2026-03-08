@@ -6,6 +6,7 @@ import { StatusBadge } from '@/components/shared/StatusBadge';
 import { TeamLiveStatus } from '@/components/admin/TeamLiveStatus';
 import { formatDistanceToNow } from 'date-fns';
 import { Users, Video, Clock, CheckCircle, TrendingUp, AlertTriangle } from 'lucide-react';
+import { PullToRefresh } from '@/components/shared/PullToRefresh';
 
 interface DashboardStats {
   activeClients: number;
@@ -201,6 +202,7 @@ export default function AdminDashboard() {
 
   return (
     <AdminLayout>
+      <PullToRefresh onRefresh={fetchDashboardData}>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-display font-bold gradient-text">Agency Overview</h1>
@@ -331,6 +333,7 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
+      </PullToRefresh>
     </AdminLayout>
   );
 }

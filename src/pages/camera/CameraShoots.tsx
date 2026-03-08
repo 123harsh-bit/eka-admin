@@ -11,6 +11,7 @@ import { handleVideoStatusChange } from '@/lib/handleVideoStatusChange';
 import { Camera, MapPin, Clock, FileText, ExternalLink, Loader2, AlertTriangle, CheckCircle, ChevronRight, X, Calendar, FolderOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { VideoStatus } from '@/lib/statusConfig';
+import { PullToRefresh } from '@/components/shared/PullToRefresh';
 
 interface ShootVideo {
   id: string; title: string; status: string; client_id: string;
@@ -133,6 +134,7 @@ export default function CameraShoots() {
 
   return (
     <CameraLayout>
+      <PullToRefresh onRefresh={fetchShoots}>
       <div className="space-y-6">
         <MyPerformance role="camera_operator" />
         <div className="flex gap-6 h-[calc(100vh-10rem)]">
@@ -339,6 +341,7 @@ export default function CameraShoots() {
           )}
         </div>
       </div>
+      </PullToRefresh>
     </CameraLayout>
   );
 }

@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { PenTool, ExternalLink, Loader2, Calendar, Clock, FolderOpen, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { PullToRefresh } from '@/components/shared/PullToRefresh';
 
 interface WritingTask {
   id: string; title: string; task_type: string; status: string;
@@ -134,6 +135,7 @@ export default function WriterDashboard() {
 
   return (
     <WriterLayout>
+      <PullToRefresh onRefresh={fetchTasks}>
       <div className="space-y-6">
         <MyPerformance role="writer" />
         <div>
@@ -315,6 +317,7 @@ export default function WriterDashboard() {
           </>
         )}
       </div>
+      </PullToRefresh>
     </WriterLayout>
   );
 }
