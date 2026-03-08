@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { ConfirmDeleteModal } from '@/components/shared/ConfirmDeleteModal';
 import { useToast } from '@/hooks/use-toast';
-import { VIDEO_STATUSES, VIDEO_STATUS_ORDER, EDITING_ONLY_STATUS_ORDER, type VideoStatus, type ClientServiceType, getActionRequired, getStatusOrderForClient } from '@/lib/statusConfig';
+import { VIDEO_STATUSES, VIDEO_STATUS_ORDER, EDITING_ONLY_STATUS_ORDER, EDITING_ONLY_ADMIN_LABELS, type VideoStatus, type ClientServiceType, getActionRequired, getStatusOrderForClient, getAdminLabel } from '@/lib/statusConfig';
 import { getDirectDownloadLink } from '@/lib/driveUtils';
 import { Plus, Search, X, Video, Edit2, Trash2, ExternalLink, MessageSquare, Loader2, FolderOpen, Lock } from 'lucide-react';
 import { WorkflowPrompt } from '@/components/shared/WorkflowPrompt';
@@ -26,7 +26,7 @@ interface VideoRow {
   drive_link: string | null; live_url: string | null; raw_footage_link: string | null;
   internal_notes: string | null; is_internal_note_visible_to_client: boolean;
   date_planned: string | null; date_delivered: string | null; created_at: string;
-  client_name?: string; editor_name?: string; camera_op_name?: string; writer_name?: string; writer_id?: string | null; feedback_count?: number;
+  client_name?: string; editor_name?: string; camera_op_name?: string; writer_name?: string; writer_id?: string | null; designer_name?: string | null; designer_id?: string | null; feedback_count?: number;
 }
 
 interface Client { id: string; name: string; service_type?: string; }
@@ -34,7 +34,7 @@ interface TeamMember { id: string; full_name: string; }
 
 const emptyForm = {
   title: '', description: '', client_id: '', assigned_editor: '',
-  assigned_writer: '',
+  assigned_writer: '', assigned_designer: '',
   assigned_camera_operator: '', shoot_date: '', shoot_start_time: '',
   shoot_location: '', shoot_notes: '',
   status: 'idea', drive_link: '', live_url: '', raw_footage_link: '',
@@ -51,6 +51,7 @@ export default function AdminVideos() {
   const [clients, setClients] = useState<Client[]>([]);
   const [editors, setEditors] = useState<TeamMember[]>([]);
   const [writers, setWriters] = useState<TeamMember[]>([]);
+  const [designers, setDesigners] = useState<TeamMember[]>([]);
   const [cameraOps, setCameraOps] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -78,7 +79,7 @@ export default function AdminVideos() {
 
   const fetchAll = async () => {
     setLoading(true);
-    await Promise.all([fetchVideos(), fetchClients(), fetchEditors(), fetchCameraOps(), fetchWriters()]);
+    await Promise.all([fetchVideos(), fetchClients(), fetchEditors(), fetchCameraOps(), fetchWriters(), fetchDesigners()]);
     setLoading(false);
   };
 
@@ -114,6 +115,21 @@ export default function AdminVideos() {
         }
       }
 
+      // Resolve designer names from design_tasks
+      let designerMap: Record<string, { name: string; id: string }> = {};
+      if (videoIds.length > 0) {
+        const { data: dTasks } = await supabase.from('design_tasks').select('video_id, assigned_designer').in('video_id', videoIds).not('assigned_designer', 'is', null);
+        if (dTasks && dTasks.length > 0) {
+          const designerIds = [...new Set(dTasks.map(d => d.assigned_designer!))];
+          const { data: dProfiles } = await supabase.from('profiles').select('id, full_name').in('id', designerIds);
+          const dProfileMap: Record<string, string> = {};
+          dProfiles?.forEach(p => { dProfileMap[p.id] = p.full_name; });
+          dTasks.forEach(d => {
+            if (d.video_id && d.assigned_designer) designerMap[d.video_id] = { name: dProfileMap[d.assigned_designer] || '', id: d.assigned_designer };
+          });
+        }
+      }
+
       const vids: VideoRow[] = (data as any[]).map(v => ({
         ...v,
         client_name: v.clients?.name || 'Unknown',
@@ -121,6 +137,8 @@ export default function AdminVideos() {
         camera_op_name: v.assigned_camera_operator ? profileMap[v.assigned_camera_operator] || null : null,
         writer_name: writerMap[v.id]?.name || null,
         writer_id: writerMap[v.id]?.id || null,
+        designer_name: designerMap[v.id]?.name || null,
+        designer_id: designerMap[v.id]?.id || null,
       }));
 
       const ids = vids.map(v => v.id);
@@ -163,6 +181,14 @@ export default function AdminVideos() {
     }
   };
 
+  const fetchDesigners = async () => {
+    const { data: designerRoles } = await supabase.from('user_roles').select('user_id').eq('role', 'designer');
+    if (designerRoles && designerRoles.length > 0) {
+      const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', designerRoles.map(r => r.user_id));
+      if (profiles) setDesigners(profiles.map(p => ({ id: p.id, full_name: p.full_name })));
+    }
+  };
+
   const openAdd = () => { setEditingVideo(null); setForm({ ...emptyForm }); setPanelOpen(true); setDetailVideo(null); };
 
   const openEdit = (video: VideoRow) => {
@@ -171,6 +197,7 @@ export default function AdminVideos() {
       title: video.title, description: video.description || '', client_id: video.client_id,
       assigned_editor: video.assigned_editor || '',
       assigned_writer: video.writer_id || '',
+      assigned_designer: video.designer_id || '',
       assigned_camera_operator: video.assigned_camera_operator || '',
       shoot_date: video.shoot_date || '', shoot_start_time: video.shoot_start_time || '',
       shoot_location: video.shoot_location || '', shoot_notes: video.shoot_notes || '',
@@ -285,6 +312,32 @@ export default function AdminVideos() {
           }
         }
 
+        // Handle designer assignment for editing-only clients (reel cover)
+        if (isEditingOnly && form.assigned_designer) {
+          const { data: existingDesignTask } = await supabase.from('design_tasks').select('id, assigned_designer').eq('video_id', editingVideo.id).maybeSingle();
+          if (existingDesignTask) {
+            if (existingDesignTask.assigned_designer !== form.assigned_designer) {
+              await supabase.from('design_tasks').update({ assigned_designer: form.assigned_designer }).eq('id', existingDesignTask.id);
+            }
+          } else {
+            await supabase.from('design_tasks').insert({
+              video_id: editingVideo.id,
+              client_id: form.client_id,
+              assigned_designer: form.assigned_designer,
+              title: `${form.title.trim()} — Reel Cover`,
+              task_type: 'thumbnail',
+              status: 'briefed',
+            });
+            await supabase.from('notifications').insert({
+              recipient_id: form.assigned_designer,
+              message: `🎨 New reel cover assignment: '${form.title.trim()}' for ${selectedClient?.name || 'client'}.`,
+              type: 'assignment',
+              related_video_id: editingVideo.id,
+              related_client_id: form.client_id,
+            });
+          }
+        }
+
         await supabase.from('activity_log').insert({ entity_type: 'video', entity_id: editingVideo.id, action: 'updated', details: { title: form.title } });
         toast({ title: 'Video updated' });
       } else {
@@ -314,6 +367,25 @@ export default function AdminVideos() {
               related_client_id: form.client_id,
             });
           }
+        }
+
+        // Handle designer assignment for editing-only on creation
+        if (isEditingOnly && form.assigned_designer) {
+          await supabase.from('design_tasks').insert({
+            video_id: data.id,
+            client_id: form.client_id,
+            assigned_designer: form.assigned_designer,
+            title: `${form.title.trim()} — Reel Cover`,
+            task_type: 'thumbnail',
+            status: 'briefed',
+          });
+          await supabase.from('notifications').insert({
+            recipient_id: form.assigned_designer,
+            message: `🎨 New reel cover assignment: '${form.title.trim()}' for ${selectedClient?.name || 'client'}.`,
+            type: 'assignment',
+            related_video_id: data.id,
+            related_client_id: form.client_id,
+          });
         }
 
         await supabase.from('activity_log').insert({ entity_type: 'video', entity_id: data.id, action: 'created', details: { title: form.title } });
@@ -602,6 +674,7 @@ export default function AdminVideos() {
                       {!isDetailEditingOnly && <div className="flex justify-between"><span className="text-muted-foreground">Writer:</span><span className="text-foreground">{detailVideo.writer_name || '—'}</span></div>}
                       {!isDetailEditingOnly && <div className="flex justify-between"><span className="text-muted-foreground">Camera Op:</span><span className="text-foreground">{detailVideo.camera_op_name || '—'}</span></div>}
                       <div className="flex justify-between"><span className="text-muted-foreground">Editor:</span><span className="text-foreground">{detailVideo.editor_name || '—'}</span></div>
+                      {isDetailEditingOnly && <div className="flex justify-between"><span className="text-muted-foreground">Designer:</span><span className="text-foreground">{detailVideo.designer_name || '—'}</span></div>}
                     </div>
                   );
                 })()}
@@ -627,7 +700,7 @@ export default function AdminVideos() {
                               !isCurrent && !isPast && 'text-foreground/50 hover:bg-muted/30',
                             )}>
                             <span className={cn('h-2 w-2 rounded-full flex-shrink-0', isCurrent ? 'bg-primary' : isPast ? 'bg-success' : 'bg-muted-foreground/30')} />
-                            {VIDEO_STATUSES[s].emoji} {VIDEO_STATUSES[s].label}
+                            {VIDEO_STATUSES[s].emoji} {detailClientSvc === 'editing_only' ? (EDITING_ONLY_ADMIN_LABELS[s] || VIDEO_STATUSES[s].label) : VIDEO_STATUSES[s].label}
                           </button>
                         );
                       })}
@@ -749,7 +822,7 @@ export default function AdminVideos() {
               <div className="space-y-1.5">
                 <Label>Status</Label>
                 <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground">
-                  {activeStatusOrder.map(s => <option key={s} value={s}>{VIDEO_STATUSES[s].emoji} {VIDEO_STATUSES[s].label}</option>)}
+                  {activeStatusOrder.map(s => <option key={s} value={s}>{VIDEO_STATUSES[s].emoji} {isEditingOnly ? (EDITING_ONLY_ADMIN_LABELS[s] || VIDEO_STATUSES[s].label) : VIDEO_STATUSES[s].label}</option>)}
                 </select>
               </div>
 
@@ -847,6 +920,21 @@ export default function AdminVideos() {
                 </div>
               ) : null}
 
+              {/* Designer field — for editing-only clients (reel covers) */}
+              {isEditingOnly && (
+                <>
+                  <div className="border-t border-glass-border pt-4 mt-2">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">🎨 Designer Assignment (Reel Cover)</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Assigned Designer</Label>
+                    <select value={form.assigned_designer} onChange={e => setForm(f => ({ ...f, assigned_designer: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground">
+                      <option value="">Unassigned</option>
+                      {designers.map(d => <option key={d.id} value={d.id}>{d.full_name}</option>)}
+                    </select>
+                  </div>
+                </>
+              )}
               {/* Links */}
               <div className="border-t border-glass-border pt-4 mt-2">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">🔗 Links</p>

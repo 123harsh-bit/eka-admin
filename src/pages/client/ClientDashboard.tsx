@@ -40,12 +40,21 @@ interface ActivityItem {
   id: string; entity_type: string; action: string; details: Record<string, unknown>; created_at: string;
 }
 
-const CLIENT_NAV = [
+const FULL_PRODUCTION_NAV = [
   { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { id: 'videos', icon: Video, label: 'Videos' },
   { id: 'ideas', icon: Lightbulb, label: '💡 My Ideas' },
   { id: 'design', icon: Palette, label: 'Design Deliverables' },
   { id: 'content', icon: PenTool, label: 'Content & Copy' },
+  { id: 'report', icon: BarChart3, label: 'Monthly Report' },
+  { id: 'account', icon: Settings, label: 'Account' },
+];
+
+const EDITING_ONLY_NAV = [
+  { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { id: 'videos', icon: Video, label: 'Videos' },
+  { id: 'ideas', icon: Lightbulb, label: '💡 My Ideas' },
+  { id: 'design', icon: Palette, label: 'Design Deliverables' },
   { id: 'report', icon: BarChart3, label: 'Monthly Report' },
   { id: 'account', icon: Settings, label: 'Account' },
 ];
@@ -203,7 +212,7 @@ export default function ClientDashboard() {
           <button className="lg:hidden text-muted-foreground" onClick={() => setSidebarOpen(false)}><X size={20} /></button>
         </div>
         <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
-          {CLIENT_NAV.map(item => (
+          {(client?.service_type === 'editing_only' ? EDITING_ONLY_NAV : FULL_PRODUCTION_NAV).map(item => (
             <button
               key={item.id}
               onClick={() => { setSection(item.id); setSidebarOpen(false); }}
@@ -432,8 +441,8 @@ export default function ClientDashboard() {
                             </div>
                           )}
 
-                          {/* Show script download after approval */}
-                          {['script_approved','shoot_assigned','shooting','footage_delivered','editing','internal_review','client_review','revisions','approved','ready_to_upload','live'].includes(video.status) && (
+                          {/* Show script download after approval — only for full production */}
+                          {!isEditOnly && ['script_approved','shoot_assigned','shooting','footage_delivered','editing','internal_review','client_review','revisions','approved','ready_to_upload','live'].includes(video.status) && (
                             <button onClick={async (e) => {
                               e.stopPropagation();
                               const { data: wt } = await supabase.from('writing_tasks').select('doc_link').eq('video_id', video.id).limit(1).single();

@@ -57,18 +57,29 @@ export const VIDEO_STATUS_ORDER: VideoStatus[] = [
 
 // Editing-only clients: simplified pipeline (no scripting/shooting)
 export const EDITING_ONLY_STATUS_ORDER: VideoStatus[] = [
-  'editing', 'internal_review', 'client_review', 'revisions', 'approved', 'ready_to_upload', 'live'
+  'idea', 'editing', 'internal_review', 'approved', 'client_review', 'ready_to_upload', 'live'
 ];
+
+// Admin-facing labels for editing-only pipeline
+export const EDITING_ONLY_ADMIN_LABELS: Partial<Record<VideoStatus, string>> = {
+  idea: 'Not Started',
+  editing: 'Editing Started',
+  internal_review: 'Internal Review',
+  approved: 'Internal Approved',
+  client_review: 'Client Review',
+  ready_to_upload: 'Client Approved',
+  live: 'Delivered',
+};
 
 // Client-facing labels for editing-only pipeline
 export const EDITING_ONLY_CLIENT_LABELS: Partial<Record<VideoStatus, string>> = {
+  idea: '📋 Received — Not Started Yet',
   editing: '✂️ Being Edited',
   internal_review: '🔍 Quality Check',
+  approved: '✅ Passed Internal Review',
   client_review: '👀 Ready for Your Review ⚡️',
-  revisions: '✏️ Applying Your Feedback',
-  approved: '✅ Approved',
-  ready_to_upload: '📦 Being Delivered',
-  live: '✅ Delivered!',
+  ready_to_upload: '✅ Approved by You!',
+  live: '📦 Delivered!',
 };
 
 export type ClientServiceType = 'full_production' | 'editing_only';
@@ -82,6 +93,13 @@ export function getClientLabel(status: VideoStatus, serviceType: ClientServiceTy
     return EDITING_ONLY_CLIENT_LABELS[status]!;
   }
   return VIDEO_STATUSES[status]?.clientLabel || status;
+}
+
+export function getAdminLabel(status: VideoStatus, serviceType: ClientServiceType): string {
+  if (serviceType === 'editing_only' && EDITING_ONLY_ADMIN_LABELS[status]) {
+    return EDITING_ONLY_ADMIN_LABELS[status]!;
+  }
+  return VIDEO_STATUSES[status]?.label || status;
 }
 
 export const DESIGN_TASK_STATUS_ORDER: DesignTaskStatus[] = [
@@ -164,15 +182,17 @@ export function getActionRequired(status: string, video: { assigned_editor?: str
   // For editing-only, simplify action labels
   if (serviceType === 'editing_only') {
     switch (status) {
+      case 'idea':
+        return { type: 'admin' as const, label: 'Not Started', color: 'bg-muted text-muted-foreground' };
       case 'editing':
-      case 'revisions':
         return { type: 'team' as const, label: `Waiting for ${video.editor_name || 'Editor'}`, color: 'bg-blue-500/20 text-blue-400' };
       case 'internal_review':
       case 'approved':
-      case 'ready_to_upload':
         return { type: 'admin' as const, label: 'Your Action Needed', color: 'bg-primary/20 text-primary' };
       case 'client_review':
         return { type: 'client' as const, label: `Waiting for ${video.client_name || 'Client'}`, color: 'bg-pink-500/20 text-pink-400' };
+      case 'ready_to_upload':
+        return { type: 'admin' as const, label: 'Preparing Delivery', color: 'bg-amber-500/20 text-amber-400' };
       case 'live':
         return { type: 'done' as const, label: '✅ Delivered', color: 'bg-success/20 text-success' };
       default:
