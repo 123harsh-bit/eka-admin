@@ -88,68 +88,61 @@ export default function AdminVideos() {
       .from('videos')
       .select('id, title, description, status, client_id, assigned_editor, assigned_camera_operator, shoot_date, shoot_start_time, shoot_location, shoot_notes, drive_link, live_url, raw_footage_link, internal_notes, is_internal_note_visible_to_client, date_planned, date_delivered, created_at, clients(name)')
       .order('created_at', { ascending: false });
-    if (data) {
-      const editorIds = [...new Set((data as any[]).map(v => v.assigned_editor).filter(Boolean))];
-      const camOpIds = [...new Set((data as any[]).map(v => v.assigned_camera_operator).filter(Boolean))];
-      const allIds = [...new Set([...editorIds, ...camOpIds])];
-      
-      let profileMap: Record<string, string> = {};
-      if (allIds.length > 0) {
-        const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', allIds);
-        profiles?.forEach(p => { profileMap[p.id] = p.full_name; });
-      }
+    if (!data) return;
 
-      // Resolve writer names from writing_tasks
-      const videoIds = (data as any[]).map(v => v.id);
-      let writerMap: Record<string, { name: string; id: string }> = {};
-      if (videoIds.length > 0) {
-        const { data: wTasks } = await supabase.from('writing_tasks').select('video_id, assigned_writer').in('video_id', videoIds).not('assigned_writer', 'is', null);
-        if (wTasks && wTasks.length > 0) {
-          const writerIds = [...new Set(wTasks.map(w => w.assigned_writer!))];
-          const { data: wProfiles } = await supabase.from('profiles').select('id, full_name').in('id', writerIds);
-          const wProfileMap: Record<string, string> = {};
-          wProfiles?.forEach(p => { wProfileMap[p.id] = p.full_name; });
-          wTasks.forEach(w => {
-            if (w.video_id && w.assigned_writer) writerMap[w.video_id] = { name: wProfileMap[w.assigned_writer] || '', id: w.assigned_writer };
-          });
-        }
-      }
+    const videoIds = (data as any[]).map(v => v.id);
+    const directProfileIds = [...new Set((data as any[]).flatMap(v => [v.assigned_editor, v.assigned_camera_operator].filter(Boolean)))];
 
-      // Resolve designer names from design_tasks
-      let designerMap: Record<string, { name: string; id: string }> = {};
-      if (videoIds.length > 0) {
-        const { data: dTasks } = await supabase.from('design_tasks').select('video_id, assigned_designer').in('video_id', videoIds).not('assigned_designer', 'is', null);
-        if (dTasks && dTasks.length > 0) {
-          const designerIds = [...new Set(dTasks.map(d => d.assigned_designer!))];
-          const { data: dProfiles } = await supabase.from('profiles').select('id, full_name').in('id', designerIds);
-          const dProfileMap: Record<string, string> = {};
-          dProfiles?.forEach(p => { dProfileMap[p.id] = p.full_name; });
-          dTasks.forEach(d => {
-            if (d.video_id && d.assigned_designer) designerMap[d.video_id] = { name: dProfileMap[d.assigned_designer] || '', id: d.assigned_designer };
-          });
-        }
-      }
+    // Parallel: fetch writing_tasks, design_tasks, feedback, and direct profiles all at once
+    const [wTasksRes, dTasksRes, fbRes, directProfilesRes] = await Promise.all([
+      videoIds.length > 0 ? supabase.from('writing_tasks').select('video_id, assigned_writer').in('video_id', videoIds).not('assigned_writer', 'is', null) : { data: [] },
+      videoIds.length > 0 ? supabase.from('design_tasks').select('video_id, assigned_designer').in('video_id', videoIds).not('assigned_designer', 'is', null) : { data: [] },
+      videoIds.length > 0 ? supabase.from('feedback').select('video_id').in('video_id', videoIds) : { data: [] },
+      directProfileIds.length > 0 ? supabase.from('profiles').select('id, full_name').in('id', directProfileIds) : { data: [] },
+    ]);
 
-      const vids: VideoRow[] = (data as any[]).map(v => ({
-        ...v,
-        client_name: v.clients?.name || 'Unknown',
-        editor_name: v.assigned_editor ? profileMap[v.assigned_editor] || null : null,
-        camera_op_name: v.assigned_camera_operator ? profileMap[v.assigned_camera_operator] || null : null,
-        writer_name: writerMap[v.id]?.name || null,
-        writer_id: writerMap[v.id]?.id || null,
-        designer_name: designerMap[v.id]?.name || null,
-        designer_id: designerMap[v.id]?.id || null,
-      }));
+    // Collect all additional profile IDs needed from tasks
+    const writerIds = [...new Set((wTasksRes.data || []).map((w: any) => w.assigned_writer).filter(Boolean))];
+    const designerIds = [...new Set((dTasksRes.data || []).map((d: any) => d.assigned_designer).filter(Boolean))];
+    const taskProfileIds = [...new Set([...writerIds, ...designerIds].filter(id => !directProfileIds.includes(id)))];
 
-      const ids = vids.map(v => v.id);
-      if (ids.length > 0) {
-        const { data: fbData } = await supabase.from('feedback').select('video_id').in('video_id', ids);
-        const fbCounts: Record<string, number> = {};
-        fbData?.forEach(f => { fbCounts[f.video_id] = (fbCounts[f.video_id] || 0) + 1; });
-        vids.forEach(v => { v.feedback_count = fbCounts[v.id] || 0; });
-      }
-      setVideos(vids);
+    // Single query for all remaining profiles
+    let taskProfileMap: Record<string, string> = {};
+    if (taskProfileIds.length > 0) {
+      const { data: tProfiles } = await supabase.from('profiles').select('id, full_name').in('id', taskProfileIds);
+      tProfiles?.forEach(p => { taskProfileMap[p.id] = p.full_name; });
     }
+
+    // Merge all profiles into one map
+    const profileMap: Record<string, string> = { ...taskProfileMap };
+    (directProfilesRes.data || []).forEach((p: any) => { profileMap[p.id] = p.full_name; });
+
+    // Build writer/designer maps
+    const writerMap: Record<string, { name: string; id: string }> = {};
+    (wTasksRes.data || []).forEach((w: any) => {
+      if (w.video_id && w.assigned_writer) writerMap[w.video_id] = { name: profileMap[w.assigned_writer] || '', id: w.assigned_writer };
+    });
+    const designerMap: Record<string, { name: string; id: string }> = {};
+    (dTasksRes.data || []).forEach((d: any) => {
+      if (d.video_id && d.assigned_designer) designerMap[d.video_id] = { name: profileMap[d.assigned_designer] || '', id: d.assigned_designer };
+    });
+
+    // Build feedback counts
+    const fbCounts: Record<string, number> = {};
+    (fbRes.data || []).forEach((f: any) => { fbCounts[f.video_id] = (fbCounts[f.video_id] || 0) + 1; });
+
+    const vids: VideoRow[] = (data as any[]).map(v => ({
+      ...v,
+      client_name: v.clients?.name || 'Unknown',
+      editor_name: v.assigned_editor ? profileMap[v.assigned_editor] || null : null,
+      camera_op_name: v.assigned_camera_operator ? profileMap[v.assigned_camera_operator] || null : null,
+      writer_name: writerMap[v.id]?.name || null,
+      writer_id: writerMap[v.id]?.id || null,
+      designer_name: designerMap[v.id]?.name || null,
+      designer_id: designerMap[v.id]?.id || null,
+      feedback_count: fbCounts[v.id] || 0,
+    }));
+    setVideos(vids);
   };
 
   const fetchClients = async () => {
