@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Video, Calendar, ExternalLink, Loader2, X, ChevronRight, FolderOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { PullToRefresh } from '@/components/shared/PullToRefresh';
 
 interface AssignedVideo {
   id: string; title: string; status: string; client_id: string;
