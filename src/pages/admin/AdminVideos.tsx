@@ -556,11 +556,12 @@ export default function AdminVideos() {
           </div>
 
           <div className="glass-card flex-1 overflow-auto">
-            <table className="w-full text-sm">
+            {/* Desktop table — hidden on mobile */}
+            <table className="w-full text-sm hidden md:table">
               <thead className="sticky top-0 bg-card/90 backdrop-blur border-b border-glass-border">
                 <tr>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Video</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Client</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Client</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stage</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Action Required</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Assigned To</th>
@@ -586,7 +587,7 @@ export default function AdminVideos() {
                     )}
                   >
                     <td className="px-4 py-3 font-medium text-foreground">{video.title}</td>
-                    <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{video.client_name}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{video.client_name}</td>
                     <td className="px-4 py-3">
                       {(() => {
                         const clientSvc = clients.find(c => c.id === video.client_id)?.service_type as ClientServiceType | undefined;
@@ -641,6 +642,52 @@ export default function AdminVideos() {
                 ))}
               </tbody>
             </table>
+
+            {/* Mobile card list */}
+            <div className="md:hidden divide-y divide-glass-border/50">
+              {loading ? [...Array(4)].map((_, i) => (
+                <div key={i} className="p-4"><div className="h-16 bg-muted/50 rounded-lg animate-pulse" /></div>
+              )) : filtered.length === 0 ? (
+                <div className="p-12 text-center text-muted-foreground">
+                  <Video size={32} className="mx-auto mb-2 opacity-40" />
+                  <p>No videos found.</p>
+                </div>
+              ) : filtered.map(video => {
+                const ar = getActionRequired(video.status, video);
+                const clientSvc = clients.find(c => c.id === video.client_id)?.service_type as ClientServiceType | undefined;
+                const order = getStatusOrderForClient(clientSvc || 'full_production');
+                return (
+                  <div
+                    key={video.id}
+                    onClick={() => openDetail(video)}
+                    className={cn('p-4 active:bg-muted/30 transition-colors cursor-pointer',
+                      detailVideo?.id === video.id && 'bg-primary/10'
+                    )}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center text-sm font-bold text-primary flex-shrink-0">
+                        {video.client_name?.charAt(0)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-foreground text-sm truncate">{video.title}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{video.client_name}</p>
+                        <div className="flex items-center gap-2 mt-2 flex-wrap">
+                          <StatusBadge status={video.status as VideoStatus} type="video" />
+                          <span className="text-[10px] text-muted-foreground">{order.indexOf(video.status as VideoStatus) + 1}/{order.length}</span>
+                          <span className={cn('text-[11px] px-2 py-0.5 rounded-full font-medium', ar.color)}>{ar.label}</span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                        <div className="flex gap-1" onClick={e => e.stopPropagation()}>
+                          <button onClick={() => openEdit(video)} className="p-2 hover:text-primary transition-colors"><Edit2 size={14} /></button>
+                          <button onClick={() => setDeleteModal({ open: true, video })} className="p-2 hover:text-destructive transition-colors"><Trash2 size={14} /></button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
 
