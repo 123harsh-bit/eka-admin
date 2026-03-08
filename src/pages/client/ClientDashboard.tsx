@@ -356,71 +356,90 @@ export default function ClientDashboard() {
                   <p className="text-muted-foreground">Your videos will appear here as Eka starts production.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {videos.map(video => {
+                <div className="space-y-2">
+                  {/* Action required videos first */}
+                  {videos
+                    .sort((a, b) => {
+                      const priority: Record<string, number> = { client_review: 0, script_client_review: 0 };
+                      return (priority[a.status] ?? 1) - (priority[b.status] ?? 1);
+                    })
+                    .map(video => {
                     const svcType = (client?.service_type || 'full_production') as ClientServiceType;
                     const isEditOnly = svcType === 'editing_only';
                     const statusCfg = VIDEO_STATUSES[video.status as VideoStatus];
                     const clientLabel = getClientLabel(video.status as VideoStatus, svcType);
                     const isReview = video.status === 'client_review';
+                    const isScriptReview = video.status === 'script_client_review';
                     const isLive = video.status === 'live';
+                    const statusOrder = getStatusOrderForClient(svcType);
+                    const idx = statusOrder.indexOf(video.status as VideoStatus);
+                    const pct = idx >= 0 ? ((idx + 1) / statusOrder.length) * 100 : 5;
+                    const needsAction = isReview || isScriptReview;
+
                     return (
                       <div key={video.id} className={cn(
-                        'glass-card-hover overflow-hidden',
-                        isReview && 'ring-2 ring-pink-500/60'
+                        'glass-card-hover p-4 transition-all',
+                        needsAction && 'ring-2 ring-pink-500/60 bg-pink-500/5'
                       )}>
-                        {/* Thumbnail */}
-                        <div className="aspect-video bg-muted/50 flex items-center justify-center relative">
-                          {video.thumbnail_url ? (
-                            <img src={video.thumbnail_url} alt={video.title} className="w-full h-full object-cover" />
-                          ) : (
-                            <Video size={32} className="text-muted-foreground/30" />
-                          )}
-                          {isReview && (
-                            <div className="absolute top-2 right-2 bg-pink-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                              👀 Action needed
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="p-4 space-y-3">
-                          <div>
-                            <h3 className="font-semibold text-foreground">{video.title}</h3>
-                            {statusCfg && (
-                              <span className={cn('inline-flex items-center gap-1 text-xs font-medium mt-1', statusCfg.color)}>
-                                {statusCfg.emoji} {clientLabel}
-                              </span>
+                        <div className="flex items-center gap-4">
+                          {/* Thumbnail — small */}
+                          <div className="hidden sm:flex h-12 w-20 flex-shrink-0 rounded-lg bg-muted/50 items-center justify-center overflow-hidden">
+                            {video.thumbnail_url ? (
+                              <img src={video.thumbnail_url} alt={video.title} className="w-full h-full object-cover" />
+                            ) : (
+                              <Video size={16} className="text-muted-foreground/30" />
                             )}
                           </div>
 
-                          {/* Shoot info for client — hide for editing-only */}
-                          {!isEditOnly && (video.status === 'shoot_assigned' || video.status === 'shooting') && video.shoot_date && (
-                            <div className="space-y-1 text-xs">
-                              {video.status === 'shooting' ? (
-                                <p className="text-primary font-medium">🎥 Your video is being filmed today!</p>
-                              ) : (
-                                <p className="text-foreground">🎬 Your shoot is scheduled for {new Date(video.shoot_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}{video.shoot_start_time ? ` at ${video.shoot_start_time}` : ''}</p>
-                              )}
-                              {video.camera_op_first_name && (
-                                <p className="text-muted-foreground">📸 {video.camera_op_first_name} is your camera operator for this shoot</p>
+                          {/* Title + Status */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="font-semibold text-foreground text-sm truncate">{video.title}</h3>
+                              {needsAction && (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-pink-500 text-pink-50 animate-pulse">
+                                  Action needed
+                                </span>
                               )}
                             </div>
-                          )}
+                            <div className="flex items-center gap-3 mt-1">
+                              {statusCfg && (
+                                <span className={cn('text-xs font-medium', statusCfg.color)}>
+                                  {clientLabel}
+                                </span>
+                              )}
+                              <span className="text-[10px] text-muted-foreground">Step {idx + 1}/{statusOrder.length}</span>
+                            </div>
+                            {/* Progress bar */}
+                            <div className="h-1 bg-muted rounded-full overflow-hidden mt-2 max-w-xs">
+                              <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                            </div>
+                          </div>
 
-                          {/* Script review for client */}
-                          {video.status === 'script_client_review' && (
-                            <div className="space-y-2 bg-pink-500/10 rounded-lg p-3">
-                              <p className="text-xs font-semibold text-pink-400">📄 Script Ready for Your Review</p>
-                              <p className="text-xs text-muted-foreground">Review and approve so filming can begin.</p>
-                              <div className="flex gap-2">
+                          {/* Actions — right side */}
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            {isReview && (
+                              <>
+                                {video.drive_link && (
+                                  <a href={video.drive_link} target="_blank" rel="noopener noreferrer"
+                                    className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-foreground transition-colors">
+                                    <Download size={12} /> Download
+                                  </a>
+                                )}
+                                <button onClick={() => handleApprove(video)} disabled={approvingId === video.id}
+                                  className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-success/20 text-success hover:bg-success/30 transition-colors font-medium">
+                                  {approvingId === video.id ? '…' : <><Check size={12} /> Approve</>}
+                                </button>
+                              </>
+                            )}
+                            {isScriptReview && (
+                              <>
                                 <button onClick={async (e) => {
                                   e.stopPropagation();
-                                  // Find linked writing task drive_link
                                   const { data: wt } = await supabase.from('writing_tasks').select('doc_link').eq('video_id', video.id).limit(1).single();
                                   if (wt?.doc_link) window.open(wt.doc_link, '_blank');
                                   else toast({ title: 'Script not uploaded yet', variant: 'destructive' });
                                 }} className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-foreground transition-colors">
-                                  <Download size={12} /> Download Script
+                                  <Download size={12} /> Script
                                 </button>
                                 <button onClick={async (e) => {
                                   e.stopPropagation();
@@ -431,18 +450,46 @@ export default function ClientDashboard() {
                                   toast({ title: '✅ Script approved!' });
                                 }} disabled={approvingId === video.id}
                                   className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-success/20 text-success hover:bg-success/30 transition-colors font-medium">
-                                  {approvingId === video.id ? '…' : <><Check size={12} /> Approve Script</>}
+                                  {approvingId === video.id ? '…' : <><Check size={12} /> Approve</>}
                                 </button>
-                                <button onClick={() => setFeedbackVideo(video)}
-                                  className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-pink-500/20 text-pink-400 hover:bg-pink-500/30 transition-colors">
-                                  <MessageSquare size={12} /> Request Changes
-                                </button>
-                              </div>
-                            </div>
-                          )}
+                              </>
+                            )}
+                            {isLive && video.live_url && (
+                              <a href={video.live_url} target="_blank" rel="noopener noreferrer"
+                                className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-success/20 text-success hover:bg-success/30 transition-colors">
+                                <ExternalLink size={12} /> {isEditOnly ? 'Download' : 'Watch'}
+                              </a>
+                            )}
+                            {isLive && isEditOnly && video.drive_link && (
+                              <a href={video.drive_link} target="_blank" rel="noopener noreferrer"
+                                className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-success/20 text-success hover:bg-success/30 transition-colors">
+                                <Download size={12} /> Final
+                              </a>
+                            )}
+                            <button onClick={() => setFeedbackVideo(video)}
+                              className="flex items-center gap-1 text-xs px-2 py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground transition-colors">
+                              <MessageSquare size={12} />
+                            </button>
+                          </div>
+                        </div>
 
-                          {/* Show script download after approval — only for full production */}
-                          {!isEditOnly && ['script_approved','shoot_assigned','shooting','footage_delivered','editing','internal_review','client_review','revisions','approved','ready_to_upload','live'].includes(video.status) && (
+                        {/* Shoot info — inline below for full production */}
+                        {!isEditOnly && (video.status === 'shoot_assigned' || video.status === 'shooting') && video.shoot_date && (
+                          <div className="mt-3 pl-0 sm:pl-24 text-xs space-y-0.5">
+                            {video.status === 'shooting' ? (
+                              <p className="text-primary font-medium">🎥 Being filmed right now!</p>
+                            ) : (
+                              <p className="text-foreground">🎬 Shoot: {new Date(video.shoot_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}{video.shoot_start_time ? ` at ${video.shoot_start_time}` : ''}</p>
+                            )}
+                            {video.camera_op_first_name && (
+                              <p className="text-muted-foreground">📸 {video.camera_op_first_name}</p>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Script download for full production */}
+                        {!isEditOnly && ['script_approved','shoot_assigned','shooting','footage_delivered','editing','internal_review','client_review','revisions','approved','ready_to_upload','live'].includes(video.status) && (
+                          <div className="mt-2 pl-0 sm:pl-24">
                             <button onClick={async (e) => {
                               e.stopPropagation();
                               const { data: wt } = await supabase.from('writing_tasks').select('doc_link').eq('video_id', video.id).limit(1).single();
@@ -450,66 +497,8 @@ export default function ClientDashboard() {
                             }} className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground">
                               <Download size={10} /> ✅ Script Approved — View
                             </button>
-                          )}
-
-                          {/* Progress bar */}
-                          {(() => {
-                            const statusOrder = getStatusOrderForClient(svcType);
-                            const idx = statusOrder.indexOf(video.status as VideoStatus);
-                            const pct = idx >= 0 ? ((idx + 1) / statusOrder.length) * 100 : 5;
-                            return (
-                              <div className="h-1 bg-muted rounded-full overflow-hidden">
-                                <div className="h-full bg-primary rounded-full" style={{ width: `${pct}%` }} />
-                              </div>
-                            );
-                          })()}
-
-                          <div className="flex flex-wrap gap-2">
-                            {isReview && (
-                              <>
-                                {video.drive_link && (
-                                  <a href={video.drive_link} target="_blank" rel="noopener noreferrer"
-                                    className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-foreground transition-colors">
-                                    <Download size={12} /> Download
-                                  </a>
-                                )}
-                                <button
-                                  onClick={() => handleApprove(video)}
-                                  disabled={approvingId === video.id}
-                                  className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-success/20 text-success hover:bg-success/30 transition-colors font-medium"
-                                >
-                                  {approvingId === video.id ? '…' : <><Check size={12} /> Approve</>}
-                                </button>
-                                <button
-                                  onClick={() => setFeedbackVideo(video)}
-                                  className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-pink-500/20 text-pink-400 hover:bg-pink-500/30 transition-colors"
-                                >
-                                  <MessageSquare size={12} /> Feedback
-                                </button>
-                              </>
-                            )}
-                            {isLive && video.live_url && (
-                              <a href={video.live_url} target="_blank" rel="noopener noreferrer"
-                                className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-success/20 text-success hover:bg-success/30 transition-colors">
-                                <ExternalLink size={12} /> {isEditOnly ? 'Download' : 'Watch Now'}
-                              </a>
-                            )}
-                            {isLive && isEditOnly && video.drive_link && (
-                              <a href={video.drive_link} target="_blank" rel="noopener noreferrer"
-                                className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-success/20 text-success hover:bg-success/30 transition-colors">
-                                <Download size={12} /> Download Final
-                              </a>
-                            )}
-                            {!isReview && (
-                              <button
-                                onClick={() => setFeedbackVideo(video)}
-                                className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
-                              >
-                                <MessageSquare size={12} /> Feedback
-                              </button>
-                            )}
                           </div>
-                        </div>
+                        )}
                       </div>
                     );
                   })}
