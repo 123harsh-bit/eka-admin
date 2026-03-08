@@ -646,7 +646,7 @@ export default function AdminVideos() {
 
         {/* Detail Panel */}
         {detailVideo && (
-          <div className="w-80 flex-shrink-0 glass-card flex flex-col overflow-hidden">
+          <div className="w-full lg:w-80 flex-shrink-0 glass-card flex flex-col overflow-hidden max-h-[80vh] lg:max-h-none">
             <div className="p-4 border-b border-glass-border flex items-start justify-between">
               <div>
                 <h2 className="font-display font-semibold text-foreground text-sm">{detailVideo.title}</h2>
