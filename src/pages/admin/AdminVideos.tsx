@@ -196,17 +196,22 @@ export default function AdminVideos() {
     if (!form.title.trim() || !form.client_id) return;
     
     const si = statusIndex(form.status);
-    // Workflow enforcement
-    if (si >= statusIndex('scripting') && !form.assigned_writer) {
-      toast({ title: 'Please assign a writer before moving to scripting.', variant: 'destructive' });
-      return;
-    }
-    if (si >= statusIndex('shoot_assigned') && !form.assigned_camera_operator) {
-      toast({ title: 'Please assign a camera operator and shoot date before scheduling the shoot.', variant: 'destructive' });
-      return;
+    const selectedClient = clients.find(c => c.id === form.client_id);
+    const isEditingOnly = selectedClient?.service_type === 'editing_only';
+
+    // Workflow enforcement — skip for editing-only clients
+    if (!isEditingOnly) {
+      if (si >= statusIndex('scripting') && !form.assigned_writer) {
+        toast({ title: 'Please assign a writer before moving to scripting.', variant: 'destructive' });
+        return;
+      }
+      if (si >= statusIndex('shoot_assigned') && !form.assigned_camera_operator) {
+        toast({ title: 'Please assign a camera operator and shoot date before scheduling the shoot.', variant: 'destructive' });
+        return;
+      }
     }
     if (si >= statusIndex('editing') && !form.assigned_editor) {
-      toast({ title: 'Please assign an editor. Editor assignment is only available after footage has been delivered.', variant: 'destructive' });
+      toast({ title: 'Please assign an editor.', variant: 'destructive' });
       return;
     }
 
@@ -709,7 +714,7 @@ export default function AdminVideos() {
               <div className="space-y-1.5">
                 <Label>Status</Label>
                 <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground">
-                  {VIDEO_STATUS_ORDER.map(s => <option key={s} value={s}>{VIDEO_STATUSES[s].emoji} {VIDEO_STATUSES[s].label}</option>)}
+                  {activeStatusOrder.map(s => <option key={s} value={s}>{VIDEO_STATUSES[s].emoji} {VIDEO_STATUSES[s].label}</option>)}
                 </select>
               </div>
 
