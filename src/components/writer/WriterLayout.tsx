@@ -9,6 +9,7 @@ import { StartWorkday } from '@/components/auth/StartWorkday';
 import { AttendanceBar } from '@/components/shared/AttendanceBar';
 import { Button } from '@/components/ui/button';
 import { PenTool, BookOpen, LogOut, Menu, X, ListTodo, Calendar } from 'lucide-react';
+import { TeamChat } from '@/components/shared/TeamChat';
 
 const navItems = [
   { to: '/writer', icon: PenTool, label: 'My Writing Tasks', end: true },
@@ -72,6 +73,7 @@ export function WriterLayout({ children }: { children: ReactNode }) {
         </div>
         <div className="p-4 md:p-6 lg:p-8 fade-in flex-1">{children}</div>
       </main>
+      <TeamChat />
     </div>
     </StartWorkday>
   );

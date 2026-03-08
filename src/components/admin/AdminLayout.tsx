@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button';
 import { NotificationBell } from '@/components/shared/NotificationBell';
 import {
   LayoutDashboard, Users, Video, Palette, PenTool, Camera,
-  UserCircle, Bell, Settings, LogOut, Menu, X, ListTodo, Calendar, Scissors, Lightbulb
+  UserCircle, Bell, Settings, LogOut, Menu, X, ListTodo, Calendar, Scissors, Lightbulb, BarChart3, MessageCircle
 } from 'lucide-react';
+import { TeamChat } from '@/components/shared/TeamChat';
 import { useState } from 'react';
 
 const adminNavItems = [
@@ -23,6 +24,7 @@ const adminNavItems = [
   { to: '/admin/daily-tasks', icon: ListTodo, label: 'Daily Tasks' },
   { to: '/admin/attendance', icon: Calendar, label: 'Attendance' },
   { to: '/admin/team', icon: UserCircle, label: 'Team' },
+  { to: '/admin/weekly-report', icon: BarChart3, label: 'Weekly Report' },
   { to: '/admin/notifications', icon: Bell, label: 'Notifications' },
   { to: '/admin/settings', icon: Settings, label: 'Settings' },
 ];
@@ -99,6 +101,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
           {children}
         </div>
       </main>
+      <TeamChat />
     </div>
   );
 }

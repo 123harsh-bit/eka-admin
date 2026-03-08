@@ -9,6 +9,7 @@ import { StartWorkday } from '@/components/auth/StartWorkday';
 import { AttendanceBar } from '@/components/shared/AttendanceBar';
 import { Button } from '@/components/ui/button';
 import { Camera, FolderOpen, Users, Calendar, Bell, LogOut, Menu, X, ListTodo } from 'lucide-react';
+import { TeamChat } from '@/components/shared/TeamChat';
 
 const navItems = [
   { to: '/camera', icon: Camera, label: 'My Shoots', end: true },
@@ -73,6 +74,7 @@ export function CameraLayout({ children }: { children: ReactNode }) {
         </div>
         <div className="p-4 md:p-6 lg:p-8 fade-in flex-1">{children}</div>
       </main>
+      <TeamChat />
     </div>
     </StartWorkday>
   );

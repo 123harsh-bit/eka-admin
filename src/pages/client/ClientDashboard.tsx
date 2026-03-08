@@ -6,6 +6,7 @@ import { NotificationBell } from '@/components/shared/NotificationBell';
 import { VideoFeedbackModal } from '@/components/client/VideoFeedbackModal';
 import { IdeaSubmissionForm } from '@/components/client/IdeaSubmissionForm';
 import { ClientIdeasList } from '@/components/client/ClientIdeasList';
+import { ClientRatingModal } from '@/components/client/ClientRatingModal';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { VIDEO_STATUSES, VIDEO_STATUS_ORDER, EDITING_ONLY_STATUS_ORDER, DESIGN_TASK_STATUSES, WRITING_TASK_STATUSES, type VideoStatus, type ClientServiceType, getClientLabel, getStatusOrderForClient } from '@/lib/statusConfig';
 import { EkaLogo } from '@/components/shared/EkaLogo';
@@ -70,6 +71,7 @@ export default function ClientDashboard() {
   const [loading, setLoading] = useState(true);
   const [section, setSection] = useState('dashboard');
   const [feedbackVideo, setFeedbackVideo] = useState<VideoData | null>(null);
+  const [ratingVideo, setRatingVideo] = useState<VideoData | null>(null);
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showIdeaForm, setShowIdeaForm] = useState(false);
@@ -498,6 +500,12 @@ export default function ClientDashboard() {
                                 <Download size={12} /> Final
                               </a>
                             )}
+                            {(isLive || video.status === 'approved') && (
+                              <button onClick={() => setRatingVideo(video)}
+                                className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 transition-colors font-medium">
+                                <Star size={12} /> Rate
+                              </button>
+                            )}
                             <button onClick={() => setFeedbackVideo(video)}
                               className="flex items-center gap-1 text-xs px-2 py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground transition-colors">
                               <MessageSquare size={12} />
@@ -719,6 +727,16 @@ export default function ClientDashboard() {
         <VideoFeedbackModal
           video={{ id: feedbackVideo.id, title: feedbackVideo.title, client_id: client.id }}
           onClose={() => setFeedbackVideo(null)}
+        />
+      )}
+
+      {ratingVideo && client && (
+        <ClientRatingModal
+          videoId={ratingVideo.id}
+          videoTitle={ratingVideo.title}
+          clientId={client.id}
+          onClose={() => setRatingVideo(null)}
+          onSubmitted={() => {}}
         />
       )}
 

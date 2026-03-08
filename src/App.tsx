@@ -25,6 +25,7 @@ import AdminAttendance from "@/pages/admin/AdminAttendance";
 import AdminEditorTasks from "@/pages/admin/AdminEditorTasks";
 import AdminCameraShoots from "@/pages/admin/AdminCameraShoots";
 import AdminClientIdeas from "@/pages/admin/AdminClientIdeas";
+import AdminWeeklyReport from "@/pages/admin/AdminWeeklyReport";
 
 // Role dashboards
 import EditorDashboard from "@/pages/editor/EditorDashboard";
@@ -79,6 +80,7 @@ const App = () => (
             <Route path="/admin/attendance" element={<ProtectedRoute allowedRoles={['admin']}><AdminAttendance /></ProtectedRoute>} />
             <Route path="/admin/team" element={<ProtectedRoute allowedRoles={['admin']}><AdminTeam /></ProtectedRoute>} />
             <Route path="/admin/notifications" element={<ProtectedRoute allowedRoles={['admin']}><AdminNotifications /></ProtectedRoute>} />
+            <Route path="/admin/weekly-report" element={<ProtectedRoute allowedRoles={['admin']}><AdminWeeklyReport /></ProtectedRoute>} />
             <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin']}><AdminSettings /></ProtectedRoute>} />
 
             {/* Editor routes */}
