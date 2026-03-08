@@ -655,7 +655,7 @@ export default function AdminVideos() {
                               !isCurrent && !isPast && 'text-foreground/50 hover:bg-muted/30',
                             )}>
                             <span className={cn('h-2 w-2 rounded-full flex-shrink-0', isCurrent ? 'bg-primary' : isPast ? 'bg-success' : 'bg-muted-foreground/30')} />
-                            {VIDEO_STATUSES[s].emoji} {VIDEO_STATUSES[s].label}
+                            {VIDEO_STATUSES[s].emoji} {detailClientSvc === 'editing_only' ? (EDITING_ONLY_ADMIN_LABELS[s] || VIDEO_STATUSES[s].label) : VIDEO_STATUSES[s].label}
                           </button>
                         );
                       })}
