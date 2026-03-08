@@ -512,10 +512,16 @@ export default function AdminVideos() {
                     <td className="px-4 py-3 font-medium text-foreground">{video.title}</td>
                     <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{video.client_name}</td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <StatusBadge status={video.status as VideoStatus} type="video" />
-                        <span className="text-[10px] text-muted-foreground">{VIDEO_STATUS_ORDER.indexOf(video.status as VideoStatus) + 1}/{VIDEO_STATUS_ORDER.length}</span>
-                      </div>
+                      {(() => {
+                        const clientSvc = clients.find(c => c.id === video.client_id)?.service_type as ClientServiceType | undefined;
+                        const order = getStatusOrderForClient(clientSvc || 'full_production');
+                        return (
+                          <div className="flex items-center gap-1.5">
+                            <StatusBadge status={video.status as VideoStatus} type="video" />
+                            <span className="text-[10px] text-muted-foreground">{order.indexOf(video.status as VideoStatus) + 1}/{order.length}</span>
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td className="px-4 py-3">
                       {(() => {
@@ -584,30 +590,46 @@ export default function AdminVideos() {
               {/* Assignments Summary */}
               <div>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Assignments</p>
-                <div className="space-y-1.5 text-xs">
-                  <div className="flex justify-between"><span className="text-muted-foreground">Writer:</span><span className="text-foreground">{detailVideo.writer_name || '—'}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Camera Op:</span><span className="text-foreground">{detailVideo.camera_op_name || '—'}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Editor:</span><span className="text-foreground">{detailVideo.editor_name || '—'}</span></div>
-                </div>
+                {(() => {
+                  const detailClientSvc = clients.find(c => c.id === detailVideo.client_id)?.service_type as ClientServiceType | undefined;
+                  const isDetailEditingOnly = detailClientSvc === 'editing_only';
+                  return (
+                    <div className="space-y-1.5 text-xs">
+                      {!isDetailEditingOnly && <div className="flex justify-between"><span className="text-muted-foreground">Writer:</span><span className="text-foreground">{detailVideo.writer_name || '—'}</span></div>}
+                      {!isDetailEditingOnly && <div className="flex justify-between"><span className="text-muted-foreground">Camera Op:</span><span className="text-foreground">{detailVideo.camera_op_name || '—'}</span></div>}
+                      <div className="flex justify-between"><span className="text-muted-foreground">Editor:</span><span className="text-foreground">{detailVideo.editor_name || '—'}</span></div>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Status stepper */}
               <div>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Pipeline</p>
-                <div className="space-y-1">
-                  {VIDEO_STATUS_ORDER.map((s, i) => {
-                    const currentIdx = VIDEO_STATUS_ORDER.indexOf(detailVideo.status as VideoStatus);
-                    const isPast = i < currentIdx;
-                    const isCurrent = s === detailVideo.status;
-                    return (
-                      <button key={s} onClick={() => handleStatusChange(detailVideo.id, s)}
-                        className={cn('w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-all',
-                          isCurrent && 'bg-primary/20 text-primary font-semibold',
-                          isPast && 'text-muted-foreground',
-                          !isCurrent && !isPast && 'text-foreground/50 hover:bg-muted/30',
-                        )}>
-                        <span className={cn('h-2 w-2 rounded-full flex-shrink-0', isCurrent ? 'bg-primary' : isPast ? 'bg-success' : 'bg-muted-foreground/30')} />
-                        {VIDEO_STATUSES[s].emoji} {VIDEO_STATUSES[s].label}
+                {(() => {
+                  const detailClientSvc = clients.find(c => c.id === detailVideo.client_id)?.service_type as ClientServiceType | undefined;
+                  const detailStatusOrder = getStatusOrderForClient(detailClientSvc || 'full_production');
+                  return (
+                    <div className="space-y-1">
+                      {detailStatusOrder.map((s, i) => {
+                        const currentIdx = detailStatusOrder.indexOf(detailVideo.status as VideoStatus);
+                        const isPast = i < currentIdx;
+                        const isCurrent = s === detailVideo.status;
+                        return (
+                          <button key={s} onClick={() => handleStatusChange(detailVideo.id, s)}
+                            className={cn('w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-all',
+                              isCurrent && 'bg-primary/20 text-primary font-semibold',
+                              isPast && 'text-muted-foreground',
+                              !isCurrent && !isPast && 'text-foreground/50 hover:bg-muted/30',
+                            )}>
+                            <span className={cn('h-2 w-2 rounded-full flex-shrink-0', isCurrent ? 'bg-primary' : isPast ? 'bg-success' : 'bg-muted-foreground/30')} />
+                            {VIDEO_STATUSES[s].emoji} {VIDEO_STATUSES[s].label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
                       </button>
                     );
                   })}
