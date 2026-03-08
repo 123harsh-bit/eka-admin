@@ -482,7 +482,13 @@ export default function ClientDashboard() {
                             {isLive && video.live_url && (
                               <a href={video.live_url} target="_blank" rel="noopener noreferrer"
                                 className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-success/20 text-success hover:bg-success/30 transition-colors">
-                                <ExternalLink size={12} /> Watch Now
+                                <ExternalLink size={12} /> {isEditOnly ? 'Download' : 'Watch Now'}
+                              </a>
+                            )}
+                            {isLive && isEditOnly && video.drive_link && (
+                              <a href={video.drive_link} target="_blank" rel="noopener noreferrer"
+                                className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-success/20 text-success hover:bg-success/30 transition-colors">
+                                <Download size={12} /> Download Final
                               </a>
                             )}
                             {!isReview && (
