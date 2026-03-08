@@ -6,6 +6,7 @@ import { StatusBadge } from '@/components/shared/StatusBadge';
 import { TeamLiveStatus } from '@/components/admin/TeamLiveStatus';
 import { formatDistanceToNow } from 'date-fns';
 import { Users, Video, Clock, CheckCircle, TrendingUp, AlertTriangle } from 'lucide-react';
+import { PullToRefresh } from '@/components/shared/PullToRefresh';
 
 interface DashboardStats {
   activeClients: number;
