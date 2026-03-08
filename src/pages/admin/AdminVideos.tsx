@@ -629,11 +629,6 @@ export default function AdminVideos() {
                       })}
                     </div>
                   );
-                })()}
-                      </button>
-                    );
-                  })}
-                </div>
               </div>
 
               {/* Internal Links section */}
