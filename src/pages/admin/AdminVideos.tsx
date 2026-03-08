@@ -12,6 +12,7 @@ import { getDirectDownloadLink } from '@/lib/driveUtils';
 import { Plus, Search, X, Video, Edit2, Trash2, ExternalLink, MessageSquare, Loader2, FolderOpen, Lock } from 'lucide-react';
 import { WorkflowPrompt } from '@/components/shared/WorkflowPrompt';
 import { handleVideoStatusChange } from '@/lib/handleVideoStatusChange';
+import { syncVideoToWritingTask } from '@/lib/syncTaskToVideo';
 import { useAuth } from '@/hooks/useAuth';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -240,6 +241,11 @@ export default function AdminVideos() {
         const { error } = await supabase.from('videos').update(payload as any).eq('id', editingVideo.id);
         if (error) throw error;
 
+        // Sync status change to linked writing task
+        if (editingVideo.status !== form.status) {
+          await syncVideoToWritingTask(editingVideo.id, form.status);
+        }
+
         // Handle writer assignment — create/update writing task
         if (form.assigned_writer && si >= statusIndex('idea')) {
           const { data: existingTask, error: queryErr } = await supabase.from('writing_tasks').select('id, assigned_writer').eq('video_id', editingVideo.id).maybeSingle();
@@ -341,6 +347,8 @@ export default function AdminVideos() {
     if (!user) return;
     const result = await handleVideoStatusChange(videoId, newStatus, user.id);
     if (result.success) {
+      // Sync status to linked writing task
+      await syncVideoToWritingTask(videoId, newStatus);
       await fetchVideos();
       if (detailVideo?.id === videoId) setDetailVideo(v => v ? { ...v, status: newStatus } : v);
       toast({ title: `Status updated to ${VIDEO_STATUSES[newStatus as VideoStatus]?.label || newStatus}` });

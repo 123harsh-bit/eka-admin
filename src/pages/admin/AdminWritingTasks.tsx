@@ -9,6 +9,7 @@ import { ConfirmDeleteModal } from '@/components/shared/ConfirmDeleteModal';
 import { useToast } from '@/hooks/use-toast';
 import { WRITING_TASK_STATUSES, WRITING_TASK_STATUS_ORDER, WRITING_TASK_TYPES, DURATION_PRESETS, formatDurationShort, type WritingTaskStatus } from '@/lib/statusConfig';
 import { Plus, Search, X, PenTool, Edit2, Trash2, ExternalLink, Loader2, Clock } from 'lucide-react';
+import { syncWritingTaskToVideo } from '@/lib/syncTaskToVideo';
 
 interface WritingTask {
   id: string; title: string; task_type: string; status: string;
@@ -129,6 +130,10 @@ export default function AdminWritingTasks() {
       if (editingTask) {
         const { error } = await supabase.from('writing_tasks').update(payload).eq('id', editingTask.id);
         if (error) throw error;
+        // Sync status change to linked video
+        if (editingTask.status !== form.status && editingTask.video_id) {
+          await syncWritingTaskToVideo(editingTask.video_id, form.status);
+        }
         await supabase.from('activity_log').insert({ entity_type: 'writing_task', entity_id: editingTask.id, action: 'updated', details: { title: form.title } });
         toast({ title: 'Writing task updated' });
       } else {

@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { DESIGN_TASK_STATUSES, DESIGN_TASK_STATUS_ORDER, DESIGN_TASK_TYPES, type DesignTaskStatus } from '@/lib/statusConfig';
 import { Plus, Search, X, Palette, Edit2, Trash2, ExternalLink, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+// Design tasks don't directly map to video pipeline stages, but we keep sync ready
 
 interface DesignTask {
   id: string;
