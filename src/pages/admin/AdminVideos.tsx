@@ -79,7 +79,7 @@ export default function AdminVideos() {
 
   const fetchAll = async () => {
     setLoading(true);
-    await Promise.all([fetchVideos(), fetchClients(), fetchEditors(), fetchCameraOps(), fetchWriters()]);
+    await Promise.all([fetchVideos(), fetchClients(), fetchEditors(), fetchCameraOps(), fetchWriters(), fetchDesigners()]);
     setLoading(false);
   };
 
