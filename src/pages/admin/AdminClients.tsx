@@ -218,11 +218,16 @@ export default function AdminClients() {
                       {client.industry && <p className="text-xs text-muted-foreground">{client.industry}</p>}
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium',
                       client.is_active ? 'bg-success/20 text-success' : 'bg-muted text-muted-foreground'
                     )}>
                       {client.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                    <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium',
+                      (client as any).service_type === 'editing_only' ? 'bg-orange-500/20 text-orange-400' : 'bg-blue-500/20 text-blue-400'
+                    )}>
+                      {(client as any).service_type === 'editing_only' ? '✂️ Edit Only' : '🎬 Full'}
                     </span>
                     <span className={cn('h-2.5 w-2.5 rounded-full', client.user_id ? 'bg-success' : 'bg-destructive')}
                       title={client.user_id ? 'Portal active' : 'No portal access'} />
