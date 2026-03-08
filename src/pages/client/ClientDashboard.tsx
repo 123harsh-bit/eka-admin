@@ -730,6 +730,16 @@ export default function ClientDashboard() {
         />
       )}
 
+      {ratingVideo && client && (
+        <ClientRatingModal
+          videoId={ratingVideo.id}
+          videoTitle={ratingVideo.title}
+          clientId={client.id}
+          onClose={() => setRatingVideo(null)}
+          onSubmitted={() => {}}
+        />
+      )}
+
       {/* Floating Share an Idea button */}
       {client && section !== 'ideas' && (
         <button
