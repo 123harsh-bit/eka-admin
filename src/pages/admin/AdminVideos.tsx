@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { ConfirmDeleteModal } from '@/components/shared/ConfirmDeleteModal';
 import { useToast } from '@/hooks/use-toast';
-import { VIDEO_STATUSES, VIDEO_STATUS_ORDER, EDITING_ONLY_STATUS_ORDER, type VideoStatus, type ClientServiceType, getActionRequired, getStatusOrderForClient } from '@/lib/statusConfig';
+import { VIDEO_STATUSES, VIDEO_STATUS_ORDER, EDITING_ONLY_STATUS_ORDER, EDITING_ONLY_ADMIN_LABELS, type VideoStatus, type ClientServiceType, getActionRequired, getStatusOrderForClient, getAdminLabel } from '@/lib/statusConfig';
 import { getDirectDownloadLink } from '@/lib/driveUtils';
 import { Plus, Search, X, Video, Edit2, Trash2, ExternalLink, MessageSquare, Loader2, FolderOpen, Lock } from 'lucide-react';
 import { WorkflowPrompt } from '@/components/shared/WorkflowPrompt';
