@@ -7,7 +7,7 @@ import { VideoFeedbackModal } from '@/components/client/VideoFeedbackModal';
 import { IdeaSubmissionForm } from '@/components/client/IdeaSubmissionForm';
 import { ClientIdeasList } from '@/components/client/ClientIdeasList';
 import { StatusBadge } from '@/components/shared/StatusBadge';
-import { VIDEO_STATUSES, VIDEO_STATUS_ORDER, DESIGN_TASK_STATUSES, WRITING_TASK_STATUSES, type VideoStatus } from '@/lib/statusConfig';
+import { VIDEO_STATUSES, VIDEO_STATUS_ORDER, EDITING_ONLY_STATUS_ORDER, DESIGN_TASK_STATUSES, WRITING_TASK_STATUSES, type VideoStatus, type ClientServiceType, getClientLabel, getStatusOrderForClient } from '@/lib/statusConfig';
 import { EkaLogo } from '@/components/shared/EkaLogo';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +24,7 @@ import { formatDistanceToNow } from 'date-fns';
 interface ClientData {
   id: string; name: string; logo_url: string | null;
   monthly_deliverables: number | null; is_active: boolean;
+  service_type?: string;
 }
 
 interface VideoData {
@@ -84,8 +85,8 @@ export default function ClientDashboard() {
 
   const fetchClient = async () => {
     if (!user) return;
-    const { data } = await supabase.from('clients').select('id, name, logo_url, monthly_deliverables, is_active').eq('user_id', user.id).single();
-    if (data) setClient(data);
+    const { data } = await supabase.from('clients').select('id, name, logo_url, monthly_deliverables, is_active, service_type').eq('user_id', user.id).single();
+    if (data) setClient(data as ClientData);
   };
 
   const fetchVideos = async () => {
@@ -348,7 +349,10 @@ export default function ClientDashboard() {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {videos.map(video => {
+                    const svcType = (client?.service_type || 'full_production') as ClientServiceType;
+                    const isEditOnly = svcType === 'editing_only';
                     const statusCfg = VIDEO_STATUSES[video.status as VideoStatus];
+                    const clientLabel = getClientLabel(video.status as VideoStatus, svcType);
                     const isReview = video.status === 'client_review';
                     const isLive = video.status === 'live';
                     return (
@@ -375,13 +379,13 @@ export default function ClientDashboard() {
                             <h3 className="font-semibold text-foreground">{video.title}</h3>
                             {statusCfg && (
                               <span className={cn('inline-flex items-center gap-1 text-xs font-medium mt-1', statusCfg.color)}>
-                                {statusCfg.emoji} {statusCfg.clientLabel}
+                                {statusCfg.emoji} {clientLabel}
                               </span>
                             )}
                           </div>
 
-                          {/* Shoot info for client */}
-                          {(video.status === 'shoot_assigned' || video.status === 'shooting') && video.shoot_date && (
+                          {/* Shoot info for client — hide for editing-only */}
+                          {!isEditOnly && (video.status === 'shoot_assigned' || video.status === 'shooting') && video.shoot_date && (
                             <div className="space-y-1 text-xs">
                               {video.status === 'shooting' ? (
                                 <p className="text-primary font-medium">🎥 Your video is being filmed today!</p>
@@ -441,10 +445,9 @@ export default function ClientDashboard() {
 
                           {/* Progress bar */}
                           {(() => {
-                            const statusOrder = VIDEO_STATUS_ORDER;
+                            const statusOrder = getStatusOrderForClient(svcType);
                             const idx = statusOrder.indexOf(video.status as VideoStatus);
-                            const cfg = VIDEO_STATUSES[video.status as VideoStatus];
-                            const pct = cfg?.progressPct || ((idx + 1) / statusOrder.length) * 100;
+                            const pct = idx >= 0 ? ((idx + 1) / statusOrder.length) * 100 : 5;
                             return (
                               <div className="h-1 bg-muted rounded-full overflow-hidden">
                                 <div className="h-full bg-primary rounded-full" style={{ width: `${pct}%` }} />
@@ -479,7 +482,13 @@ export default function ClientDashboard() {
                             {isLive && video.live_url && (
                               <a href={video.live_url} target="_blank" rel="noopener noreferrer"
                                 className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-success/20 text-success hover:bg-success/30 transition-colors">
-                                <ExternalLink size={12} /> Watch Now
+                                <ExternalLink size={12} /> {isEditOnly ? 'Download' : 'Watch Now'}
+                              </a>
+                            )}
+                            {isLive && isEditOnly && video.drive_link && (
+                              <a href={video.drive_link} target="_blank" rel="noopener noreferrer"
+                                className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-success/20 text-success hover:bg-success/30 transition-colors">
+                                <Download size={12} /> Download Final
                               </a>
                             )}
                             {!isReview && (

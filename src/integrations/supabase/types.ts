@@ -191,6 +191,7 @@ export type Database = {
           notes: string | null
           phone: string | null
           project_title: string | null
+          service_type: string
           updated_at: string
           user_id: string | null
         }
@@ -211,6 +212,7 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           project_title?: string | null
+          service_type?: string
           updated_at?: string
           user_id?: string | null
         }
@@ -231,6 +233,7 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           project_title?: string | null
+          service_type?: string
           updated_at?: string
           user_id?: string | null
         }

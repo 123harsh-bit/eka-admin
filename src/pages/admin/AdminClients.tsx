@@ -9,7 +9,7 @@ import { ConfirmDeleteModal } from '@/components/shared/ConfirmDeleteModal';
 import { useToast } from '@/hooks/use-toast';
 import {
   Plus, Search, X, Users, Building2, Phone, Mail,
-  Calendar, Edit2, Trash2, ToggleLeft, ToggleRight, Upload, Loader2, KeyRound
+  Calendar, Edit2, Trash2, ToggleLeft, ToggleRight, Upload, Loader2, KeyRound, Scissors, Film
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -36,6 +36,7 @@ const INDUSTRIES = ['Technology', 'E-commerce', 'Health & Fitness', 'Real Estate
 const emptyForm = {
   name: '', email: '', phone: '', industry: '', contact_person: '',
   project_title: '', notes: '', monthly_deliverables: '', contract_start: '', contract_end: '',
+  service_type: 'full_production',
 };
 
 export default function AdminClients() {
@@ -77,6 +78,7 @@ export default function AdminClients() {
       project_title: client.project_title || '', notes: client.notes || '',
       monthly_deliverables: client.monthly_deliverables?.toString() || '',
       contract_start: client.contract_start || '', contract_end: client.contract_end || '',
+      service_type: (client as any).service_type || 'full_production',
     });
     setLogoPreview(client.logo_url);
     setLogoFile(null);
@@ -121,6 +123,7 @@ export default function AdminClients() {
         contract_start: form.contract_start || null,
         contract_end: form.contract_end || null,
         logo_url: logoUrl,
+        service_type: form.service_type,
       };
 
       if (editingClient) {
@@ -215,11 +218,16 @@ export default function AdminClients() {
                       {client.industry && <p className="text-xs text-muted-foreground">{client.industry}</p>}
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium',
                       client.is_active ? 'bg-success/20 text-success' : 'bg-muted text-muted-foreground'
                     )}>
                       {client.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                    <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium',
+                      (client as any).service_type === 'editing_only' ? 'bg-orange-500/20 text-orange-400' : 'bg-blue-500/20 text-blue-400'
+                    )}>
+                      {(client as any).service_type === 'editing_only' ? '✂️ Edit Only' : '🎬 Full'}
                     </span>
                     <span className={cn('h-2.5 w-2.5 rounded-full', client.user_id ? 'bg-success' : 'bg-destructive')}
                       title={client.user_id ? 'Portal active' : 'No portal access'} />
@@ -299,6 +307,41 @@ export default function AdminClients() {
               </div>
 
               <div className="grid grid-cols-1 gap-4">
+                {/* Service Type Selection */}
+                <div className="space-y-2">
+                  <Label>Service Type *</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, service_type: 'full_production' }))}
+                      className={cn(
+                        'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-center',
+                        form.service_type === 'full_production'
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-glass-border bg-muted/20 text-muted-foreground hover:border-primary/40'
+                      )}
+                    >
+                      <Film size={24} />
+                      <span className="text-sm font-semibold">Full Production</span>
+                      <span className="text-[10px] leading-tight">Script → Shoot → Edit → Deliver</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, service_type: 'editing_only' }))}
+                      className={cn(
+                        'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-center',
+                        form.service_type === 'editing_only'
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-glass-border bg-muted/20 text-muted-foreground hover:border-primary/40'
+                      )}
+                    >
+                      <Scissors size={24} />
+                      <span className="text-sm font-semibold">Editing Only</span>
+                      <span className="text-[10px] leading-tight">Client provides footage → Edit → Deliver</span>
+                    </button>
+                  </div>
+                </div>
+
                 <div className="space-y-1.5">
                   <Label htmlFor="name">Client Name *</Label>
                   <Input id="name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Acme Corp" required />

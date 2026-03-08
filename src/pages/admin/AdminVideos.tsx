@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { ConfirmDeleteModal } from '@/components/shared/ConfirmDeleteModal';
 import { useToast } from '@/hooks/use-toast';
-import { VIDEO_STATUSES, VIDEO_STATUS_ORDER, type VideoStatus, getActionRequired } from '@/lib/statusConfig';
+import { VIDEO_STATUSES, VIDEO_STATUS_ORDER, EDITING_ONLY_STATUS_ORDER, type VideoStatus, type ClientServiceType, getActionRequired, getStatusOrderForClient } from '@/lib/statusConfig';
 import { getDirectDownloadLink } from '@/lib/driveUtils';
 import { Plus, Search, X, Video, Edit2, Trash2, ExternalLink, MessageSquare, Loader2, FolderOpen, Lock } from 'lucide-react';
 import { WorkflowPrompt } from '@/components/shared/WorkflowPrompt';
@@ -29,7 +29,7 @@ interface VideoRow {
   client_name?: string; editor_name?: string; camera_op_name?: string; writer_name?: string; writer_id?: string | null; feedback_count?: number;
 }
 
-interface Client { id: string; name: string; }
+interface Client { id: string; name: string; service_type?: string; }
 interface TeamMember { id: string; full_name: string; }
 
 const emptyForm = {
@@ -135,8 +135,8 @@ export default function AdminVideos() {
   };
 
   const fetchClients = async () => {
-    const { data } = await supabase.from('clients').select('id, name').eq('is_active', true).order('name');
-    if (data) setClients(data);
+    const { data } = await supabase.from('clients').select('id, name, service_type').eq('is_active', true).order('name');
+    if (data) setClients(data as Client[]);
   };
 
   const fetchEditors = async () => {
@@ -196,17 +196,22 @@ export default function AdminVideos() {
     if (!form.title.trim() || !form.client_id) return;
     
     const si = statusIndex(form.status);
-    // Workflow enforcement
-    if (si >= statusIndex('scripting') && !form.assigned_writer) {
-      toast({ title: 'Please assign a writer before moving to scripting.', variant: 'destructive' });
-      return;
-    }
-    if (si >= statusIndex('shoot_assigned') && !form.assigned_camera_operator) {
-      toast({ title: 'Please assign a camera operator and shoot date before scheduling the shoot.', variant: 'destructive' });
-      return;
+    const selectedClient = clients.find(c => c.id === form.client_id);
+    const isEditingOnly = selectedClient?.service_type === 'editing_only';
+
+    // Workflow enforcement — skip for editing-only clients
+    if (!isEditingOnly) {
+      if (si >= statusIndex('scripting') && !form.assigned_writer) {
+        toast({ title: 'Please assign a writer before moving to scripting.', variant: 'destructive' });
+        return;
+      }
+      if (si >= statusIndex('shoot_assigned') && !form.assigned_camera_operator) {
+        toast({ title: 'Please assign a camera operator and shoot date before scheduling the shoot.', variant: 'destructive' });
+        return;
+      }
     }
     if (si >= statusIndex('editing') && !form.assigned_editor) {
-      toast({ title: 'Please assign an editor. Editor assignment is only available after footage has been delivered.', variant: 'destructive' });
+      toast({ title: 'Please assign an editor.', variant: 'destructive' });
       return;
     }
 
@@ -225,11 +230,11 @@ export default function AdminVideos() {
         date_planned: form.date_planned || null,
         date_delivered: form.date_delivered || null,
       };
-      // Only include gated assignments if status allows
-      if (si >= statusIndex('footage_delivered')) {
+      // Only include gated assignments if status allows (or editing-only client)
+      if (isEditingOnly || si >= statusIndex('footage_delivered')) {
         payload.assigned_editor = form.assigned_editor || null;
       }
-      if (si >= statusIndex('script_approved')) {
+      if (!isEditingOnly && si >= statusIndex('script_approved')) {
         payload.assigned_camera_operator = form.assigned_camera_operator || null;
         payload.shoot_date = form.shoot_date || null;
         payload.shoot_start_time = form.shoot_start_time || null;
@@ -326,17 +331,21 @@ export default function AdminVideos() {
   const handleStatusChange = async (videoId: string, newStatus: string) => {
     const video = videos.find(v => v.id === videoId);
     const newSi = statusIndex(newStatus);
+    const videoClientSvc = clients.find(c => c.id === video?.client_id)?.service_type;
+    const isVideoEditingOnly = videoClientSvc === 'editing_only';
 
-    // Enforce workflow gates — redirect to edit panel if assignments are missing
-    if (newSi >= statusIndex('scripting') && !video?.writer_name && !video?.writer_id) {
-      toast({ title: 'Assign a writer first', description: 'Open the edit panel and select a writer before moving to scripting.', variant: 'destructive' });
-      if (video) openEdit(video);
-      return;
-    }
-    if (newSi >= statusIndex('shoot_assigned') && !video?.assigned_camera_operator) {
-      toast({ title: 'Assign a camera operator first', description: 'Open the edit panel and assign a camera operator.', variant: 'destructive' });
-      if (video) openEdit(video);
-      return;
+    // Enforce workflow gates — skip writer/camera gates for editing-only
+    if (!isVideoEditingOnly) {
+      if (newSi >= statusIndex('scripting') && !video?.writer_name && !video?.writer_id) {
+        toast({ title: 'Assign a writer first', description: 'Open the edit panel and select a writer before moving to scripting.', variant: 'destructive' });
+        if (video) openEdit(video);
+        return;
+      }
+      if (newSi >= statusIndex('shoot_assigned') && !video?.assigned_camera_operator) {
+        toast({ title: 'Assign a camera operator first', description: 'Open the edit panel and assign a camera operator.', variant: 'destructive' });
+        if (video) openEdit(video);
+        return;
+      }
     }
     if (newSi >= statusIndex('editing') && !video?.assigned_editor) {
       toast({ title: 'Assign an editor first', description: 'Open the edit panel and assign an editor.', variant: 'destructive' });
@@ -442,6 +451,9 @@ export default function AdminVideos() {
   });
 
   const si = statusIndex(form.status);
+  const selectedClient = clients.find(c => c.id === form.client_id);
+  const isEditingOnly = selectedClient?.service_type === 'editing_only';
+  const activeStatusOrder = isEditingOnly ? EDITING_ONLY_STATUS_ORDER : VIDEO_STATUS_ORDER;
 
   return (
     <AdminLayout>
@@ -504,10 +516,16 @@ export default function AdminVideos() {
                     <td className="px-4 py-3 font-medium text-foreground">{video.title}</td>
                     <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{video.client_name}</td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <StatusBadge status={video.status as VideoStatus} type="video" />
-                        <span className="text-[10px] text-muted-foreground">{VIDEO_STATUS_ORDER.indexOf(video.status as VideoStatus) + 1}/{VIDEO_STATUS_ORDER.length}</span>
-                      </div>
+                      {(() => {
+                        const clientSvc = clients.find(c => c.id === video.client_id)?.service_type as ClientServiceType | undefined;
+                        const order = getStatusOrderForClient(clientSvc || 'full_production');
+                        return (
+                          <div className="flex items-center gap-1.5">
+                            <StatusBadge status={video.status as VideoStatus} type="video" />
+                            <span className="text-[10px] text-muted-foreground">{order.indexOf(video.status as VideoStatus) + 1}/{order.length}</span>
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td className="px-4 py-3">
                       {(() => {
@@ -576,34 +594,46 @@ export default function AdminVideos() {
               {/* Assignments Summary */}
               <div>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Assignments</p>
-                <div className="space-y-1.5 text-xs">
-                  <div className="flex justify-between"><span className="text-muted-foreground">Writer:</span><span className="text-foreground">{detailVideo.writer_name || '—'}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Camera Op:</span><span className="text-foreground">{detailVideo.camera_op_name || '—'}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Editor:</span><span className="text-foreground">{detailVideo.editor_name || '—'}</span></div>
-                </div>
+                {(() => {
+                  const detailClientSvc = clients.find(c => c.id === detailVideo.client_id)?.service_type as ClientServiceType | undefined;
+                  const isDetailEditingOnly = detailClientSvc === 'editing_only';
+                  return (
+                    <div className="space-y-1.5 text-xs">
+                      {!isDetailEditingOnly && <div className="flex justify-between"><span className="text-muted-foreground">Writer:</span><span className="text-foreground">{detailVideo.writer_name || '—'}</span></div>}
+                      {!isDetailEditingOnly && <div className="flex justify-between"><span className="text-muted-foreground">Camera Op:</span><span className="text-foreground">{detailVideo.camera_op_name || '—'}</span></div>}
+                      <div className="flex justify-between"><span className="text-muted-foreground">Editor:</span><span className="text-foreground">{detailVideo.editor_name || '—'}</span></div>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Status stepper */}
               <div>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Pipeline</p>
-                <div className="space-y-1">
-                  {VIDEO_STATUS_ORDER.map((s, i) => {
-                    const currentIdx = VIDEO_STATUS_ORDER.indexOf(detailVideo.status as VideoStatus);
-                    const isPast = i < currentIdx;
-                    const isCurrent = s === detailVideo.status;
-                    return (
-                      <button key={s} onClick={() => handleStatusChange(detailVideo.id, s)}
-                        className={cn('w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-all',
-                          isCurrent && 'bg-primary/20 text-primary font-semibold',
-                          isPast && 'text-muted-foreground',
-                          !isCurrent && !isPast && 'text-foreground/50 hover:bg-muted/30',
-                        )}>
-                        <span className={cn('h-2 w-2 rounded-full flex-shrink-0', isCurrent ? 'bg-primary' : isPast ? 'bg-success' : 'bg-muted-foreground/30')} />
-                        {VIDEO_STATUSES[s].emoji} {VIDEO_STATUSES[s].label}
-                      </button>
-                    );
-                  })}
-                </div>
+                {(() => {
+                  const detailClientSvc = clients.find(c => c.id === detailVideo.client_id)?.service_type as ClientServiceType | undefined;
+                  const detailStatusOrder = getStatusOrderForClient(detailClientSvc || 'full_production');
+                  return (
+                    <div className="space-y-1">
+                      {detailStatusOrder.map((s, i) => {
+                        const currentIdx = detailStatusOrder.indexOf(detailVideo.status as VideoStatus);
+                        const isPast = i < currentIdx;
+                        const isCurrent = s === detailVideo.status;
+                        return (
+                          <button key={s} onClick={() => handleStatusChange(detailVideo.id, s)}
+                            className={cn('w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-all',
+                              isCurrent && 'bg-primary/20 text-primary font-semibold',
+                              isPast && 'text-muted-foreground',
+                              !isCurrent && !isPast && 'text-foreground/50 hover:bg-muted/30',
+                            )}>
+                            <span className={cn('h-2 w-2 rounded-full flex-shrink-0', isCurrent ? 'bg-primary' : isPast ? 'bg-success' : 'bg-muted-foreground/30')} />
+                            {VIDEO_STATUSES[s].emoji} {VIDEO_STATUSES[s].label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Internal Links section */}
@@ -693,9 +723,22 @@ export default function AdminVideos() {
               </div>
               <div className="space-y-1.5">
                 <Label>Client *</Label>
-                <select value={form.client_id} onChange={e => setForm(f => ({ ...f, client_id: e.target.value }))} required className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground">
+                <select value={form.client_id} onChange={e => {
+                  const cid = e.target.value;
+                  const cl = clients.find(c => c.id === cid);
+                  setForm(f => ({
+                    ...f,
+                    client_id: cid,
+                    // Auto-set status to editing for editing-only clients on new video
+                    ...(!editingVideo && cl?.service_type === 'editing_only' ? { status: 'editing' } : {}),
+                  }));
+                }} required className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground">
                   <option value="">Select client…</option>
-                  {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  {clients.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} {c.service_type === 'editing_only' ? '(✂️ Edit Only)' : ''}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="space-y-1.5">
@@ -706,7 +749,7 @@ export default function AdminVideos() {
               <div className="space-y-1.5">
                 <Label>Status</Label>
                 <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground">
-                  {VIDEO_STATUS_ORDER.map(s => <option key={s} value={s}>{VIDEO_STATUSES[s].emoji} {VIDEO_STATUSES[s].label}</option>)}
+                  {activeStatusOrder.map(s => <option key={s} value={s}>{VIDEO_STATUSES[s].emoji} {VIDEO_STATUSES[s].label}</option>)}
                 </select>
               </div>
 
@@ -721,63 +764,69 @@ export default function AdminVideos() {
                 </div>
               </div>
 
-              {/* Writer assignment — visible at idea+ */}
-              <div className="border-t border-glass-border pt-4 mt-2">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">📝 Writer Assignment</p>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Assigned Writer</Label>
-                <select value={form.assigned_writer} onChange={e => setForm(f => ({ ...f, assigned_writer: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground">
-                  <option value="">Unassigned</option>
-                  {writers.map(w => <option key={w.id} value={w.id}>{w.full_name}</option>)}
-                </select>
-                {si >= statusIndex('scripting') && !form.assigned_writer && (
-                  <p className="text-xs text-destructive">⚠️ Writer is required at scripting stage</p>
-                )}
-              </div>
-
-              {/* Camera Op fields — only visible at script_approved+ */}
-              {si >= statusIndex('script_approved') ? (
+              {/* Writer assignment — visible at idea+ (NOT for editing-only) */}
+              {!isEditingOnly && (
                 <>
                   <div className="border-t border-glass-border pt-4 mt-2">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">🎬 Shoot Assignment</p>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">📝 Writer Assignment</p>
                   </div>
                   <div className="space-y-1.5">
-                    <Label>Camera Operator</Label>
-                    <select value={form.assigned_camera_operator} onChange={e => setForm(f => ({ ...f, assigned_camera_operator: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground">
+                    <Label>Assigned Writer</Label>
+                    <select value={form.assigned_writer} onChange={e => setForm(f => ({ ...f, assigned_writer: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground">
                       <option value="">Unassigned</option>
-                      {cameraOps.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
+                      {writers.map(w => <option key={w.id} value={w.id}>{w.full_name}</option>)}
                     </select>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label>Shoot Date</Label>
-                      <Input type="date" value={form.shoot_date} onChange={e => setForm(f => ({ ...f, shoot_date: e.target.value }))} />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Shoot Time</Label>
-                      <Input type="time" value={form.shoot_start_time} onChange={e => setForm(f => ({ ...f, shoot_start_time: e.target.value }))} />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Shoot Location</Label>
-                    <Input value={form.shoot_location} onChange={e => setForm(f => ({ ...f, shoot_location: e.target.value }))} placeholder="Location address" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Shoot Notes</Label>
-                    <textarea value={form.shoot_notes} onChange={e => setForm(f => ({ ...f, shoot_notes: e.target.value }))} placeholder="Notes for camera operator…" rows={2} className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground resize-none" />
+                    {si >= statusIndex('scripting') && !form.assigned_writer && (
+                      <p className="text-xs text-destructive">⚠️ Writer is required at scripting stage</p>
+                    )}
                   </div>
                 </>
-              ) : si >= statusIndex('scripting') ? (
-                <div className="border-t border-glass-border pt-4 mt-2">
-                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <Lock size={12} /> 🎬 Shoot assignment unlocks after script is approved by client
-                  </p>
-                </div>
-              ) : null}
+              )}
 
-              {/* Editor field — only visible at footage_delivered+ */}
-              {si >= statusIndex('footage_delivered') ? (
+              {/* Camera Op fields — only for full production clients */}
+              {!isEditingOnly && (
+                si >= statusIndex('script_approved') ? (
+                  <>
+                    <div className="border-t border-glass-border pt-4 mt-2">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">🎬 Shoot Assignment</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Camera Operator</Label>
+                      <select value={form.assigned_camera_operator} onChange={e => setForm(f => ({ ...f, assigned_camera_operator: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground">
+                        <option value="">Unassigned</option>
+                        {cameraOps.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
+                      </select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label>Shoot Date</Label>
+                        <Input type="date" value={form.shoot_date} onChange={e => setForm(f => ({ ...f, shoot_date: e.target.value }))} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Shoot Time</Label>
+                        <Input type="time" value={form.shoot_start_time} onChange={e => setForm(f => ({ ...f, shoot_start_time: e.target.value }))} />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Shoot Location</Label>
+                      <Input value={form.shoot_location} onChange={e => setForm(f => ({ ...f, shoot_location: e.target.value }))} placeholder="Location address" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Shoot Notes</Label>
+                      <textarea value={form.shoot_notes} onChange={e => setForm(f => ({ ...f, shoot_notes: e.target.value }))} placeholder="Notes for camera operator…" rows={2} className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground resize-none" />
+                    </div>
+                  </>
+                ) : si >= statusIndex('scripting') ? (
+                  <div className="border-t border-glass-border pt-4 mt-2">
+                    <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                      <Lock size={12} /> 🎬 Shoot assignment unlocks after script is approved by client
+                    </p>
+                  </div>
+                ) : null
+              )}
+
+              {/* Editor field — always visible for editing-only, gated for full production */}
+              {isEditingOnly || si >= statusIndex('footage_delivered') ? (
                 <>
                   <div className="border-t border-glass-border pt-4 mt-2">
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">✂️ Editor Assignment</p>
@@ -790,7 +839,7 @@ export default function AdminVideos() {
                     </select>
                   </div>
                 </>
-              ) : si >= statusIndex('script_approved') ? (
+              ) : !isEditingOnly && si >= statusIndex('script_approved') ? (
                 <div className="border-t border-glass-border pt-4 mt-2">
                   <p className="text-xs text-muted-foreground flex items-center gap-1.5">
                     <Lock size={12} /> ✂️ Editor assignment unlocks after footage is delivered

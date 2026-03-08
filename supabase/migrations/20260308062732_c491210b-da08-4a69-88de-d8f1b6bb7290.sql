@@ -1,0 +1,1 @@
+ALTER TABLE public.clients ADD COLUMN service_type text NOT NULL DEFAULT 'full_production';
