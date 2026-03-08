@@ -100,8 +100,8 @@ export default function EditorDashboard() {
     <EditorLayout>
       <div className="space-y-6">
         <MyPerformance role="editor" />
-        <div className="flex gap-6 h-[calc(100vh-10rem)]">
-        <div className={cn('flex flex-col space-y-4', selectedVideo ? 'flex-1 min-w-0' : 'w-full')}>
+        <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 h-auto lg:h-[calc(100vh-10rem)]">
+        <div className={cn('flex flex-col space-y-4', selectedVideo ? 'flex-1 min-w-0 hidden lg:flex' : 'w-full')}>
           <div>
             <h1 className="text-3xl font-display font-bold gradient-text">My Tasks</h1>
             <p className="text-muted-foreground mt-1">{videos.length} active video{videos.length !== 1 ? 's' : ''} assigned to you</p>
