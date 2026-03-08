@@ -9,7 +9,7 @@ import {
   LayoutDashboard, Users, Video, Palette, PenTool, Camera,
   UserCircle, Bell, Settings, LogOut, Menu, X, ListTodo, Calendar, Scissors, Lightbulb, BarChart3, MessageCircle
 } from 'lucide-react';
-import { TeamChat } from '@/components/shared/TeamChat';
+
 import { useState } from 'react';
 
 const adminNavItems = [
@@ -101,7 +101,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
           {children}
         </div>
       </main>
-      <TeamChat />
+      
     </div>
   );
 }

@@ -7,6 +7,8 @@ import { VideoFeedbackModal } from '@/components/client/VideoFeedbackModal';
 import { IdeaSubmissionForm } from '@/components/client/IdeaSubmissionForm';
 import { ClientIdeasList } from '@/components/client/ClientIdeasList';
 import { ClientRatingModal } from '@/components/client/ClientRatingModal';
+import { VideoProgressTracker } from '@/components/client/VideoProgressTracker';
+import { DeliveryCalendar } from '@/components/client/DeliveryCalendar';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { VIDEO_STATUSES, VIDEO_STATUS_ORDER, EDITING_ONLY_STATUS_ORDER, DESIGN_TASK_STATUSES, WRITING_TASK_STATUSES, type VideoStatus, type ClientServiceType, getClientLabel, getStatusOrderForClient } from '@/lib/statusConfig';
 import { EkaLogo } from '@/components/shared/EkaLogo';
@@ -16,7 +18,7 @@ import {
   Video, Download, Check, MessageSquare, ExternalLink,
   LogOut, LayoutDashboard, Palette, PenTool, BarChart3,
   Settings, Bell, TrendingUp, Clock, CheckCircle, Star,
-  Menu, X, Loader2, Lightbulb
+  Menu, X, Loader2, Lightbulb, GitBranch, CalendarDays
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth as useAuthHook } from '@/hooks/useAuth';
@@ -44,6 +46,8 @@ interface ActivityItem {
 const FULL_PRODUCTION_NAV = [
   { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { id: 'videos', icon: Video, label: 'Videos' },
+  { id: 'tracker', icon: GitBranch, label: 'Progress Tracker' },
+  { id: 'calendar', icon: CalendarDays, label: 'Calendar' },
   { id: 'ideas', icon: Lightbulb, label: '💡 My Ideas' },
   { id: 'design', icon: Palette, label: 'Design Deliverables' },
   { id: 'content', icon: PenTool, label: 'Content & Copy' },
@@ -54,6 +58,8 @@ const FULL_PRODUCTION_NAV = [
 const EDITING_ONLY_NAV = [
   { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { id: 'videos', icon: Video, label: 'Videos' },
+  { id: 'tracker', icon: GitBranch, label: 'Progress Tracker' },
+  { id: 'calendar', icon: CalendarDays, label: 'Calendar' },
   { id: 'ideas', icon: Lightbulb, label: '💡 My Ideas' },
   { id: 'design', icon: Palette, label: 'Design Deliverables' },
   { id: 'report', icon: BarChart3, label: 'Monthly Report' },
@@ -547,7 +553,46 @@ export default function ClientDashboard() {
             </div>
           )}
 
-          {/* IDEAS SECTION */}
+          {/* PROGRESS TRACKER SECTION */}
+          {section === 'tracker' && (
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-3xl font-display font-bold gradient-text">Progress Tracker</h1>
+                <p className="text-muted-foreground mt-1">See exactly where each video is in production</p>
+              </div>
+              {videos.filter(v => !['live'].includes(v.status)).length === 0 ? (
+                <div className="glass-card p-16 text-center">
+                  <GitBranch size={40} className="mx-auto text-muted-foreground/40 mb-3" />
+                  <p className="text-muted-foreground">No active videos in production.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {videos
+                    .filter(v => !['live'].includes(v.status))
+                    .map(v => (
+                      <VideoProgressTracker
+                        key={v.id}
+                        videoTitle={v.title}
+                        currentStatus={v.status}
+                        serviceType={(client?.service_type || 'full_production') as ClientServiceType}
+                      />
+                    ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* DELIVERY CALENDAR SECTION */}
+          {section === 'calendar' && (
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-3xl font-display font-bold gradient-text">Delivery Calendar</h1>
+                <p className="text-muted-foreground mt-1">Track shoots and delivery dates</p>
+              </div>
+              <DeliveryCalendar videos={videos} />
+            </div>
+          )}
+
           {section === 'ideas' && client && (
             showIdeaForm ? (
               <div className="space-y-6">
