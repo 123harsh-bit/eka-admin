@@ -164,6 +164,14 @@ export default function AdminVideos() {
     }
   };
 
+  const fetchDesigners = async () => {
+    const { data: designerRoles } = await supabase.from('user_roles').select('user_id').eq('role', 'designer');
+    if (designerRoles && designerRoles.length > 0) {
+      const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', designerRoles.map(r => r.user_id));
+      if (profiles) setDesigners(profiles.map(p => ({ id: p.id, full_name: p.full_name })));
+    }
+  };
+
   const openAdd = () => { setEditingVideo(null); setForm({ ...emptyForm }); setPanelOpen(true); setDetailVideo(null); };
 
   const openEdit = (video: VideoRow) => {
@@ -172,6 +180,7 @@ export default function AdminVideos() {
       title: video.title, description: video.description || '', client_id: video.client_id,
       assigned_editor: video.assigned_editor || '',
       assigned_writer: video.writer_id || '',
+      assigned_designer: video.designer_id || '',
       assigned_camera_operator: video.assigned_camera_operator || '',
       shoot_date: video.shoot_date || '', shoot_start_time: video.shoot_start_time || '',
       shoot_location: video.shoot_location || '', shoot_notes: video.shoot_notes || '',
