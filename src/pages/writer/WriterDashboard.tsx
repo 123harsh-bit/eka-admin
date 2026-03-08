@@ -312,6 +312,7 @@ export default function WriterDashboard() {
               )}
             </div>
           </div>
+          </>
         )}
       </div>
     </WriterLayout>
