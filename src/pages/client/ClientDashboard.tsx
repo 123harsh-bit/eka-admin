@@ -445,10 +445,9 @@ export default function ClientDashboard() {
 
                           {/* Progress bar */}
                           {(() => {
-                            const statusOrder = VIDEO_STATUS_ORDER;
+                            const statusOrder = getStatusOrderForClient(svcType);
                             const idx = statusOrder.indexOf(video.status as VideoStatus);
-                            const cfg = VIDEO_STATUSES[video.status as VideoStatus];
-                            const pct = cfg?.progressPct || ((idx + 1) / statusOrder.length) * 100;
+                            const pct = idx >= 0 ? ((idx + 1) / statusOrder.length) * 100 : 5;
                             return (
                               <div className="h-1 bg-muted rounded-full overflow-hidden">
                                 <div className="h-full bg-primary rounded-full" style={{ width: `${pct}%` }} />
