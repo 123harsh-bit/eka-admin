@@ -73,7 +73,7 @@ export function WriterLayout({ children }: { children: ReactNode }) {
         </div>
         <div className="p-4 md:p-6 lg:p-8 fade-in flex-1">{children}</div>
       </main>
-      <TeamChat />
+      
     </div>
     </StartWorkday>
   );
