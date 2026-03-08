@@ -115,6 +115,21 @@ export default function AdminVideos() {
         }
       }
 
+      // Resolve designer names from design_tasks
+      let designerMap: Record<string, { name: string; id: string }> = {};
+      if (videoIds.length > 0) {
+        const { data: dTasks } = await supabase.from('design_tasks').select('video_id, assigned_designer').in('video_id', videoIds).not('assigned_designer', 'is', null);
+        if (dTasks && dTasks.length > 0) {
+          const designerIds = [...new Set(dTasks.map(d => d.assigned_designer!))];
+          const { data: dProfiles } = await supabase.from('profiles').select('id, full_name').in('id', designerIds);
+          const dProfileMap: Record<string, string> = {};
+          dProfiles?.forEach(p => { dProfileMap[p.id] = p.full_name; });
+          dTasks.forEach(d => {
+            if (d.video_id && d.assigned_designer) designerMap[d.video_id] = { name: dProfileMap[d.assigned_designer] || '', id: d.assigned_designer };
+          });
+        }
+      }
+
       const vids: VideoRow[] = (data as any[]).map(v => ({
         ...v,
         client_name: v.clients?.name || 'Unknown',
@@ -122,6 +137,8 @@ export default function AdminVideos() {
         camera_op_name: v.assigned_camera_operator ? profileMap[v.assigned_camera_operator] || null : null,
         writer_name: writerMap[v.id]?.name || null,
         writer_id: writerMap[v.id]?.id || null,
+        designer_name: designerMap[v.id]?.name || null,
+        designer_id: designerMap[v.id]?.id || null,
       }));
 
       const ids = vids.map(v => v.id);
