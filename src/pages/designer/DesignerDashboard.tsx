@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Palette, ExternalLink, Loader2, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { PullToRefresh } from '@/components/shared/PullToRefresh';
 
 interface DesignTask {
   id: string; title: string; task_type: string; status: string;
