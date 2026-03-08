@@ -306,7 +306,8 @@ export default function AdminAttendance() {
             </div>
 
             <div className="glass-card overflow-auto">
-              <table className="w-full text-sm">
+              {/* Desktop table */}
+              <table className="w-full text-sm hidden md:table">
                 <thead className="bg-card/90 border-b border-glass-border">
                   <tr>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Date</th>
@@ -337,6 +338,33 @@ export default function AdminAttendance() {
                   })}
                 </tbody>
               </table>
+
+              {/* Mobile cards */}
+              <div className="md:hidden divide-y divide-glass-border/50">
+                {historyLoading ? [...Array(4)].map((_, i) => (
+                  <div key={i} className="p-4"><div className="h-12 bg-muted/50 rounded-lg animate-pulse" /></div>
+                )) : historyData.length === 0 ? (
+                  <div className="p-12 text-center text-muted-foreground">No records for this period.</div>
+                ) : historyData.map((r: any) => {
+                  const cfg = getStatusConfig(r.status);
+                  return (
+                    <div key={r.id} className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-foreground text-sm">{r.profiles?.full_name || '—'}</p>
+                          <p className="text-xs text-muted-foreground">{new Date(r.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
+                        </div>
+                        <span className={cn('text-[11px] px-2 py-0.5 rounded-full font-medium', cfg.bgColor, cfg.color)}>{cfg.emoji} {cfg.label}</span>
+                      </div>
+                      <div className="flex items-center gap-4 mt-1.5 text-xs text-muted-foreground">
+                        <span>In: {r.login_time ? new Date(r.login_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '—'}</span>
+                        <span>Out: {r.logout_time ? new Date(r.logout_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '—'}</span>
+                        <span>{r.total_hours_worked ? `${r.total_hours_worked}h` : '—'}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </>
         )}
