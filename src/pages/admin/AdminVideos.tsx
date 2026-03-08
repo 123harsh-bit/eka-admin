@@ -230,11 +230,11 @@ export default function AdminVideos() {
         date_planned: form.date_planned || null,
         date_delivered: form.date_delivered || null,
       };
-      // Only include gated assignments if status allows
-      if (si >= statusIndex('footage_delivered')) {
+      // Only include gated assignments if status allows (or editing-only client)
+      if (isEditingOnly || si >= statusIndex('footage_delivered')) {
         payload.assigned_editor = form.assigned_editor || null;
       }
-      if (si >= statusIndex('script_approved')) {
+      if (!isEditingOnly && si >= statusIndex('script_approved')) {
         payload.assigned_camera_operator = form.assigned_camera_operator || null;
         payload.shoot_date = form.shoot_date || null;
         payload.shoot_start_time = form.shoot_start_time || null;
