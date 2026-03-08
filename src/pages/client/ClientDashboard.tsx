@@ -212,7 +212,7 @@ export default function ClientDashboard() {
           <button className="lg:hidden text-muted-foreground" onClick={() => setSidebarOpen(false)}><X size={20} /></button>
         </div>
         <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
-          {CLIENT_NAV.map(item => (
+          {(client?.service_type === 'editing_only' ? EDITING_ONLY_NAV : FULL_PRODUCTION_NAV).map(item => (
             <button
               key={item.id}
               onClick={() => { setSection(item.id); setSidebarOpen(false); }}
