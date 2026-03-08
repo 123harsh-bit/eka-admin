@@ -499,6 +499,12 @@ export default function ClientDashboard() {
                                 <Download size={12} /> Final
                               </a>
                             )}
+                            {(isLive || video.status === 'approved') && (
+                              <button onClick={() => setRatingVideo(video)}
+                                className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 transition-colors font-medium">
+                                <Star size={12} /> Rate
+                              </button>
+                            )}
                             <button onClick={() => setFeedbackVideo(video)}
                               className="flex items-center gap-1 text-xs px-2 py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground transition-colors">
                               <MessageSquare size={12} />
