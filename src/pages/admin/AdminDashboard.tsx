@@ -202,6 +202,7 @@ export default function AdminDashboard() {
 
   return (
     <AdminLayout>
+      <PullToRefresh onRefresh={fetchDashboardData}>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-display font-bold gradient-text">Agency Overview</h1>
