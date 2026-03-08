@@ -175,15 +175,17 @@ export function getActionRequired(status: string, video: { assigned_editor?: str
   // For editing-only, simplify action labels
   if (serviceType === 'editing_only') {
     switch (status) {
+      case 'idea':
+        return { type: 'admin' as const, label: 'Not Started', color: 'bg-muted text-muted-foreground' };
       case 'editing':
-      case 'revisions':
         return { type: 'team' as const, label: `Waiting for ${video.editor_name || 'Editor'}`, color: 'bg-blue-500/20 text-blue-400' };
       case 'internal_review':
       case 'approved':
-      case 'ready_to_upload':
         return { type: 'admin' as const, label: 'Your Action Needed', color: 'bg-primary/20 text-primary' };
       case 'client_review':
         return { type: 'client' as const, label: `Waiting for ${video.client_name || 'Client'}`, color: 'bg-pink-500/20 text-pink-400' };
+      case 'ready_to_upload':
+        return { type: 'admin' as const, label: 'Preparing Delivery', color: 'bg-amber-500/20 text-amber-400' };
       case 'live':
         return { type: 'done' as const, label: '✅ Delivered', color: 'bg-success/20 text-success' };
       default:
