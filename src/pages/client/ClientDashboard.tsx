@@ -156,8 +156,13 @@ export default function ClientDashboard() {
 
   const handleApprove = async (video: VideoData) => {
     setApprovingId(video.id);
-    // For editing_only clients, "client approves" means move to ready_to_upload (not "approved" which is internal)
-    const svcType = (client?.service_type || 'full_production') as ClientServiceType;
+    // Fetch service_type directly from DB to avoid stale state
+    let svcType: ClientServiceType = (client?.service_type || 'full_production') as ClientServiceType;
+    if (client?.id) {
+      const { data: freshClient } = await supabase.from('clients').select('service_type').eq('id', client.id).single();
+      if (freshClient?.service_type) svcType = freshClient.service_type as ClientServiceType;
+    }
+    // For editing_only clients, "client approves" means move to ready_to_upload (not "approved" which is internal step)
     const targetStatus = svcType === 'editing_only' ? 'ready_to_upload' : 'approved';
     // Optimistic UI update — instantly reflect change
     setVideos(prev => prev.map(v => v.id === video.id ? { ...v, status: targetStatus } : v));
