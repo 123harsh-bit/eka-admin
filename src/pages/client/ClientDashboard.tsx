@@ -156,9 +156,12 @@ export default function ClientDashboard() {
 
   const handleApprove = async (video: VideoData) => {
     setApprovingId(video.id);
+    // For editing_only clients, "client approves" means move to ready_to_upload (not "approved" which is internal)
+    const svcType = (client?.service_type || 'full_production') as ClientServiceType;
+    const targetStatus = svcType === 'editing_only' ? 'ready_to_upload' : 'approved';
     // Optimistic UI update — instantly reflect change
-    setVideos(prev => prev.map(v => v.id === video.id ? { ...v, status: 'approved' } : v));
-    const { error } = await supabase.from('videos').update({ status: 'approved' }).eq('id', video.id);
+    setVideos(prev => prev.map(v => v.id === video.id ? { ...v, status: targetStatus } : v));
+    const { error } = await supabase.from('videos').update({ status: targetStatus }).eq('id', video.id);
     if (error) {
       // Revert on failure
       setVideos(prev => prev.map(v => v.id === video.id ? { ...v, status: video.status } : v));
@@ -188,7 +191,7 @@ export default function ClientDashboard() {
           });
         }
       }
-      await supabase.from('activity_log').insert({ entity_type: 'video', entity_id: video.id, action: 'status_changed', details: { status: 'approved' }, actor_id: user?.id });
+      await supabase.from('activity_log').insert({ entity_type: 'video', entity_id: video.id, action: 'status_changed', details: { status: targetStatus }, actor_id: user?.id });
       toast({ title: '✅ Video approved!', description: 'The Eka team has been notified.' });
     }
     setApprovingId(null);
