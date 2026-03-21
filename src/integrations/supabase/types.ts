@@ -291,6 +291,168 @@ export type Database = {
         }
         Relationships: []
       }
+      content_items: {
+        Row: {
+          caption_brief: string | null
+          client_id: string
+          content_type: string
+          created_at: string
+          hashtags: string | null
+          id: string
+          is_visible_to_client: boolean
+          linked_design_task_id: string | null
+          linked_video_id: string | null
+          linked_writing_task_id: string | null
+          plan_id: string
+          planned_date: string | null
+          platform: string
+          published_url: string | null
+          reference_url: string | null
+          status: string
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          visual_brief: string | null
+        }
+        Insert: {
+          caption_brief?: string | null
+          client_id: string
+          content_type: string
+          created_at?: string
+          hashtags?: string | null
+          id?: string
+          is_visible_to_client?: boolean
+          linked_design_task_id?: string | null
+          linked_video_id?: string | null
+          linked_writing_task_id?: string | null
+          plan_id: string
+          planned_date?: string | null
+          platform: string
+          published_url?: string | null
+          reference_url?: string | null
+          status?: string
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          visual_brief?: string | null
+        }
+        Update: {
+          caption_brief?: string | null
+          client_id?: string
+          content_type?: string
+          created_at?: string
+          hashtags?: string | null
+          id?: string
+          is_visible_to_client?: boolean
+          linked_design_task_id?: string | null
+          linked_video_id?: string | null
+          linked_writing_task_id?: string | null
+          plan_id?: string
+          planned_date?: string | null
+          platform?: string
+          published_url?: string | null
+          reference_url?: string | null
+          status?: string
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          visual_brief?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_items_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_items_linked_design_task_id_fkey"
+            columns: ["linked_design_task_id"]
+            isOneToOne: false
+            referencedRelation: "design_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_items_linked_video_id_fkey"
+            columns: ["linked_video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_items_linked_writing_task_id_fkey"
+            columns: ["linked_writing_task_id"]
+            isOneToOne: false
+            referencedRelation: "writing_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_items_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "content_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_plans: {
+        Row: {
+          approved_at: string | null
+          client_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          month: number
+          status: string
+          strategy_notes: string | null
+          title: string | null
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          approved_at?: string | null
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          month: number
+          status?: string
+          strategy_notes?: string | null
+          title?: string | null
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          approved_at?: string | null
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          month?: number
+          status?: string
+          strategy_notes?: string | null
+          title?: string | null
+          updated_at?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_plans_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_plans_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_todos: {
         Row: {
           admin_id: string

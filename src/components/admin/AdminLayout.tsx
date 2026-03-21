@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { NotificationBell } from '@/components/shared/NotificationBell';
 import {
   LayoutDashboard, Users, Video, Palette, PenTool, Camera,
-  UserCircle, Bell, Settings, LogOut, Menu, X, ListTodo, Calendar, Scissors, Lightbulb, BarChart3, MessageCircle
+  UserCircle, Bell, Settings, LogOut, Menu, X, ListTodo, Calendar, Scissors, Lightbulb, BarChart3, MessageCircle, CalendarRange
 } from 'lucide-react';
 
 import { useState } from 'react';
@@ -16,6 +16,7 @@ const adminNavItems = [
   { to: '/admin', icon: LayoutDashboard, label: 'Overview', end: true },
   { to: '/admin/clients', icon: Users, label: 'Clients' },
   { to: '/admin/client-ideas', icon: Lightbulb, label: '💡 Client Ideas' },
+  { to: '/admin/content-planner', icon: CalendarRange, label: '📅 Content Planner' },
   { to: '/admin/videos', icon: Video, label: 'Videos' },
   { to: '/admin/design-tasks', icon: Palette, label: 'Design Tasks' },
   { to: '/admin/writing-tasks', icon: PenTool, label: 'Writing Tasks' },

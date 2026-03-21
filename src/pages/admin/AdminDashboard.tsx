@@ -5,6 +5,7 @@ import { TableSkeleton } from '@/components/shared/SkeletonLoader';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { TeamLiveStatus } from '@/components/admin/TeamLiveStatus';
 import { ClientSatisfactionWidget } from '@/components/admin/ClientSatisfactionWidget';
+import { ContentPlanStatusWidget } from '@/components/admin/ContentPlanStatusWidget';
 import { formatDistanceToNow } from 'date-fns';
 import { Users, Video, Clock, CheckCircle, TrendingUp, AlertTriangle } from 'lucide-react';
 import { PullToRefresh } from '@/components/shared/PullToRefresh';
@@ -232,6 +233,8 @@ export default function AdminDashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Content Plan Status */}
+          <ContentPlanStatusWidget />
           {/* Client Snapshots */}
           <div className="lg:col-span-2 glass-card p-6 space-y-4">
             <h2 className="text-lg font-display font-semibold text-foreground">Active Clients</h2>

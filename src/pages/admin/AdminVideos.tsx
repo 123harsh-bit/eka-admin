@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { VIDEO_STATUSES, VIDEO_STATUS_ORDER, EDITING_ONLY_STATUS_ORDER, EDITING_ONLY_ADMIN_LABELS, type VideoStatus, type ClientServiceType, getActionRequired, getStatusOrderForClient, getAdminLabel } from '@/lib/statusConfig';
 import { getDirectDownloadLink } from '@/lib/driveUtils';
 import { Plus, Search, X, Video, Edit2, Trash2, ExternalLink, MessageSquare, Loader2, FolderOpen, Lock } from 'lucide-react';
+import { ContentPlanBadge } from '@/components/shared/ContentPlanBadge';
 import { WorkflowPrompt } from '@/components/shared/WorkflowPrompt';
 import { handleVideoStatusChange } from '@/lib/handleVideoStatusChange';
 import { syncVideoToWritingTask } from '@/lib/syncTaskToVideo';
@@ -27,6 +28,7 @@ interface VideoRow {
   internal_notes: string | null; is_internal_note_visible_to_client: boolean;
   date_planned: string | null; date_delivered: string | null; created_at: string;
   client_name?: string; editor_name?: string; camera_op_name?: string; writer_name?: string; writer_id?: string | null; designer_name?: string | null; designer_id?: string | null; feedback_count?: number;
+  has_content_plan?: boolean;
 }
 
 interface Client { id: string; name: string; service_type?: string; }

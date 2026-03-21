@@ -126,11 +126,72 @@ export const WRITING_TASK_TYPES = [
   { value: 'long_form_script', label: 'Long Form Script' },
   { value: 'caption', label: 'Caption' },
   { value: 'ad_copy', label: 'Ad Copy' },
-  { value: 'blog', label: 'Blog Post' },
   { value: 'email', label: 'Email Newsletter' },
   { value: 'bio', label: 'Bio/About' },
   { value: 'other', label: 'Other' },
 ];
+
+// Content Planner types
+export const CONTENT_TYPES = [
+  { value: 'reel', label: 'Reel', icon: '🎬', platform: 'instagram', color: 'bg-purple-500/20 text-purple-400 border-purple-500/30' },
+  { value: 'post', label: 'Post', icon: '📷', platform: 'instagram', color: 'bg-pink-500/20 text-pink-400 border-pink-500/30' },
+  { value: 'carousel', label: 'Carousel', icon: '🎠', platform: 'instagram', color: 'bg-fuchsia-500/20 text-fuchsia-400 border-fuchsia-500/30' },
+  { value: 'story', label: 'Story', icon: '📱', platform: 'instagram', color: 'bg-violet-500/20 text-violet-400 border-violet-500/30' },
+  { value: 'youtube_video', label: 'YouTube Video', icon: '📺', platform: 'youtube', color: 'bg-red-500/20 text-red-400 border-red-500/30' },
+  { value: 'youtube_short', label: 'YouTube Short', icon: '⚡', platform: 'youtube', color: 'bg-red-500/20 text-red-400 border-red-500/30' },
+  { value: 'linkedin_post', label: 'LinkedIn Post', icon: '💼', platform: 'linkedin', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
+  { value: 'facebook_post', label: 'Facebook Post', icon: '👥', platform: 'facebook', color: 'bg-sky-500/20 text-sky-400 border-sky-500/30' },
+  { value: 'ad', label: 'Ad', icon: '📢', platform: 'multiple', color: 'bg-orange-500/20 text-orange-400 border-orange-500/30' },
+  { value: 'other', label: 'Other', icon: '📌', platform: 'other', color: 'bg-muted text-muted-foreground border-border' },
+] as const;
+
+export const PLATFORM_OPTIONS = [
+  { value: 'instagram', label: 'Instagram', icon: '📷', color: 'bg-purple-500/20 text-purple-400' },
+  { value: 'youtube', label: 'YouTube', icon: '📺', color: 'bg-red-500/20 text-red-400' },
+  { value: 'linkedin', label: 'LinkedIn', icon: '💼', color: 'bg-blue-500/20 text-blue-400' },
+  { value: 'facebook', label: 'Facebook', icon: '👥', color: 'bg-sky-500/20 text-sky-400' },
+  { value: 'multiple', label: 'Multiple', icon: '🌐', color: 'bg-muted text-muted-foreground' },
+  { value: 'other', label: 'Other', icon: '📌', color: 'bg-muted text-muted-foreground' },
+] as const;
+
+export const CONTENT_ITEM_STATUSES = {
+  planned: { label: 'Planned', emoji: '📋', color: 'text-muted-foreground', bgColor: 'bg-muted' },
+  in_production: { label: 'In Production', emoji: '🔄', color: 'text-blue-400', bgColor: 'bg-blue-500/20' },
+  ready: { label: 'Ready', emoji: '✅', color: 'text-success', bgColor: 'bg-success/20' },
+  published: { label: 'Published', emoji: '🟢', color: 'text-emerald-400', bgColor: 'bg-emerald-500/20' },
+  cancelled: { label: 'Cancelled', emoji: '❌', color: 'text-destructive', bgColor: 'bg-destructive/20' },
+} as const;
+
+export function getContentTypeConfig(type: string) {
+  return CONTENT_TYPES.find(t => t.value === type) || CONTENT_TYPES[CONTENT_TYPES.length - 1];
+}
+
+export function getPlatformConfig(platform: string) {
+  return PLATFORM_OPTIONS.find(p => p.value === platform) || PLATFORM_OPTIONS[PLATFORM_OPTIONS.length - 1];
+}
+
+// What production tasks each content type auto-creates
+export function getAutoCreateTasks(contentType: string): { video: boolean; writing: boolean; design: boolean; writingType?: string; designType?: string } {
+  switch (contentType) {
+    case 'reel':
+    case 'youtube_video':
+    case 'youtube_short':
+      return { video: true, writing: true, design: true, writingType: 'reel_script', designType: 'thumbnail' };
+    case 'post':
+      return { video: false, writing: true, design: true, writingType: 'caption', designType: 'social_graphic' };
+    case 'carousel':
+      return { video: false, writing: true, design: true, writingType: 'caption', designType: 'social_graphic' };
+    case 'linkedin_post':
+    case 'facebook_post':
+      return { video: false, writing: true, design: true, writingType: 'caption', designType: 'social_graphic' };
+    case 'story':
+      return { video: false, writing: false, design: true, designType: 'social_graphic' };
+    case 'ad':
+      return { video: false, writing: true, design: true, writingType: 'ad_copy', designType: 'social_graphic' };
+    default:
+      return { video: false, writing: false, design: false };
+  }
+}
 
 // Duration formatting helpers
 export function formatDuration(seconds: number): string {

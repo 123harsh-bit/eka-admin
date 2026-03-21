@@ -9,6 +9,7 @@ import { ClientIdeasList } from '@/components/client/ClientIdeasList';
 import { ClientRatingModal } from '@/components/client/ClientRatingModal';
 import { VideoProgressTracker } from '@/components/client/VideoProgressTracker';
 import { DeliveryCalendar } from '@/components/client/DeliveryCalendar';
+import { ClientContentPlan } from '@/components/client/ClientContentPlan';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { VIDEO_STATUSES, VIDEO_STATUS_ORDER, EDITING_ONLY_STATUS_ORDER, DESIGN_TASK_STATUSES, WRITING_TASK_STATUSES, type VideoStatus, type ClientServiceType, getClientLabel, getStatusOrderForClient } from '@/lib/statusConfig';
 import { EkaLogo } from '@/components/shared/EkaLogo';
@@ -45,6 +46,7 @@ interface ActivityItem {
 
 const FULL_PRODUCTION_NAV = [
   { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { id: 'content-plan', icon: CalendarDays, label: '📅 Content Plan' },
   { id: 'videos', icon: Video, label: 'Videos' },
   { id: 'tracker', icon: GitBranch, label: 'Progress Tracker' },
   { id: 'calendar', icon: CalendarDays, label: 'Calendar' },
@@ -57,6 +59,7 @@ const FULL_PRODUCTION_NAV = [
 
 const EDITING_ONLY_NAV = [
   { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { id: 'content-plan', icon: CalendarDays, label: '📅 Content Plan' },
   { id: 'videos', icon: Video, label: 'Videos' },
   { id: 'tracker', icon: GitBranch, label: 'Progress Tracker' },
   { id: 'calendar', icon: CalendarDays, label: 'Calendar' },
@@ -598,6 +601,17 @@ export default function ClientDashboard() {
                 <p className="text-muted-foreground mt-1">Track shoots and delivery dates</p>
               </div>
               <DeliveryCalendar videos={videos} />
+            </div>
+          )}
+
+          {/* CONTENT PLAN SECTION */}
+          {section === 'content-plan' && client && (
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-3xl font-display font-bold gradient-text">📅 Content Plan</h1>
+                <p className="text-muted-foreground mt-1">Your monthly content strategy and schedule</p>
+              </div>
+              <ClientContentPlan clientId={client.id} />
             </div>
           )}
 
