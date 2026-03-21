@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { NotificationBell } from '@/components/shared/NotificationBell';
 import {
   LayoutDashboard, Users, Video, Palette, PenTool, Camera,
-  UserCircle, Bell, Settings, LogOut, Menu, X, ListTodo, Calendar, Scissors, Lightbulb, BarChart3, MessageCircle
+  UserCircle, Bell, Settings, LogOut, Menu, X, ListTodo, Calendar, Scissors, Lightbulb, BarChart3, MessageCircle, CalendarRange
 } from 'lucide-react';
 
 import { useState } from 'react';
