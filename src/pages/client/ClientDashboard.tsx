@@ -46,6 +46,7 @@ interface ActivityItem {
 
 const FULL_PRODUCTION_NAV = [
   { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { id: 'content-plan', icon: CalendarDays, label: '📅 Content Plan' },
   { id: 'videos', icon: Video, label: 'Videos' },
   { id: 'tracker', icon: GitBranch, label: 'Progress Tracker' },
   { id: 'calendar', icon: CalendarDays, label: 'Calendar' },
@@ -58,6 +59,7 @@ const FULL_PRODUCTION_NAV = [
 
 const EDITING_ONLY_NAV = [
   { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { id: 'content-plan', icon: CalendarDays, label: '📅 Content Plan' },
   { id: 'videos', icon: Video, label: 'Videos' },
   { id: 'tracker', icon: GitBranch, label: 'Progress Tracker' },
   { id: 'calendar', icon: CalendarDays, label: 'Calendar' },
