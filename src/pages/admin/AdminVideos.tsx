@@ -28,6 +28,7 @@ interface VideoRow {
   internal_notes: string | null; is_internal_note_visible_to_client: boolean;
   date_planned: string | null; date_delivered: string | null; created_at: string;
   client_name?: string; editor_name?: string; camera_op_name?: string; writer_name?: string; writer_id?: string | null; designer_name?: string | null; designer_id?: string | null; feedback_count?: number;
+  has_content_plan?: boolean;
 }
 
 interface Client { id: string; name: string; service_type?: string; }
