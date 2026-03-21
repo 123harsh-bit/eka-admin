@@ -9,6 +9,7 @@ import { ClientIdeasList } from '@/components/client/ClientIdeasList';
 import { ClientRatingModal } from '@/components/client/ClientRatingModal';
 import { VideoProgressTracker } from '@/components/client/VideoProgressTracker';
 import { DeliveryCalendar } from '@/components/client/DeliveryCalendar';
+import { ClientContentPlan } from '@/components/client/ClientContentPlan';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { VIDEO_STATUSES, VIDEO_STATUS_ORDER, EDITING_ONLY_STATUS_ORDER, DESIGN_TASK_STATUSES, WRITING_TASK_STATUSES, type VideoStatus, type ClientServiceType, getClientLabel, getStatusOrderForClient } from '@/lib/statusConfig';
 import { EkaLogo } from '@/components/shared/EkaLogo';
