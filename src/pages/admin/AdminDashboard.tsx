@@ -5,6 +5,7 @@ import { TableSkeleton } from '@/components/shared/SkeletonLoader';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { TeamLiveStatus } from '@/components/admin/TeamLiveStatus';
 import { ClientSatisfactionWidget } from '@/components/admin/ClientSatisfactionWidget';
+import { ContentPlanStatusWidget } from '@/components/admin/ContentPlanStatusWidget';
 import { formatDistanceToNow } from 'date-fns';
 import { Users, Video, Clock, CheckCircle, TrendingUp, AlertTriangle } from 'lucide-react';
 import { PullToRefresh } from '@/components/shared/PullToRefresh';
