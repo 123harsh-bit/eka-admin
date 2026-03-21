@@ -13,6 +13,7 @@ interface ContentItem {
   linked_video_id: string | null;
   linked_writing_task_id: string | null;
   linked_design_task_id: string | null;
+  [key: string]: unknown;
 }
 
 interface Props {

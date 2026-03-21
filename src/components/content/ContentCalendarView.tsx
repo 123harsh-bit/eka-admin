@@ -10,6 +10,7 @@ interface ContentItem {
   platform: string;
   planned_date: string | null;
   status: string;
+  [key: string]: unknown;
 }
 
 interface Props {
