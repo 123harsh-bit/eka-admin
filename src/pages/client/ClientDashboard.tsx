@@ -604,6 +604,17 @@ export default function ClientDashboard() {
             </div>
           )}
 
+          {/* CONTENT PLAN SECTION */}
+          {section === 'content-plan' && client && (
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-3xl font-display font-bold gradient-text">📅 Content Plan</h1>
+                <p className="text-muted-foreground mt-1">Your monthly content strategy and schedule</p>
+              </div>
+              <ClientContentPlan clientId={client.id} />
+            </div>
+          )}
+
           {section === 'ideas' && client && (
             showIdeaForm ? (
               <div className="space-y-6">
