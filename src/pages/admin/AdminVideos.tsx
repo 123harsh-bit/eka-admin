@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { VIDEO_STATUSES, VIDEO_STATUS_ORDER, EDITING_ONLY_STATUS_ORDER, EDITING_ONLY_ADMIN_LABELS, type VideoStatus, type ClientServiceType, getActionRequired, getStatusOrderForClient, getAdminLabel } from '@/lib/statusConfig';
 import { getDirectDownloadLink } from '@/lib/driveUtils';
 import { Plus, Search, X, Video, Edit2, Trash2, ExternalLink, MessageSquare, Loader2, FolderOpen, Lock } from 'lucide-react';
+import { ContentPlanBadge } from '@/components/shared/ContentPlanBadge';
 import { WorkflowPrompt } from '@/components/shared/WorkflowPrompt';
 import { handleVideoStatusChange } from '@/lib/handleVideoStatusChange';
 import { syncVideoToWritingTask } from '@/lib/syncTaskToVideo';
