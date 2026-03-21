@@ -16,6 +16,7 @@ const adminNavItems = [
   { to: '/admin', icon: LayoutDashboard, label: 'Overview', end: true },
   { to: '/admin/clients', icon: Users, label: 'Clients' },
   { to: '/admin/client-ideas', icon: Lightbulb, label: '💡 Client Ideas' },
+  { to: '/admin/content-planner', icon: CalendarRange, label: '📅 Content Planner' },
   { to: '/admin/videos', icon: Video, label: 'Videos' },
   { to: '/admin/design-tasks', icon: Palette, label: 'Design Tasks' },
   { to: '/admin/writing-tasks', icon: PenTool, label: 'Writing Tasks' },
