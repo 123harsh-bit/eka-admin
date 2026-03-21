@@ -1,20 +1,8 @@
 import { useMemo } from 'react';
 import { getContentTypeConfig, getPlatformConfig, CONTENT_ITEM_STATUSES } from '@/lib/statusConfig';
-import { Plus, Video, PenTool, Palette } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface ContentItem {
-  id: string;
-  title: string;
-  content_type: string;
-  platform: string;
-  planned_date: string | null;
-  status: string;
-  linked_video_id: string | null;
-  linked_writing_task_id: string | null;
-  linked_design_task_id: string | null;
-  [key: string]: unknown;
-}
+import { ContentItem } from '@/lib/contentTypes';
 
 interface Props {
   items: ContentItem[];

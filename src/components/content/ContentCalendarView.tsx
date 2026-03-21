@@ -2,16 +2,7 @@ import { useMemo } from 'react';
 import { getContentTypeConfig, CONTENT_ITEM_STATUSES } from '@/lib/statusConfig';
 import { Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface ContentItem {
-  id: string;
-  title: string;
-  content_type: string;
-  platform: string;
-  planned_date: string | null;
-  status: string;
-  [key: string]: unknown;
-}
+import { ContentItem } from '@/lib/contentTypes';
 
 interface Props {
   items: ContentItem[];

@@ -5,27 +5,7 @@ import { Button } from '@/components/ui/button';
 import { X, ExternalLink, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-
-interface ContentItem {
-  id: string;
-  plan_id: string;
-  client_id: string;
-  title: string;
-  content_type: string;
-  platform: string;
-  planned_date: string | null;
-  caption_brief: string | null;
-  visual_brief: string | null;
-  reference_url: string | null;
-  hashtags: string | null;
-  status: string;
-  published_url: string | null;
-  thumbnail_url: string | null;
-  linked_video_id: string | null;
-  linked_writing_task_id: string | null;
-  linked_design_task_id: string | null;
-  is_visible_to_client: boolean;
-}
+import { ContentItem } from '@/lib/contentTypes';
 
 interface LinkedTask {
   id: string;
