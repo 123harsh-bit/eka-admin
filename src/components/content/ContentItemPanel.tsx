@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { CONTENT_TYPES, PLATFORM_OPTIONS, getAutoCreateTasks } from '@/lib/statusConfig';
 import { Button } from '@/components/ui/button';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -15,7 +15,7 @@ interface Props {
 export function ContentItemPanel({ clientId, planId, defaultDate, onSave, onClose }: Props) {
   const [title, setTitle] = useState('');
   const [contentType, setContentType] = useState('');
-  const [platform, setPlatform] = useState('');
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [plannedDate, setPlannedDate] = useState(defaultDate || '');
   const [captionBrief, setCaptionBrief] = useState('');
   const [visualBrief, setVisualBrief] = useState('');
@@ -25,18 +25,34 @@ export function ContentItemPanel({ clientId, planId, defaultDate, onSave, onClos
 
   const autoTasks = contentType ? getAutoCreateTasks(contentType) : null;
 
-  // Auto-set platform when content type is selected
   const handleContentTypeSelect = (type: string) => {
     setContentType(type);
     const cfg = CONTENT_TYPES.find(t => t.value === type);
-    if (cfg) setPlatform(cfg.platform);
+    if (cfg) {
+      // Auto-add the default platform if not already selected
+      if (!selectedPlatforms.includes(cfg.platform)) {
+        setSelectedPlatforms([cfg.platform]);
+      }
+    }
+  };
+
+  const togglePlatform = (platform: string) => {
+    setSelectedPlatforms(prev =>
+      prev.includes(platform)
+        ? prev.filter(p => p !== platform)
+        : [...prev, platform]
+    );
   };
 
   const handleSubmit = async () => {
-    if (!title || !contentType || !platform) return;
+    if (!title || !contentType || selectedPlatforms.length === 0) return;
     setSaving(true);
+    // Store multiple platforms as comma-separated
+    const platformValue = selectedPlatforms.length > 1 ? 'multiple' : selectedPlatforms[0];
     await onSave({
-      title, content_type: contentType, platform,
+      title, content_type: contentType,
+      platform: platformValue,
+      platforms: selectedPlatforms, // pass raw array for display
       planned_date: plannedDate || null,
       caption_brief: captionBrief || null,
       visual_brief: visualBrief || null,
@@ -89,26 +105,41 @@ export function ContentItemPanel({ clientId, planId, defaultDate, onSave, onClos
             </div>
           </div>
 
-          {/* Platform — visual grid */}
+          {/* Platform — multi-select visual grid */}
           <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground">Platform *</label>
+            <label className="text-xs font-medium text-muted-foreground">
+              Platform(s) * <span className="text-[10px] text-muted-foreground/70">— select one or more</span>
+            </label>
             <div className="grid grid-cols-3 gap-2">
-              {PLATFORM_OPTIONS.map(p => (
-                <button
-                  key={p.value}
-                  onClick={() => setPlatform(p.value)}
-                  className={cn(
-                    'p-2.5 rounded-lg border text-center transition-all text-sm',
-                    platform === p.value
-                      ? 'border-primary bg-primary/10 ring-1 ring-primary'
-                      : 'border-border bg-card/60 hover:border-primary/30'
-                  )}
-                >
-                  <span className="text-lg">{p.icon}</span>
-                  <p className="text-xs font-medium text-foreground mt-1">{p.label}</p>
-                </button>
-              ))}
+              {PLATFORM_OPTIONS.filter(p => p.value !== 'multiple' && p.value !== 'other').map(p => {
+                const isSelected = selectedPlatforms.includes(p.value);
+                return (
+                  <button
+                    key={p.value}
+                    onClick={() => togglePlatform(p.value)}
+                    className={cn(
+                      'p-2.5 rounded-lg border text-center transition-all text-sm relative',
+                      isSelected
+                        ? 'border-primary bg-primary/10 ring-1 ring-primary'
+                        : 'border-border bg-card/60 hover:border-primary/30'
+                    )}
+                  >
+                    {isSelected && (
+                      <div className="absolute top-1 right-1 h-4 w-4 rounded-full bg-primary flex items-center justify-center">
+                        <Check size={10} className="text-primary-foreground" />
+                      </div>
+                    )}
+                    <span className="text-lg">{p.icon}</span>
+                    <p className="text-xs font-medium text-foreground mt-1">{p.label}</p>
+                  </button>
+                );
+              })}
             </div>
+            {selectedPlatforms.length > 1 && (
+              <p className="text-[10px] text-primary font-medium">
+                📌 Will be posted on {selectedPlatforms.length} platforms: {selectedPlatforms.map(p => PLATFORM_OPTIONS.find(o => o.value === p)?.label).join(', ')}
+              </p>
+            )}
           </div>
 
           {/* Date */}
@@ -180,7 +211,7 @@ export function ContentItemPanel({ clientId, planId, defaultDate, onSave, onClos
 
           <Button
             onClick={handleSubmit}
-            disabled={!title || !contentType || !platform || saving}
+            disabled={!title || !contentType || selectedPlatforms.length === 0 || saving}
             className="w-full gap-2"
           >
             {saving ? <Loader2 size={14} className="animate-spin" /> : null}
