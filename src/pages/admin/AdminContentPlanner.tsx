@@ -8,11 +8,11 @@ import { ContentCalendarView } from '@/components/content/ContentCalendarView';
 import { ContentListView } from '@/components/content/ContentListView';
 import { ContentItemPanel } from '@/components/content/ContentItemPanel';
 import { ContentItemDetail } from '@/components/content/ContentItemDetail';
-import { CONTENT_TYPES, PLATFORM_OPTIONS, CONTENT_ITEM_STATUSES, getContentTypeConfig, getAutoCreateTasks } from '@/lib/statusConfig';
+import { CONTENT_TYPES, PLATFORM_OPTIONS, CONTENT_ITEM_STATUSES, getContentTypeConfig, getPlatformConfig, getAutoCreateTasks } from '@/lib/statusConfig';
 import { PullToRefresh } from '@/components/shared/PullToRefresh';
 import { ContentPlan, ContentItem } from '@/lib/contentTypes';
 import {
-  ChevronLeft, ChevronRight, Calendar, List, Plus, Send, Check, Clock, Loader2
+  ChevronLeft, ChevronRight, Calendar, List, Plus, Send, Check, Clock, Loader2, CalendarDays, ArrowRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -57,7 +57,6 @@ export default function AdminContentPlanner() {
     if (!selectedClientId) return;
     setLoading(true);
 
-    // Get or create plan
     let { data: existingPlan } = await supabase.from('content_plans')
       .select('*').eq('client_id', selectedClientId).eq('month', month).eq('year', year).single();
 
@@ -94,7 +93,6 @@ export default function AdminContentPlanner() {
     setSendingPlan(true);
     await supabase.from('content_plans').update({ status: 'sent_for_approval' }).eq('id', plan.id);
     
-    // Notify client
     const { data: clientData } = await supabase.from('clients').select('user_id, name').eq('id', selectedClientId).single();
     if (clientData?.user_id) {
       const platformCounts = items.reduce((acc, i) => { acc[i.platform] = (acc[i.platform] || 0) + 1; return acc; }, {} as Record<string, number>);
@@ -120,7 +118,6 @@ export default function AdminContentPlanner() {
     let linked_writing_task_id: string | null = null;
     let linked_design_task_id: string | null = null;
 
-    // Auto-create video
     if (autoTasks.video) {
       const { data: video } = await supabase.from('videos').insert({
         client_id: selectedClientId,
@@ -131,7 +128,6 @@ export default function AdminContentPlanner() {
       if (video) linked_video_id = video.id;
     }
 
-    // Auto-create writing task
     if (autoTasks.writing && autoTasks.writingType) {
       const writingTitle = autoTasks.video
         ? `${itemData.title} — Script`
@@ -147,7 +143,6 @@ export default function AdminContentPlanner() {
       if (wt) linked_writing_task_id = wt.id;
     }
 
-    // Auto-create design task
     if (autoTasks.design && autoTasks.designType) {
       const designTitle = autoTasks.video
         ? `${itemData.title} — Thumbnail`
@@ -163,7 +158,6 @@ export default function AdminContentPlanner() {
       if (dt) linked_design_task_id = dt.id;
     }
 
-    // Create content item
     const { error } = await supabase.from('content_items').insert({
       plan_id: plan.id,
       client_id: selectedClientId,
@@ -209,6 +203,23 @@ export default function AdminContentPlanner() {
     items.forEach(i => { counts[i.platform] = (counts[i.platform] || 0) + 1; });
     return counts;
   }, [items]);
+
+  // Upcoming posts: today, tomorrow, day after
+  const upcomingPosts = useMemo(() => {
+    const today = new Date();
+    const dates: { label: string; date: string; items: ContentItem[] }[] = [];
+    for (let offset = 0; offset < 3; offset++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() + offset);
+      const dateStr = d.toISOString().split('T')[0];
+      const label = offset === 0 ? '📌 Today' : offset === 1 ? '📅 Tomorrow' : '📆 Day After';
+      const dayItems = items.filter(i => i.planned_date === dateStr);
+      dates.push({ label, date: dateStr, items: dayItems });
+    }
+    return dates;
+  }, [items]);
+
+  const hasUpcomingPosts = upcomingPosts.some(d => d.items.length > 0);
 
   const navigateMonth = (dir: number) => {
     let newMonth = month + dir;
@@ -264,6 +275,60 @@ export default function AdminContentPlanner() {
 
           {selectedClientId && (
             <>
+              {/* Upcoming Posts — What to post today/tomorrow/day after */}
+              {hasUpcomingPosts && (
+                <div className="glass-card p-4 space-y-3 border-primary/20">
+                  <div className="flex items-center gap-2">
+                    <CalendarDays size={16} className="text-primary" />
+                    <h3 className="text-sm font-display font-semibold text-foreground">What's Coming Up</h3>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {upcomingPosts.map(day => (
+                      <div key={day.date} className="rounded-xl border border-border/60 bg-card/40 p-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-foreground">{day.label}</span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {new Date(day.date + 'T00:00').toLocaleDateString('en', { weekday: 'short', day: 'numeric', month: 'short' })}
+                          </span>
+                        </div>
+                        {day.items.length === 0 ? (
+                          <p className="text-[10px] text-muted-foreground/60 py-2 text-center">Nothing scheduled</p>
+                        ) : (
+                          <div className="space-y-1.5">
+                            {day.items.map(item => {
+                              const cfg = getContentTypeConfig(item.content_type);
+                              const platCfg = getPlatformConfig(item.platform);
+                              const statusCfg = CONTENT_ITEM_STATUSES[item.status as keyof typeof CONTENT_ITEM_STATUSES];
+                              return (
+                                <button
+                                  key={item.id}
+                                  onClick={() => setSelectedItem(item)}
+                                  className="w-full text-left flex items-center gap-2 p-2 rounded-lg bg-muted/30 hover:bg-muted/60 transition-colors"
+                                >
+                                  <span className="text-base flex-shrink-0">{platCfg.icon}</span>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-medium text-foreground truncate">{item.title}</p>
+                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                      <span className={cn('text-[9px] px-1.5 py-0.5 rounded-full border', cfg.color)}>{cfg.label}</span>
+                                      {statusCfg && (
+                                        <span className={cn('text-[9px] px-1.5 py-0.5 rounded-full', statusCfg.bgColor, statusCfg.color)}>
+                                          {statusCfg.emoji}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <ArrowRight size={12} className="text-muted-foreground flex-shrink-0" />
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Month navigator */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
