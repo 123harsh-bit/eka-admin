@@ -17,7 +17,6 @@ export function ContentListView({ items, month, year, onItemClick, onAddClick }:
     const firstDay = new Date(year, month - 1, 1);
     const lastDay = new Date(year, month, 0);
     const totalDays = lastDay.getDate();
-
     const weekGroups: { label: string; startDate: string; items: ContentItem[] }[] = [];
     let weekNum = 1;
     let weekStart = 1;
@@ -27,28 +26,13 @@ export function ContentListView({ items, month, year, onItemClick, onAddClick }:
       const startStr = `${year}-${String(month).padStart(2,'0')}-${String(weekStart).padStart(2,'0')}`;
       const endStr = `${year}-${String(month).padStart(2,'0')}-${String(weekEnd).padStart(2,'0')}`;
       const monthName = firstDay.toLocaleString('en', { month: 'short' });
-
-      const weekItems = items.filter(i => {
-        if (!i.planned_date) return false;
-        return i.planned_date >= startStr && i.planned_date <= endStr;
-      });
-
-      weekGroups.push({
-        label: `Week ${weekNum} — ${monthName} ${weekStart}–${weekEnd}`,
-        startDate: startStr,
-        items: weekItems,
-      });
-
+      const weekItems = items.filter(i => i.planned_date && i.planned_date >= startStr && i.planned_date <= endStr);
+      weekGroups.push({ label: `Week ${weekNum} — ${monthName} ${weekStart}–${weekEnd}`, startDate: startStr, items: weekItems });
       weekStart = weekEnd + 1;
       weekNum++;
     }
-
-    // Items without dates
     const undated = items.filter(i => !i.planned_date);
-    if (undated.length > 0) {
-      weekGroups.push({ label: 'Unscheduled', startDate: '', items: undated });
-    }
-
+    if (undated.length > 0) weekGroups.push({ label: 'Unscheduled', startDate: '', items: undated });
     return weekGroups;
   }, [items, month, year]);
 
@@ -101,9 +85,9 @@ export function ContentListView({ items, month, year, onItemClick, onAddClick }:
                         </td>
                         <td className="p-3">
                           <div className="flex items-center gap-1.5">
-                            {item.linked_video_id && <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400" title="Video">📹</span>}
-                            {item.linked_writing_task_id && <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400" title="Writing">✍️</span>}
-                            {item.linked_design_task_id && <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400" title="Design">🎨</span>}
+                            {item.linked_video_id && <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400">📹</span>}
+                            {item.linked_writing_task_id && <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400">✍️</span>}
+                            {item.linked_design_task_id && <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400">🎨</span>}
                           </div>
                         </td>
                       </tr>
