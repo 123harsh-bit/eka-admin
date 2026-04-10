@@ -445,15 +445,13 @@ export default function AdminContentPlanner() {
       )}
 
       {/* Delete Confirmation */}
-      {deleteItem && (
-        <ConfirmDeleteModal
-          title="Delete Content Item"
-          message={`Delete "${deleteItem.title}" and all linked production tasks (video, writing, design)?`}
-          onConfirm={handleDeleteItem}
-          onCancel={() => setDeleteItem(null)}
-          isDeleting={deleting}
-        />
-      )}
+      <ConfirmDeleteModal
+        open={!!deleteItem}
+        onOpenChange={(open) => { if (!open) setDeleteItem(null); }}
+        title="Delete Content Item"
+        description={deleteItem ? `Delete "${deleteItem.title}" and all linked production tasks?` : ''}
+        onConfirm={handleDeleteItem}
+      />
     </AdminLayout>
   );
 }
