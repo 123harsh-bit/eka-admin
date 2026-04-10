@@ -4,15 +4,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { ContentCalendarView } from '@/components/content/ContentCalendarView';
-import { ContentListView } from '@/components/content/ContentListView';
 import { ContentItemPanel } from '@/components/content/ContentItemPanel';
 import { ContentItemDetail } from '@/components/content/ContentItemDetail';
 import { CONTENT_TYPES, PLATFORM_OPTIONS, CONTENT_ITEM_STATUSES, getContentTypeConfig, getPlatformConfig, getAutoCreateTasks } from '@/lib/statusConfig';
 import { PullToRefresh } from '@/components/shared/PullToRefresh';
+import { ConfirmDeleteModal } from '@/components/shared/ConfirmDeleteModal';
 import { ContentPlan, ContentItem } from '@/lib/contentTypes';
 import {
-  ChevronLeft, ChevronRight, Calendar, List, Plus, Send, Check, Clock, Loader2, CalendarDays, ArrowRight
+  ChevronLeft, ChevronRight, Plus, Loader2, Trash2, Edit2, ExternalLink, Calendar
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -32,14 +31,14 @@ export default function AdminContentPlanner() {
   const [plan, setPlan] = useState<ContentPlan | null>(null);
   const [items, setItems] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<'calendar' | 'list'>('calendar');
   const [platformFilter, setPlatformFilter] = useState<string>('all');
   const [showAddPanel, setShowAddPanel] = useState(false);
   const [addDate, setAddDate] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<ContentItem | null>(null);
   const [strategyNotes, setStrategyNotes] = useState('');
   const [savingStrategy, setSavingStrategy] = useState(false);
-  const [sendingPlan, setSendingPlan] = useState(false);
+  const [deleteItem, setDeleteItem] = useState<ContentItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => { fetchClients(); }, []);
   useEffect(() => { if (selectedClientId) fetchPlanAndItems(); }, [selectedClientId, month, year]);
@@ -88,28 +87,6 @@ export default function AdminContentPlanner() {
     toast({ title: 'Strategy saved' });
   };
 
-  const sendForApproval = async () => {
-    if (!plan || !selectedClientId) return;
-    setSendingPlan(true);
-    await supabase.from('content_plans').update({ status: 'sent_for_approval' }).eq('id', plan.id);
-    
-    const { data: clientData } = await supabase.from('clients').select('user_id, name').eq('id', selectedClientId).single();
-    if (clientData?.user_id) {
-      const platformCounts = items.reduce((acc, i) => { acc[i.platform] = (acc[i.platform] || 0) + 1; return acc; }, {} as Record<string, number>);
-      const platformStr = Object.entries(platformCounts).map(([p, c]) => `${getPlatformLabel(p)} ${c}`).join(', ');
-      await supabase.from('notifications').insert({
-        recipient_id: clientData.user_id,
-        message: `📅 Your ${getMonthName(month)} content plan is ready! ${items.length} pieces of content planned across ${platformStr}. Log in to review and approve.`,
-        type: 'content_plan',
-        related_client_id: selectedClientId,
-      });
-    }
-    
-    setPlan(p => p ? { ...p, status: 'sent_for_approval' } : p);
-    setSendingPlan(false);
-    toast({ title: '📤 Plan sent for client approval!' });
-  };
-
   const handleAddItem = async (itemData: Partial<ContentItem>) => {
     if (!plan || !selectedClientId || !user) return;
 
@@ -120,10 +97,8 @@ export default function AdminContentPlanner() {
 
     if (autoTasks.video) {
       const { data: video } = await supabase.from('videos').insert({
-        client_id: selectedClientId,
-        title: itemData.title || 'Untitled',
-        status: 'idea',
-        date_planned: itemData.planned_date || null,
+        client_id: selectedClientId, title: itemData.title || 'Untitled',
+        status: 'idea', date_planned: itemData.planned_date || null,
       }).select('id').single();
       if (video) linked_video_id = video.id;
     }
@@ -133,12 +108,8 @@ export default function AdminContentPlanner() {
         ? `${itemData.title} — Script`
         : autoTasks.writingType === 'ad_copy' ? `${itemData.title} — Ad Copy` : `${itemData.title} — Caption`;
       const { data: wt } = await supabase.from('writing_tasks').insert({
-        client_id: selectedClientId,
-        title: writingTitle,
-        task_type: autoTasks.writingType,
-        status: 'briefed',
-        due_date: itemData.planned_date || null,
-        video_id: linked_video_id || null,
+        client_id: selectedClientId, title: writingTitle, task_type: autoTasks.writingType,
+        status: 'briefed', due_date: itemData.planned_date || null, video_id: linked_video_id || null,
       }).select('id').single();
       if (wt) linked_writing_task_id = wt.id;
     }
@@ -146,43 +117,27 @@ export default function AdminContentPlanner() {
     if (autoTasks.design && autoTasks.designType) {
       const designTitle = autoTasks.video
         ? `${itemData.title} — Thumbnail`
-        : autoTasks.designType === 'social_graphic' ? `${itemData.title} — Graphic` : `${itemData.title} — Creative`;
+        : `${itemData.title} — Graphic`;
       const { data: dt } = await supabase.from('design_tasks').insert({
-        client_id: selectedClientId,
-        title: designTitle,
-        task_type: autoTasks.designType,
-        status: 'briefed',
-        due_date: itemData.planned_date || null,
-        video_id: linked_video_id || null,
+        client_id: selectedClientId, title: designTitle, task_type: autoTasks.designType,
+        status: 'briefed', due_date: itemData.planned_date || null, video_id: linked_video_id || null,
       }).select('id').single();
       if (dt) linked_design_task_id = dt.id;
     }
 
     const { error } = await supabase.from('content_items').insert({
-      plan_id: plan.id,
-      client_id: selectedClientId,
-      title: itemData.title || 'Untitled',
-      content_type: itemData.content_type || 'other',
-      platform: itemData.platform || 'other',
-      planned_date: itemData.planned_date || null,
-      caption_brief: itemData.caption_brief || null,
-      visual_brief: itemData.visual_brief || null,
-      reference_url: itemData.reference_url || null,
-      hashtags: itemData.hashtags || null,
-      linked_video_id,
-      linked_writing_task_id,
-      linked_design_task_id,
+      plan_id: plan.id, client_id: selectedClientId, title: itemData.title || 'Untitled',
+      content_type: itemData.content_type || 'other', platform: itemData.platform || 'other',
+      planned_date: itemData.planned_date || null, caption_brief: itemData.caption_brief || null,
+      visual_brief: itemData.visual_brief || null, reference_url: itemData.reference_url || null,
+      hashtags: itemData.hashtags || null, linked_video_id, linked_writing_task_id, linked_design_task_id,
     });
 
     if (error) {
       toast({ title: 'Error adding item', description: error.message, variant: 'destructive' });
     } else {
-      const taskList = [
-        autoTasks.video && '🎬 1 Video',
-        autoTasks.writing && '✍️ 1 Writing task',
-        autoTasks.design && '🎨 1 Design task',
-      ].filter(Boolean).join(', ');
-      toast({ title: '✅ Added to plan!', description: taskList ? `Created: ${taskList}` : undefined });
+      const taskList = [autoTasks.video && '🎬 Video', autoTasks.writing && '✍️ Writing', autoTasks.design && '🎨 Design'].filter(Boolean).join(', ');
+      toast({ title: '✅ Added!', description: taskList ? `Created: ${taskList}` : undefined });
       setShowAddPanel(false);
       fetchPlanAndItems();
     }
@@ -190,6 +145,22 @@ export default function AdminContentPlanner() {
 
   const handleUpdateItem = async (id: string, updates: Partial<ContentItem>) => {
     await supabase.from('content_items').update(updates).eq('id', id);
+    fetchPlanAndItems();
+  };
+
+  const handleDeleteItem = async () => {
+    if (!deleteItem) return;
+    setDeleting(true);
+
+    // Delete linked tasks
+    if (deleteItem.linked_video_id) await supabase.from('videos').delete().eq('id', deleteItem.linked_video_id);
+    if (deleteItem.linked_writing_task_id) await supabase.from('writing_tasks').delete().eq('id', deleteItem.linked_writing_task_id);
+    if (deleteItem.linked_design_task_id) await supabase.from('design_tasks').delete().eq('id', deleteItem.linked_design_task_id);
+
+    await supabase.from('content_items').delete().eq('id', deleteItem.id);
+    setDeleting(false);
+    setDeleteItem(null);
+    toast({ title: '🗑️ Deleted', description: 'Content item and linked tasks removed' });
     fetchPlanAndItems();
   };
 
@@ -204,22 +175,45 @@ export default function AdminContentPlanner() {
     return counts;
   }, [items]);
 
-  // Upcoming posts: today, tomorrow, day after
-  const upcomingPosts = useMemo(() => {
+  // Group items by timeframe
+  const groupedItems = useMemo(() => {
     const today = new Date();
-    const dates: { label: string; date: string; items: ContentItem[] }[] = [];
-    for (let offset = 0; offset < 3; offset++) {
-      const d = new Date(today);
-      d.setDate(d.getDate() + offset);
-      const dateStr = d.toISOString().split('T')[0];
-      const label = offset === 0 ? '📌 Today' : offset === 1 ? '📅 Tomorrow' : '📆 Day After';
-      const dayItems = items.filter(i => i.planned_date === dateStr);
-      dates.push({ label, date: dateStr, items: dayItems });
-    }
-    return dates;
-  }, [items]);
+    today.setHours(0, 0, 0, 0);
+    const todayStr = today.toISOString().split('T')[0];
 
-  const hasUpcomingPosts = upcomingPosts.some(d => d.items.length > 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+    const endOfWeek = new Date(today);
+    endOfWeek.setDate(endOfWeek.getDate() + (7 - endOfWeek.getDay()));
+    const endOfWeekStr = endOfWeek.toISOString().split('T')[0];
+
+    const endOfNextWeek = new Date(endOfWeek);
+    endOfNextWeek.setDate(endOfNextWeek.getDate() + 7);
+    const endOfNextWeekStr = endOfNextWeek.toISOString().split('T')[0];
+
+    const groups: { label: string; emoji: string; items: ContentItem[]; color: string }[] = [
+      { label: 'Today', emoji: '🔴', items: [], color: 'border-destructive/30' },
+      { label: 'Tomorrow', emoji: '🟡', items: [], color: 'border-warning/30' },
+      { label: 'This Week', emoji: '📅', items: [], color: 'border-primary/20' },
+      { label: 'Next Week', emoji: '📆', items: [], color: 'border-border' },
+      { label: 'Later', emoji: '📋', items: [], color: 'border-border' },
+      { label: 'Unscheduled', emoji: '❓', items: [], color: 'border-muted' },
+    ];
+
+    filteredItems.forEach(item => {
+      if (!item.planned_date) { groups[5].items.push(item); return; }
+      if (item.planned_date === todayStr) groups[0].items.push(item);
+      else if (item.planned_date === tomorrowStr) groups[1].items.push(item);
+      else if (item.planned_date <= endOfWeekStr && item.planned_date > tomorrowStr) groups[2].items.push(item);
+      else if (item.planned_date <= endOfNextWeekStr && item.planned_date > endOfWeekStr) groups[3].items.push(item);
+      else if (item.planned_date > endOfNextWeekStr) groups[4].items.push(item);
+      else groups[4].items.push(item); // past dates go to "Later"
+    });
+
+    return groups.filter(g => g.items.length > 0);
+  }, [filteredItems]);
 
   const navigateMonth = (dir: number) => {
     let newMonth = month + dir;
@@ -231,42 +225,42 @@ export default function AdminContentPlanner() {
   };
 
   const goToThisMonth = () => {
-    const now = new Date();
-    setMonth(now.getMonth() + 1);
-    setYear(now.getFullYear());
+    setMonth(new Date().getMonth() + 1);
+    setYear(new Date().getFullYear());
   };
-
-  const selectedClient = clients.find(c => c.id === selectedClientId);
 
   return (
     <AdminLayout>
       <PullToRefresh onRefresh={fetchPlanAndItems}>
-        <div className="space-y-6">
+        <div className="space-y-5 max-w-4xl mx-auto">
           {/* Header */}
-          <div className="flex items-start justify-between flex-wrap gap-4">
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-display font-bold gradient-text">Content Planner</h1>
-              <p className="text-muted-foreground mt-1">Plan, schedule, and track content across all platforms</p>
+              <h1 className="text-2xl font-bold text-foreground">Content Planner</h1>
+              <p className="text-sm text-muted-foreground">Plan and track content across platforms</p>
             </div>
+            <Button onClick={() => { setAddDate(null); setShowAddPanel(true); }} size="sm" className="gap-1.5">
+              <Plus size={14} /> Add
+            </Button>
           </div>
 
           {/* Client selector */}
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          <div className="flex gap-2 overflow-x-auto pb-1">
             {clients.map(c => (
               <button
                 key={c.id}
                 onClick={() => setSelectedClientId(c.id)}
                 className={cn(
-                  'flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap transition-all flex-shrink-0',
+                  'flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex-shrink-0 border',
                   selectedClientId === c.id
-                    ? 'bg-primary/20 border-primary/50 text-primary'
-                    : 'bg-card/60 border-border text-muted-foreground hover:text-foreground hover:border-primary/30'
+                    ? 'bg-primary/15 border-primary/40 text-primary'
+                    : 'bg-card border-border text-muted-foreground hover:text-foreground'
                 )}
               >
                 {c.logo_url ? (
-                  <img src={c.logo_url} alt="" className="h-5 w-5 rounded-full object-cover" />
+                  <img src={c.logo_url} alt="" className="h-4 w-4 rounded-full object-cover" />
                 ) : (
-                  <div className="h-5 w-5 rounded-full bg-primary/30 flex items-center justify-center text-[10px] font-bold text-primary">{c.name.charAt(0)}</div>
+                  <div className="h-4 w-4 rounded-full bg-primary/20 flex items-center justify-center text-[8px] font-bold text-primary">{c.name.charAt(0)}</div>
                 )}
                 {c.name}
               </button>
@@ -275,150 +269,47 @@ export default function AdminContentPlanner() {
 
           {selectedClientId && (
             <>
-              {/* Upcoming Posts — What to post today/tomorrow/day after */}
-              {hasUpcomingPosts && (
-                <div className="glass-card p-4 space-y-3 border-primary/20">
-                  <div className="flex items-center gap-2">
-                    <CalendarDays size={16} className="text-primary" />
-                    <h3 className="text-sm font-display font-semibold text-foreground">What's Coming Up</h3>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {upcomingPosts.map(day => (
-                      <div key={day.date} className="rounded-xl border border-border/60 bg-card/40 p-3 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-foreground">{day.label}</span>
-                          <span className="text-[10px] text-muted-foreground">
-                            {new Date(day.date + 'T00:00').toLocaleDateString('en', { weekday: 'short', day: 'numeric', month: 'short' })}
-                          </span>
-                        </div>
-                        {day.items.length === 0 ? (
-                          <p className="text-[10px] text-muted-foreground/60 py-2 text-center">Nothing scheduled</p>
-                        ) : (
-                          <div className="space-y-1.5">
-                            {day.items.map(item => {
-                              const cfg = getContentTypeConfig(item.content_type);
-                              const platCfg = getPlatformConfig(item.platform);
-                              const statusCfg = CONTENT_ITEM_STATUSES[item.status as keyof typeof CONTENT_ITEM_STATUSES];
-                              return (
-                                <button
-                                  key={item.id}
-                                  onClick={() => setSelectedItem(item)}
-                                  className="w-full text-left flex items-center gap-2 p-2 rounded-lg bg-muted/30 hover:bg-muted/60 transition-colors"
-                                >
-                                  <span className="text-base flex-shrink-0">{platCfg.icon}</span>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-xs font-medium text-foreground truncate">{item.title}</p>
-                                    <div className="flex items-center gap-1.5 mt-0.5">
-                                      <span className={cn('text-[9px] px-1.5 py-0.5 rounded-full border', cfg.color)}>{cfg.label}</span>
-                                      {statusCfg && (
-                                        <span className={cn('text-[9px] px-1.5 py-0.5 rounded-full', statusCfg.bgColor, statusCfg.color)}>
-                                          {statusCfg.emoji}
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <ArrowRight size={12} className="text-muted-foreground flex-shrink-0" />
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               {/* Month navigator */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <button onClick={() => navigateMonth(-1)} className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors">
-                    <ChevronLeft size={16} />
-                  </button>
-                  <h2 className="text-xl font-display font-bold text-foreground">{getMonthName(month)} {year}</h2>
-                  <button onClick={() => navigateMonth(1)} className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors">
-                    <ChevronRight size={16} />
-                  </button>
-                  <button onClick={goToThisMonth} className="text-xs px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors font-medium">
-                    This Month
-                  </button>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => setView('calendar')} className={cn('p-2 rounded-lg transition-colors', view === 'calendar' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground')}>
-                    <Calendar size={16} />
-                  </button>
-                  <button onClick={() => setView('list')} className={cn('p-2 rounded-lg transition-colors', view === 'list' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground')}>
-                    <List size={16} />
-                  </button>
-                </div>
+              <div className="flex items-center gap-3">
+                <button onClick={() => navigateMonth(-1)} className="h-7 w-7 rounded-md bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors">
+                  <ChevronLeft size={14} />
+                </button>
+                <h2 className="text-base font-bold text-foreground">{getMonthName(month)} {year}</h2>
+                <button onClick={() => navigateMonth(1)} className="h-7 w-7 rounded-md bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors">
+                  <ChevronRight size={14} />
+                </button>
+                <button onClick={goToThisMonth} className="text-[11px] px-2.5 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors font-medium">
+                  Today
+                </button>
+                <span className="text-xs text-muted-foreground ml-auto">{items.length} items</span>
               </div>
 
-              {/* Plan status bar */}
+              {/* Strategy Notes */}
               {plan && (
-                <div className="glass-card p-4 flex items-center justify-between flex-wrap gap-3">
-                  <div className="flex items-center gap-3">
-                    {plan.status === 'draft' && (
-                      <>
-                        <span className="text-xs px-2.5 py-1 rounded-full bg-muted text-muted-foreground font-medium">Draft</span>
-                        <span className="text-sm text-muted-foreground">{items.length} items planned</span>
-                      </>
-                    )}
-                    {plan.status === 'sent_for_approval' && (
-                      <>
-                        <span className="text-xs px-2.5 py-1 rounded-full bg-warning/20 text-warning font-medium">⏳ Awaiting Approval</span>
-                        <span className="text-sm text-muted-foreground">Sent to client</span>
-                      </>
-                    )}
-                    {plan.status === 'client_approved' && (
-                      <span className="text-xs px-2.5 py-1 rounded-full bg-success/20 text-success font-medium">✅ Client Approved{plan.approved_at ? ` on ${new Date(plan.approved_at).toLocaleDateString()}` : ''}</span>
-                    )}
-                    {plan.status === 'active' && (
-                      <>
-                        <span className="text-xs px-2.5 py-1 rounded-full bg-primary/20 text-primary font-medium">Active</span>
-                        <span className="text-sm text-muted-foreground">
-                          {items.filter(i => i.status === 'published').length}/{items.length} published
-                        </span>
-                      </>
-                    )}
-                    {plan.status === 'completed' && (
-                      <span className="text-xs px-2.5 py-1 rounded-full bg-success/20 text-success font-medium">✅ Completed</span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {plan.status === 'draft' && items.length > 0 && (
-                      <Button size="sm" onClick={sendForApproval} disabled={sendingPlan} className="gap-2">
-                        {sendingPlan ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-                        Send to Client
+                <div className="glass-card p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Monthly Strategy</p>
+                    {strategyNotes !== (plan.strategy_notes || '') && (
+                      <Button size="sm" variant="outline" onClick={saveStrategy} disabled={savingStrategy} className="h-6 text-[11px]">
+                        {savingStrategy ? 'Saving…' : 'Save'}
                       </Button>
                     )}
                   </div>
+                  <textarea
+                    value={strategyNotes}
+                    onChange={e => setStrategyNotes(e.target.value)}
+                    placeholder="Describe the content strategy for this month…"
+                    className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none min-h-[50px] border-0"
+                    rows={2}
+                  />
                 </div>
               )}
 
-              {/* Strategy Notes */}
-              <div className="glass-card p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-foreground">📌 Monthly Strategy</h3>
-                  {strategyNotes !== (plan?.strategy_notes || '') && (
-                    <Button size="sm" variant="outline" onClick={saveStrategy} disabled={savingStrategy}>
-                      {savingStrategy ? 'Saving…' : 'Save'}
-                    </Button>
-                  )}
-                </div>
-                <textarea
-                  value={strategyNotes}
-                  onChange={e => setStrategyNotes(e.target.value)}
-                  placeholder="Describe the content strategy for this month…"
-                  className="w-full bg-transparent border-0 text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none min-h-[60px]"
-                  rows={3}
-                />
-              </div>
-
-              {/* Platform filter tabs */}
-              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+              {/* Platform filter */}
+              <div className="flex gap-1.5 overflow-x-auto pb-1">
                 <button
                   onClick={() => setPlatformFilter('all')}
-                  className={cn('text-xs px-3 py-1.5 rounded-full font-medium whitespace-nowrap transition-colors', platformFilter === 'all' ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground hover:text-foreground')}
+                  className={cn('text-[11px] px-2.5 py-1 rounded-full font-medium whitespace-nowrap transition-colors', platformFilter === 'all' ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground hover:text-foreground')}
                 >
                   All ({items.length})
                 </button>
@@ -426,43 +317,107 @@ export default function AdminContentPlanner() {
                   <button
                     key={p.value}
                     onClick={() => setPlatformFilter(p.value)}
-                    className={cn('text-xs px-3 py-1.5 rounded-full font-medium whitespace-nowrap transition-colors', platformFilter === p.value ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground hover:text-foreground')}
+                    className={cn('text-[11px] px-2.5 py-1 rounded-full font-medium whitespace-nowrap transition-colors', platformFilter === p.value ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground hover:text-foreground')}
                   >
                     {p.icon} {p.label} ({platformCounts[p.value]})
                   </button>
                 ))}
               </div>
 
-              {/* Content view */}
+              {/* Content Items grouped by timeframe */}
               {loading ? (
-                <div className="glass-card p-16 text-center">
-                  <Loader2 size={24} className="animate-spin mx-auto text-primary" />
+                <div className="glass-card p-12 text-center">
+                  <Loader2 size={20} className="animate-spin mx-auto text-primary" />
                 </div>
-              ) : view === 'calendar' ? (
-                <ContentCalendarView
-                  items={filteredItems}
-                  month={month}
-                  year={year}
-                  onDayClick={(date) => { setAddDate(date); setShowAddPanel(true); }}
-                  onItemClick={(item) => setSelectedItem(item)}
-                />
+              ) : groupedItems.length === 0 ? (
+                <div className="glass-card p-12 text-center space-y-3">
+                  <Calendar size={32} className="mx-auto text-muted-foreground/40" />
+                  <p className="text-sm text-muted-foreground">No content planned for {getMonthName(month)}</p>
+                  <Button size="sm" variant="outline" onClick={() => { setAddDate(null); setShowAddPanel(true); }} className="gap-1.5">
+                    <Plus size={12} /> Add first item
+                  </Button>
+                </div>
               ) : (
-                <ContentListView
-                  items={filteredItems}
-                  month={month}
-                  year={year}
-                  onItemClick={(item) => setSelectedItem(item)}
-                  onAddClick={(date) => { setAddDate(date); setShowAddPanel(true); }}
-                />
-              )}
+                <div className="space-y-4">
+                  {groupedItems.map(group => (
+                    <div key={group.label} className="space-y-2">
+                      <div className="flex items-center gap-2 px-1">
+                        <span className="text-sm">{group.emoji}</span>
+                        <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">{group.label}</h3>
+                        <span className="text-[10px] text-muted-foreground">{group.items.length}</span>
+                      </div>
 
-              {/* Add FAB for mobile */}
-              <button
-                onClick={() => { setAddDate(null); setShowAddPanel(true); }}
-                className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors z-30 lg:hidden"
-              >
-                <Plus size={24} />
-              </button>
+                      <div className="space-y-1.5">
+                        {group.items.map(item => {
+                          const typeCfg = getContentTypeConfig(item.content_type);
+                          const platCfg = getPlatformConfig(item.platform);
+                          const statusCfg = CONTENT_ITEM_STATUSES[item.status as keyof typeof CONTENT_ITEM_STATUSES];
+
+                          return (
+                            <div
+                              key={item.id}
+                              className={cn(
+                                'glass-card p-3 flex items-center gap-3 group transition-colors hover:bg-card/80 border-l-2',
+                                group.color,
+                                item.status === 'cancelled' && 'opacity-40'
+                              )}
+                            >
+                              {/* Platform icon */}
+                              <span className="text-lg flex-shrink-0">{platCfg.icon}</span>
+
+                              {/* Main content */}
+                              <button
+                                onClick={() => setSelectedItem(item)}
+                                className="flex-1 min-w-0 text-left"
+                              >
+                                <div className="flex items-center gap-2 mb-0.5">
+                                  <span className={cn('text-[10px] px-1.5 py-0.5 rounded border', typeCfg.color)}>{typeCfg.label}</span>
+                                  {statusCfg && (
+                                    <span className={cn('text-[10px] px-1.5 py-0.5 rounded-full', statusCfg.bgColor, statusCfg.color)}>
+                                      {statusCfg.emoji} {statusCfg.label}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className={cn('text-sm font-medium text-foreground truncate', item.status === 'cancelled' && 'line-through')}>
+                                  {item.title}
+                                </p>
+                                <div className="flex items-center gap-3 mt-0.5">
+                                  {item.planned_date && (
+                                    <span className="text-[10px] text-muted-foreground">
+                                      {new Date(item.planned_date + 'T00:00').toLocaleDateString('en', { weekday: 'short', day: 'numeric', month: 'short' })}
+                                    </span>
+                                  )}
+                                  <div className="flex items-center gap-1">
+                                    {item.linked_video_id && <span className="text-[9px] px-1 rounded bg-destructive/10 text-destructive">📹</span>}
+                                    {item.linked_writing_task_id && <span className="text-[9px] px-1 rounded bg-primary/10 text-primary">✍️</span>}
+                                    {item.linked_design_task_id && <span className="text-[9px] px-1 rounded bg-secondary/10 text-secondary">🎨</span>}
+                                  </div>
+                                </div>
+                              </button>
+
+                              {/* Actions */}
+                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                                <button
+                                  onClick={() => setSelectedItem(item)}
+                                  className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                                >
+                                  <Edit2 size={12} />
+                                </button>
+                                <button
+                                  onClick={() => setDeleteItem(item)}
+                                  className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </>
           )}
         </div>
@@ -485,6 +440,18 @@ export default function AdminContentPlanner() {
           item={selectedItem}
           onUpdate={handleUpdateItem}
           onClose={() => { setSelectedItem(null); fetchPlanAndItems(); }}
+          onDelete={(item) => { setSelectedItem(null); setDeleteItem(item); }}
+        />
+      )}
+
+      {/* Delete Confirmation */}
+      {deleteItem && (
+        <ConfirmDeleteModal
+          title="Delete Content Item"
+          message={`Delete "${deleteItem.title}" and all linked production tasks (video, writing, design)?`}
+          onConfirm={handleDeleteItem}
+          onCancel={() => setDeleteItem(null)}
+          isDeleting={deleting}
         />
       )}
     </AdminLayout>
@@ -493,8 +460,4 @@ export default function AdminContentPlanner() {
 
 function getMonthName(m: number) {
   return ['January','February','March','April','May','June','July','August','September','October','November','December'][m - 1];
-}
-
-function getPlatformLabel(p: string) {
-  return PLATFORM_OPTIONS.find(o => o.value === p)?.label || p;
 }
