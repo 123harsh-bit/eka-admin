@@ -42,7 +42,6 @@ import WriterDashboard from "@/pages/writer/WriterDashboard";
 import WriterClientBriefs from "@/pages/writer/WriterClientBriefs";
 import WriterDailyTasks from "@/pages/writer/WriterDailyTasks";
 import WriterAttendance from "@/pages/writer/WriterAttendance";
-import ClientDashboard from "@/pages/client/ClientDashboard";
 
 // Camera operator pages
 import CameraShoots from "@/pages/camera/CameraShoots";
@@ -110,9 +109,6 @@ const App = () => (
             <Route path="/camera/clients" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraClients /></ProtectedRoute>} />
             <Route path="/camera/daily-tasks" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraDailyTasks /></ProtectedRoute>} />
             <Route path="/camera/attendance" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraAttendance /></ProtectedRoute>} />
-
-            {/* Client routes */}
-            <Route path="/client" element={<ProtectedRoute allowedRoles={['client']}><ClientDashboard /></ProtectedRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

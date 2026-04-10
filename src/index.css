@@ -2,31 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Eka Creative Agency — Design System
-   All colors MUST be HSL. Dark-mode-first with purple brand. */
+/* Eka Creative Agency — Redesigned Design System
+   Modern dark theme with refined aesthetics */
 
 @layer base {
   :root {
-    --background: 260 50% 6%;
-    --foreground: 260 30% 97%;
+    --background: 220 20% 4%;
+    --foreground: 210 20% 95%;
 
-    --card: 264 45% 12%;
-    --card-foreground: 260 30% 97%;
+    --card: 220 18% 8%;
+    --card-foreground: 210 20% 95%;
 
-    --popover: 264 45% 10%;
-    --popover-foreground: 260 30% 97%;
+    --popover: 220 18% 7%;
+    --popover-foreground: 210 20% 95%;
 
-    --primary: 263 70% 58%;
+    --primary: 250 80% 62%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 263 52% 65%;
+    --secondary: 280 60% 65%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 260 30% 18%;
-    --muted-foreground: 220 10% 64%;
+    --muted: 220 15% 14%;
+    --muted-foreground: 215 15% 55%;
 
-    --accent: 263 40% 22%;
-    --accent-foreground: 260 30% 97%;
+    --accent: 250 30% 18%;
+    --accent-foreground: 210 20% 95%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
@@ -37,25 +37,25 @@
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 0%;
 
-    --border: 263 70% 58% / 0.2;
-    --input: 260 30% 20%;
-    --ring: 263 70% 58%;
+    --border: 220 15% 16%;
+    --input: 220 15% 12%;
+    --ring: 250 80% 62%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 264 45% 8%;
-    --sidebar-foreground: 260 30% 85%;
-    --sidebar-primary: 263 70% 58%;
+    --sidebar-background: 220 20% 5%;
+    --sidebar-foreground: 215 15% 70%;
+    --sidebar-primary: 250 80% 62%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 263 40% 18%;
-    --sidebar-accent-foreground: 260 30% 97%;
-    --sidebar-border: 263 70% 58% / 0.15;
-    --sidebar-ring: 263 70% 58%;
+    --sidebar-accent: 250 30% 14%;
+    --sidebar-accent-foreground: 210 20% 95%;
+    --sidebar-border: 220 15% 12%;
+    --sidebar-ring: 250 80% 62%;
 
-    --surface: 264 40% 10%;
-    --glass: 264 45% 12% / 0.6;
-    --glass-border: 263 70% 58% / 0.25;
-    --glow: 263 70% 58% / 0.15;
+    --surface: 220 18% 7%;
+    --glass: 220 18% 8% / 0.8;
+    --glass-border: 220 15% 18%;
+    --glow: 250 80% 62% / 0.1;
   }
 }
 
@@ -66,27 +66,26 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Inter', 'DM Sans', system-ui, sans-serif;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Inter', 'Syne', system-ui, sans-serif;
+    font-weight: 700;
   }
 }
 
-/* Glassmorphism utility */
 @layer components {
   .glass-card {
-    @apply bg-card/60 backdrop-blur-xl border border-glass-border rounded-xl;
-    box-shadow: 0 8px 32px hsl(263 70% 58% / 0.08), inset 0 1px 0 hsl(0 0% 100% / 0.05);
+    @apply bg-card border border-border rounded-xl;
   }
 
   .glass-card-hover {
-    @apply glass-card transition-all duration-300;
+    @apply glass-card transition-all duration-200;
   }
   .glass-card-hover:hover {
-    box-shadow: 0 12px 40px hsl(263 70% 58% / 0.15), inset 0 1px 0 hsl(0 0% 100% / 0.08);
-    border-color: hsl(263 70% 58% / 0.4);
+    border-color: hsl(250 80% 62% / 0.3);
+    background: hsl(220 18% 10%);
   }
 
   .gradient-text {
@@ -94,16 +93,27 @@
   }
 
   .eka-gradient {
-    background: linear-gradient(135deg, hsl(263 70% 58%), hsl(263 52% 65%), hsl(263 80% 72%));
+    background: linear-gradient(135deg, hsl(250 80% 62%), hsl(280 60% 65%));
   }
 
   .fade-in {
-    animation: fadeIn 0.2s ease-out;
+    animation: fadeIn 0.15s ease-out;
   }
 
   @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(4px); }
+    from { opacity: 0; transform: translateY(2px); }
     to { opacity: 1; transform: translateY(0); }
+  }
+
+  .animated-gradient {
+    background: linear-gradient(
+      135deg,
+      hsl(220 20% 4%),
+      hsl(250 25% 8%),
+      hsl(220 20% 4%)
+    );
+    background-size: 200% 200%;
+    animation: gradientShift 12s ease infinite;
   }
 
   @keyframes gradientShift {
@@ -111,16 +121,12 @@
     50% { background-position: 100% 50%; }
   }
 
-  .animated-gradient {
-    background: linear-gradient(
-      -45deg,
-      hsl(263 70% 12%),
-      hsl(263 50% 18%),
-      hsl(280 60% 14%),
-      hsl(250 50% 10%)
-    );
-    background-size: 400% 400%;
-    animation: gradientShift 15s ease infinite;
+  /* Stat card hover */
+  .stat-card {
+    @apply glass-card p-5 transition-all duration-200;
+  }
+  .stat-card:hover {
+    border-color: hsl(250 80% 62% / 0.25);
   }
 }
 
@@ -141,13 +147,27 @@
     min-width: 44px;
   }
 
-  /* Prevent text size adjustment on orientation change */
   html {
     -webkit-text-size-adjust: 100%;
   }
 
-  /* Smooth scrolling for native feel */
   * {
     -webkit-overflow-scrolling: touch;
   }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(220 15% 20%);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(220 15% 28%);
 }

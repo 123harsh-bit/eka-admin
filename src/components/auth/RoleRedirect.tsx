@@ -2,7 +2,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { Navigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// Redirects authenticated users to their role-based dashboard
 export function RoleRedirect() {
   const { user, role, loading } = useAuth();
 
@@ -25,7 +24,6 @@ export function RoleRedirect() {
     designer: '/designer',
     writer: '/writer',
     camera_operator: '/camera',
-    client: '/client',
   };
 
   return <Navigate to={role ? roleRoutes[role] || '/login' : '/login'} replace />;
