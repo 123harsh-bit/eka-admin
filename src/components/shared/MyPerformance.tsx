@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { CheckCircle, Clock, FileText, TrendingUp } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface PerformanceData {
   completed: number;
@@ -19,6 +20,7 @@ export function MyPerformance({ role }: MyPerformanceProps) {
   const { user } = useAuth();
   const [data, setData] = useState<PerformanceData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -77,9 +79,8 @@ export function MyPerformance({ role }: MyPerformanceProps) {
 
   if (loading) {
     return (
-      <div className="glass-card p-6 space-y-4">
-        <div className="h-6 w-48 bg-muted animate-pulse rounded" />
-        <div className="h-20 bg-muted/50 animate-pulse rounded" />
+      <div className="glass-card p-4">
+        <div className="h-5 w-40 bg-muted animate-pulse rounded" />
       </div>
     );
   }
@@ -89,76 +90,63 @@ export function MyPerformance({ role }: MyPerformanceProps) {
   const pct = data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0;
 
   return (
-    <div className="glass-card p-6 space-y-5">
-      <div className="flex items-center gap-2">
-        <TrendingUp size={18} className="text-primary" />
-        <h2 className="font-display font-semibold text-foreground">My Performance — {monthName}</h2>
-      </div>
+    <div className="glass-card p-4 space-y-3">
+      <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <TrendingUp size={14} className="text-primary" />
+          <h2 className="text-sm font-semibold text-foreground">Performance — {monthName}</h2>
+        </div>
+        <span className="text-[10px] text-muted-foreground">{expanded ? 'Collapse' : 'Expand'}</span>
+      </button>
 
-      {/* Hero stat */}
-      <div className="text-center py-2">
-        <p className="text-5xl font-display font-bold text-foreground">{data.completed}</p>
-        <p className="text-sm text-muted-foreground mt-1">Tasks Delivered in {monthName}</p>
-      </div>
-
-      {/* Summary cards */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-success/10 rounded-xl p-3 text-center">
-          <CheckCircle size={16} className="text-success mx-auto mb-1" />
-          <p className="text-lg font-bold text-foreground">{data.completed}</p>
-          <p className="text-[10px] text-muted-foreground">Completed</p>
+      {/* Compact stats row */}
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1.5">
+            <CheckCircle size={12} className="text-success" />
+            <span className="text-lg font-bold text-foreground">{data.completed}</span>
+            <span className="text-[10px] text-muted-foreground">Done</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Clock size={12} className="text-primary" />
+            <span className="text-lg font-bold text-foreground">{data.inProgress}</span>
+            <span className="text-[10px] text-muted-foreground">Active</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <FileText size={12} className="text-muted-foreground" />
+            <span className="text-lg font-bold text-foreground">{data.notStarted}</span>
+            <span className="text-[10px] text-muted-foreground">Queue</span>
+          </div>
         </div>
-        <div className="bg-primary/10 rounded-xl p-3 text-center">
-          <Clock size={16} className="text-primary mx-auto mb-1" />
-          <p className="text-lg font-bold text-foreground">{data.inProgress}</p>
-          <p className="text-[10px] text-muted-foreground">In Progress</p>
-        </div>
-        <div className="bg-muted rounded-xl p-3 text-center">
-          <FileText size={16} className="text-muted-foreground mx-auto mb-1" />
-          <p className="text-lg font-bold text-foreground">{data.notStarted}</p>
-          <p className="text-[10px] text-muted-foreground">Not Started</p>
-        </div>
-      </div>
-
-      {/* Progress bar */}
-      <div className="space-y-1.5">
-        <div className="flex justify-between text-xs text-muted-foreground">
-          <span>{data.completed} of {data.total} tasks completed</span>
-          <span>{pct}%</span>
-        </div>
-        <div className="h-2 bg-muted rounded-full overflow-hidden">
-          <div className="h-full bg-success rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+        <div className="flex-1 ml-4">
+          <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
+            <span>{data.completed}/{data.total}</span>
+            <span>{pct}%</span>
+          </div>
+          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+            <div className="h-full bg-success rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+          </div>
         </div>
       </div>
 
-      {/* Breakdown table */}
-      {data.breakdown.length > 0 && (
-        <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">By Client</p>
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="text-muted-foreground border-b border-glass-border">
-                <th className="text-left py-1.5">Client</th>
-                <th className="text-center py-1.5">Assigned</th>
-                <th className="text-center py-1.5">Completed</th>
-                <th className="text-center py-1.5">In Progress</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.breakdown.map(b => (
-                <tr key={b.clientName} className="border-b border-glass-border/30">
-                  <td className="py-1.5 text-foreground">{b.clientName}</td>
-                  <td className="text-center py-1.5">{b.assigned}</td>
-                  <td className="text-center py-1.5 text-success">{b.completed}</td>
-                  <td className="text-center py-1.5 text-primary">{b.inProgress}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* Expanded breakdown */}
+      {expanded && data.breakdown.length > 0 && (
+        <div className="pt-2 border-t border-border">
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">By Client</p>
+          <div className="space-y-1.5">
+            {data.breakdown.map(b => (
+              <div key={b.clientName} className="flex items-center justify-between text-xs p-2 bg-muted/20 rounded-lg">
+                <span className="text-foreground font-medium">{b.clientName}</span>
+                <div className="flex items-center gap-3 text-[10px]">
+                  <span className="text-muted-foreground">{b.assigned} total</span>
+                  <span className="text-success">{b.completed} done</span>
+                  <span className="text-primary">{b.inProgress} active</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
-
-      <p className="text-[10px] text-muted-foreground text-center">Resets on the 1st of each month</p>
     </div>
   );
 }
