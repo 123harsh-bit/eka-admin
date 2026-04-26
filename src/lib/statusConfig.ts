@@ -150,9 +150,21 @@ export const PLATFORM_OPTIONS = [
   { value: 'youtube', label: 'YouTube', icon: '📺', color: 'bg-red-500/20 text-red-400' },
   { value: 'linkedin', label: 'LinkedIn', icon: '💼', color: 'bg-blue-500/20 text-blue-400' },
   { value: 'facebook', label: 'Facebook', icon: '👥', color: 'bg-sky-500/20 text-sky-400' },
+  { value: 'tiktok', label: 'TikTok', icon: '🎵', color: 'bg-pink-500/20 text-pink-400' },
   { value: 'multiple', label: 'Multiple', icon: '🌐', color: 'bg-muted text-muted-foreground' },
   { value: 'other', label: 'Other', icon: '📌', color: 'bg-muted text-muted-foreground' },
 ] as const;
+
+// Platform caption character limits
+export const PLATFORM_CAPTION_LIMITS: Record<string, number> = {
+  instagram: 2200,
+  youtube: 5000,
+  linkedin: 3000,
+  facebook: 63206,
+  tiktok: 2200,
+  multiple: 2200, // safest minimum
+  other: 5000,
+};
 
 export const CONTENT_ITEM_STATUSES = {
   planned: { label: 'Planned', emoji: '📋', color: 'text-muted-foreground', bgColor: 'bg-muted' },
