@@ -7,55 +7,58 @@
 
 @layer base {
   :root {
-    --background: 220 20% 4%;
-    --foreground: 210 20% 95%;
+    /* Eka — Premium Dark: amber accent on deep navy */
+    --background: 222 45% 6%;          /* #0A0F1E */
+    --foreground: 210 40% 98%;         /* #F8FAFC */
 
-    --card: 220 18% 8%;
-    --card-foreground: 210 20% 95%;
+    --card: 222 40% 9%;                /* #0F1629 */
+    --card-foreground: 210 40% 98%;
 
-    --popover: 220 18% 7%;
-    --popover-foreground: 210 20% 95%;
+    --popover: 222 42% 8%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 250 80% 62%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 38 92% 50%;             /* #F59E0B amber */
+    --primary-foreground: 222 47% 6%;  /* dark text on amber */
 
-    --secondary: 280 60% 65%;
+    --secondary: 28 90% 47%;           /* #D97706 deeper amber */
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 220 15% 14%;
-    --muted-foreground: 215 15% 55%;
+    --muted: 222 30% 14%;
+    --muted-foreground: 215 20% 65%;   /* #94A3B8 */
 
-    --accent: 250 30% 18%;
-    --accent-foreground: 210 20% 95%;
+    --accent: 38 92% 50% / 0.12;
+    --accent-foreground: 38 92% 60%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 0 84% 60%;          /* #EF4444 */
     --destructive-foreground: 0 0% 100%;
 
-    --success: 160 84% 39%;
+    --success: 160 84% 39%;            /* #10B981 */
     --success-foreground: 0 0% 100%;
 
     --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 0%;
+    --warning-foreground: 222 47% 6%;
 
-    --border: 220 15% 16%;
-    --input: 220 15% 12%;
-    --ring: 250 80% 62%;
+    --info: 217 91% 60%;               /* #3B82F6 */
 
-    --radius: 0.75rem;
+    --border: 215 28% 17% / 0.6;       /* rgba(255,255,255,0.08) feel */
+    --input: 222 35% 11%;
+    --ring: 38 92% 50%;
 
-    --sidebar-background: 220 20% 5%;
-    --sidebar-foreground: 215 15% 70%;
-    --sidebar-primary: 250 80% 62%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 250 30% 14%;
-    --sidebar-accent-foreground: 210 20% 95%;
-    --sidebar-border: 220 15% 12%;
-    --sidebar-ring: 250 80% 62%;
+    --radius: 1rem;                    /* 16px premium feel */
 
-    --surface: 220 18% 7%;
-    --glass: 220 18% 8% / 0.8;
-    --glass-border: 220 15% 18%;
-    --glow: 250 80% 62% / 0.1;
+    --sidebar-background: 222 47% 5%;
+    --sidebar-foreground: 215 20% 70%;
+    --sidebar-primary: 38 92% 50%;
+    --sidebar-primary-foreground: 222 47% 6%;
+    --sidebar-accent: 38 92% 50% / 0.1;
+    --sidebar-accent-foreground: 38 92% 60%;
+    --sidebar-border: 215 28% 17% / 0.5;
+    --sidebar-ring: 38 92% 50%;
+
+    --surface: 222 40% 9%;
+    --glass: 0 0% 100% / 0.04;
+    --glass-border: 0 0% 100% / 0.08;
+    --glow: 38 92% 50% / 0.15;
   }
 }
 
@@ -77,15 +80,19 @@
 
 @layer components {
   .glass-card {
-    @apply bg-card border border-border rounded-xl;
+    background: hsl(var(--card));
+    border: 1px solid hsl(215 28% 17% / 0.5);
+    border-radius: var(--radius);
+    backdrop-filter: blur(12px);
   }
 
   .glass-card-hover {
     @apply glass-card transition-all duration-200;
   }
   .glass-card-hover:hover {
-    border-color: hsl(250 80% 62% / 0.3);
-    background: hsl(220 18% 10%);
+    border-color: hsl(38 92% 50% / 0.3);
+    background: hsl(222 40% 11%);
+    box-shadow: 0 8px 32px -8px hsl(38 92% 50% / 0.15);
   }
 
   .gradient-text {
@@ -93,7 +100,18 @@
   }
 
   .eka-gradient {
-    background: linear-gradient(135deg, hsl(250 80% 62%), hsl(280 60% 65%));
+    background: linear-gradient(135deg, hsl(38 92% 50%), hsl(28 90% 47%));
+  }
+
+  /* Subtle grain texture overlay for premium feel */
+  .grain-texture::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    mix-blend-mode: overlay;
   }
 
   .fade-in {
