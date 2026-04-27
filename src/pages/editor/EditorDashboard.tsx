@@ -133,7 +133,7 @@ export default function EditorDashboard() {
                         return (
                           <div key={video.id} onClick={() => openVideo(video)}
                             className={cn('glass-card p-3 cursor-pointer flex items-center gap-3 group transition-all hover:bg-card/80', selectedVideo?.id === video.id && 'ring-1 ring-primary')}>
-                            <div className="h-9 w-9 rounded-lg bg-blue-500/15 flex items-center justify-center text-xs font-bold text-blue-400 flex-shrink-0">
+                            <div className="h-9 w-9 rounded-lg bg-secondary/15 flex items-center justify-center text-xs font-bold text-secondary flex-shrink-0">
                               {video.client_name?.charAt(0)}
                             </div>
                             <div className="flex-1 min-w-0">
