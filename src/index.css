@@ -7,58 +7,64 @@
 
 @layer base {
   :root {
-    /* Eka — Premium Dark: amber accent on deep navy */
-    --background: 222 45% 6%;          /* #0A0F1E */
-    --foreground: 210 40% 98%;         /* #F8FAFC */
+    /* Eka — Electric Blue on True Black, Neon Yellow for CTAs */
+    --background: 0 0% 4%;             /* #0A0A0A true black */
+    --foreground: 0 0% 100%;           /* #FFFFFF */
 
-    --card: 222 40% 9%;                /* #0F1629 */
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 7%;                   /* slightly lifted black */
+    --card-foreground: 0 0% 100%;
 
-    --popover: 222 42% 8%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 6%;
+    --popover-foreground: 0 0% 100%;
 
-    --primary: 38 92% 50%;             /* #F59E0B amber */
-    --primary-foreground: 222 47% 6%;  /* dark text on amber */
+    --primary: 252 100% 47%;           /* #4400EE electric blue */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 28 90% 47%;           /* #D97706 deeper amber */
+    --secondary: 252 100% 56%;         /* #6622FF blue light */
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 222 30% 14%;
-    --muted-foreground: 215 20% 65%;   /* #94A3B8 */
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 65%;
 
-    --accent: 38 92% 50% / 0.12;
-    --accent-foreground: 38 92% 60%;
+    --accent: 71 100% 50%;             /* #D4FF00 neon yellow — CTAs/highlights */
+    --accent-foreground: 0 0% 4%;
 
-    --destructive: 0 84% 60%;          /* #EF4444 */
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 160 84% 39%;            /* #10B981 */
+    --success: 160 84% 39%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 222 47% 6%;
+    --warning: 71 100% 50%;
+    --warning-foreground: 0 0% 4%;
 
-    --info: 217 91% 60%;               /* #3B82F6 */
+    --info: 252 100% 56%;
 
-    --border: 215 28% 17% / 0.6;       /* rgba(255,255,255,0.08) feel */
-    --input: 222 35% 11%;
-    --ring: 38 92% 50%;
+    --border: 0 0% 100% / 0.08;
+    --input: 0 0% 10%;
+    --ring: 252 100% 47%;
 
-    --radius: 1rem;                    /* 16px premium feel */
+    --radius: 1rem;
 
-    --sidebar-background: 222 47% 5%;
-    --sidebar-foreground: 215 20% 70%;
-    --sidebar-primary: 38 92% 50%;
-    --sidebar-primary-foreground: 222 47% 6%;
-    --sidebar-accent: 38 92% 50% / 0.1;
-    --sidebar-accent-foreground: 38 92% 60%;
-    --sidebar-border: 215 28% 17% / 0.5;
-    --sidebar-ring: 38 92% 50%;
+    --sidebar-background: 0 0% 3%;
+    --sidebar-foreground: 0 0% 70%;
+    --sidebar-primary: 252 100% 47%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 252 100% 47% / 0.12;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 100% / 0.06;
+    --sidebar-ring: 252 100% 47%;
 
-    --surface: 222 40% 9%;
+    --surface: 0 0% 7%;
     --glass: 0 0% 100% / 0.04;
     --glass-border: 0 0% 100% / 0.08;
-    --glow: 38 92% 50% / 0.15;
+    --glow: 252 100% 47% / 0.25;
+
+    /* Brand-specific tokens */
+    --blue-electric: 252 100% 47%;     /* #4400EE */
+    --blue-light: 252 100% 56%;        /* #6622FF */
+    --blue-deep: 252 100% 33%;         /* #2200AA */
+    --neon-yellow: 71 100% 50%;        /* #D4FF00 */
   }
 }
 
@@ -81,7 +87,7 @@
 @layer components {
   .glass-card {
     background: hsl(var(--card));
-    border: 1px solid hsl(215 28% 17% / 0.5);
+    border: 1px solid hsl(0 0% 100% / 0.06);
     border-radius: var(--radius);
     backdrop-filter: blur(12px);
   }
@@ -90,9 +96,9 @@
     @apply glass-card transition-all duration-200;
   }
   .glass-card-hover:hover {
-    border-color: hsl(38 92% 50% / 0.3);
-    background: hsl(222 40% 11%);
-    box-shadow: 0 8px 32px -8px hsl(38 92% 50% / 0.15);
+    border-color: hsl(var(--primary) / 0.4);
+    background: hsl(0 0% 9%);
+    box-shadow: 0 8px 32px -8px hsl(var(--blue-deep) / 0.5);
   }
 
   .gradient-text {
@@ -100,7 +106,15 @@
   }
 
   .eka-gradient {
-    background: linear-gradient(135deg, hsl(38 92% 50%), hsl(28 90% 47%));
+    background: linear-gradient(135deg, hsl(var(--blue-electric)), hsl(var(--blue-light)));
+  }
+
+  .neon-glow {
+    box-shadow: 0 0 24px hsl(var(--accent) / 0.4), 0 0 48px hsl(var(--accent) / 0.2);
+  }
+
+  .blue-glow {
+    box-shadow: 0 0 32px hsl(var(--primary) / 0.5);
   }
 
   /* Subtle grain texture overlay for premium feel */
@@ -126,9 +140,9 @@
   .animated-gradient {
     background: linear-gradient(
       135deg,
-      hsl(220 20% 4%),
-      hsl(250 25% 8%),
-      hsl(220 20% 4%)
+      hsl(0 0% 4%),
+      hsl(252 100% 8%),
+      hsl(0 0% 4%)
     );
     background-size: 200% 200%;
     animation: gradientShift 12s ease infinite;
@@ -144,7 +158,7 @@
     @apply glass-card p-5 transition-all duration-200;
   }
   .stat-card:hover {
-    border-color: hsl(250 80% 62% / 0.25);
+    border-color: hsl(var(--primary) / 0.35);
   }
 }
 
