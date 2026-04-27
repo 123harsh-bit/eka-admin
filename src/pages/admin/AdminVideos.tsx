@@ -764,7 +764,7 @@ export default function AdminVideos() {
                   <Lock size={10} className="text-muted-foreground" />
                 </div>
                 {detailVideo.raw_footage_link ? (
-                  <a href={detailVideo.raw_footage_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-amber-400 hover:underline font-medium">
+                  <a href={detailVideo.raw_footage_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-accent hover:underline font-medium">
                     <FolderOpen size={12} /> Raw Footage
                   </a>
                 ) : <p className="text-xs text-muted-foreground">No raw footage link</p>}
