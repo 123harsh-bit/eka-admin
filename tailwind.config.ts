@@ -65,6 +65,12 @@ export default {
           border: "hsl(var(--glass-border))",
         },
         glow: "hsl(var(--glow))",
+        brand: {
+          electric: "hsl(var(--blue-electric))",
+          light: "hsl(var(--blue-light))",
+          deep: "hsl(var(--blue-deep))",
+          neon: "hsl(var(--neon-yellow))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
