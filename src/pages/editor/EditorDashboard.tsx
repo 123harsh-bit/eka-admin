@@ -133,7 +133,7 @@ export default function EditorDashboard() {
                         return (
                           <div key={video.id} onClick={() => openVideo(video)}
                             className={cn('glass-card p-3 cursor-pointer flex items-center gap-3 group transition-all hover:bg-card/80', selectedVideo?.id === video.id && 'ring-1 ring-primary')}>
-                            <div className="h-9 w-9 rounded-lg bg-blue-500/15 flex items-center justify-center text-xs font-bold text-blue-400 flex-shrink-0">
+                            <div className="h-9 w-9 rounded-lg bg-secondary/15 flex items-center justify-center text-xs font-bold text-secondary flex-shrink-0">
                               {video.client_name?.charAt(0)}
                             </div>
                             <div className="flex-1 min-w-0">
@@ -178,7 +178,7 @@ export default function EditorDashboard() {
                     <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Internal Links</p>
                     {selectedVideo.raw_footage_link ? (
                       <a href={selectedVideo.raw_footage_link} target="_blank" rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-xs text-amber-400 hover:underline font-medium py-2 px-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                        className="flex items-center gap-2 text-xs text-primary hover:underline font-medium py-2 px-3 rounded-lg bg-primary/10 border border-primary/20">
                         <FolderOpen size={12} /> Open Raw Footage
                       </a>
                     ) : (

@@ -183,7 +183,7 @@ export default function WriterDashboard() {
                           {task.raw_footage_link && (
                             <a href={task.raw_footage_link} target="_blank" rel="noopener noreferrer"
                               onClick={e => e.stopPropagation()}
-                              className="inline-flex items-center gap-1 text-[10px] text-amber-400 hover:underline">
+                              className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline">
                               <FolderOpen size={9} /> Raw Footage →
                             </a>
                           )}
@@ -278,7 +278,7 @@ export default function WriterDashboard() {
                       </a>
                     )}
                     {selectedTask.raw_footage_link && (
-                      <a href={selectedTask.raw_footage_link} target="_blank" rel="noopener noreferrer" className="text-xs text-amber-400 hover:underline flex items-center gap-1">
+                      <a href={selectedTask.raw_footage_link} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1">
                         <FolderOpen size={10} /> Raw Footage
                       </a>
                     )}

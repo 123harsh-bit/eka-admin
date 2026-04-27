@@ -115,9 +115,9 @@ export default function AdminDashboard() {
 
   const statCards = [
     { label: 'Clients', value: stats?.activeClients, icon: Users, accent: 'text-primary' },
-    { label: 'In Production', value: stats?.videosInProduction, icon: Video, accent: 'text-blue-400' },
+    { label: 'In Production', value: stats?.videosInProduction, icon: Video, accent: 'text-secondary' },
     { label: 'Pending Review', value: stats?.pendingReviews, icon: Clock, accent: 'text-warning' },
-    { label: 'Due This Week', value: stats?.tasksDueThisWeek, icon: AlertTriangle, accent: 'text-orange-400' },
+    { label: 'Due This Week', value: stats?.tasksDueThisWeek, icon: AlertTriangle, accent: 'text-accent' },
     { label: 'Live This Month', value: stats?.videosLiveThisMonth, icon: TrendingUp, accent: 'text-success' },
   ];
 
