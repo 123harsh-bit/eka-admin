@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { RoleRedirect } from "@/components/auth/RoleRedirect";
+import { CommandPalette } from "@/components/shared/CommandPalette";
 
 import LoginPage from "@/components/auth/LoginPage";
 import ResetPassword from "@/pages/ResetPassword";
@@ -59,6 +60,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <CommandPalette />
           <Routes>
             {/* Public routes */}
             <Route path="/login" element={<LoginPage />} />

@@ -17,6 +17,9 @@ import { syncVideoToWritingTask } from '@/lib/syncTaskToVideo';
 import { useAuth } from '@/hooks/useAuth';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { VideoComments } from '@/components/shared/VideoComments';
+import { ShootChecklist } from '@/components/shared/ShootChecklist';
+import { DeadlineBadge } from '@/components/shared/DeadlineBadge';
 
 interface VideoRow {
   id: string; title: string; description: string | null; status: string;
@@ -693,7 +696,10 @@ export default function AdminVideos() {
               <div className="flex items-center gap-2">
                 <button onClick={() => setDetailVideo(null)} className="lg:hidden text-muted-foreground hover:text-foreground text-sm">← Back</button>
                 <div>
-                  <h2 className="font-display font-semibold text-foreground text-sm">{detailVideo.title}</h2>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="font-display font-semibold text-foreground text-sm">{detailVideo.title}</h2>
+                    <DeadlineBadge dueDate={(detailVideo as any).due_date || detailVideo.date_planned} />
+                  </div>
                   <p className="text-xs text-muted-foreground">{detailVideo.client_name}</p>
                 </div>
               </div>
@@ -761,7 +767,7 @@ export default function AdminVideos() {
                   <Lock size={10} className="text-muted-foreground" />
                 </div>
                 {detailVideo.raw_footage_link ? (
-                  <a href={detailVideo.raw_footage_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-amber-400 hover:underline font-medium">
+                  <a href={detailVideo.raw_footage_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-accent hover:underline font-medium">
                     <FolderOpen size={12} /> Raw Footage
                   </a>
                 ) : <p className="text-xs text-muted-foreground">No raw footage link</p>}
@@ -784,6 +790,15 @@ export default function AdminVideos() {
                   <p className="text-xs text-foreground/80 bg-muted/30 rounded-lg p-3">{detailVideo.internal_notes}</p>
                 </div>
               )}
+
+              {/* Shoot Checklist */}
+              <ShootChecklist
+                videoId={detailVideo.id}
+                initial={(detailVideo as any).shoot_checklist || null}
+              />
+
+              {/* Comments */}
+              <VideoComments videoId={detailVideo.id} />
 
               {/* Feedback */}
               <div>

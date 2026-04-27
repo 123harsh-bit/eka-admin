@@ -804,6 +804,47 @@ export type Database = {
         }
         Relationships: []
       }
+      video_comments: {
+        Row: {
+          author_id: string
+          content: string
+          created_at: string
+          id: string
+          mentions: string[] | null
+          parent_id: string | null
+          updated_at: string
+          video_id: string
+        }
+        Insert: {
+          author_id: string
+          content: string
+          created_at?: string
+          id?: string
+          mentions?: string[] | null
+          parent_id?: string | null
+          updated_at?: string
+          video_id: string
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          mentions?: string[] | null
+          parent_id?: string | null
+          updated_at?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "video_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       videos: {
         Row: {
           assigned_camera_operator: string | null
@@ -814,12 +855,14 @@ export type Database = {
           date_planned: string | null
           description: string | null
           drive_link: string | null
+          due_date: string | null
           footage_uploaded_at: string | null
           id: string
           internal_notes: string | null
           is_internal_note_visible_to_client: boolean
           live_url: string | null
           raw_footage_link: string | null
+          shoot_checklist: Json | null
           shoot_date: string | null
           shoot_location: string | null
           shoot_notes: string | null
@@ -838,12 +881,14 @@ export type Database = {
           date_planned?: string | null
           description?: string | null
           drive_link?: string | null
+          due_date?: string | null
           footage_uploaded_at?: string | null
           id?: string
           internal_notes?: string | null
           is_internal_note_visible_to_client?: boolean
           live_url?: string | null
           raw_footage_link?: string | null
+          shoot_checklist?: Json | null
           shoot_date?: string | null
           shoot_location?: string | null
           shoot_notes?: string | null
@@ -862,12 +907,14 @@ export type Database = {
           date_planned?: string | null
           description?: string | null
           drive_link?: string | null
+          due_date?: string | null
           footage_uploaded_at?: string | null
           id?: string
           internal_notes?: string | null
           is_internal_note_visible_to_client?: boolean
           live_url?: string | null
           raw_footage_link?: string | null
+          shoot_checklist?: Json | null
           shoot_date?: string | null
           shoot_location?: string | null
           shoot_notes?: string | null
