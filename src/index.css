@@ -140,9 +140,9 @@
   .animated-gradient {
     background: linear-gradient(
       135deg,
-      hsl(220 20% 4%),
-      hsl(250 25% 8%),
-      hsl(220 20% 4%)
+      hsl(0 0% 4%),
+      hsl(252 100% 8%),
+      hsl(0 0% 4%)
     );
     background-size: 200% 200%;
     animation: gradientShift 12s ease infinite;
@@ -158,7 +158,7 @@
     @apply glass-card p-5 transition-all duration-200;
   }
   .stat-card:hover {
-    border-color: hsl(250 80% 62% / 0.25);
+    border-color: hsl(var(--primary) / 0.35);
   }
 }
 
