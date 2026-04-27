@@ -696,7 +696,10 @@ export default function AdminVideos() {
               <div className="flex items-center gap-2">
                 <button onClick={() => setDetailVideo(null)} className="lg:hidden text-muted-foreground hover:text-foreground text-sm">← Back</button>
                 <div>
-                  <h2 className="font-display font-semibold text-foreground text-sm">{detailVideo.title}</h2>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="font-display font-semibold text-foreground text-sm">{detailVideo.title}</h2>
+                    <DeadlineBadge dueDate={(detailVideo as any).due_date || detailVideo.date_planned} />
+                  </div>
                   <p className="text-xs text-muted-foreground">{detailVideo.client_name}</p>
                 </div>
               </div>
