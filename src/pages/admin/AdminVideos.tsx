@@ -17,6 +17,9 @@ import { syncVideoToWritingTask } from '@/lib/syncTaskToVideo';
 import { useAuth } from '@/hooks/useAuth';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { VideoComments } from '@/components/shared/VideoComments';
+import { ShootChecklist } from '@/components/shared/ShootChecklist';
+import { DeadlineBadge } from '@/components/shared/DeadlineBadge';
 
 interface VideoRow {
   id: string; title: string; description: string | null; status: string;
