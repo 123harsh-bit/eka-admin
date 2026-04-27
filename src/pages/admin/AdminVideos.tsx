@@ -785,6 +785,15 @@ export default function AdminVideos() {
                 </div>
               )}
 
+              {/* Shoot Checklist */}
+              <ShootChecklist
+                videoId={detailVideo.id}
+                initial={(detailVideo as any).shoot_checklist || null}
+              />
+
+              {/* Comments */}
+              <VideoComments videoId={detailVideo.id} />
+
               {/* Feedback */}
               <div>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
