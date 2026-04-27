@@ -178,7 +178,7 @@ export default function EditorDashboard() {
                     <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Internal Links</p>
                     {selectedVideo.raw_footage_link ? (
                       <a href={selectedVideo.raw_footage_link} target="_blank" rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-xs text-amber-400 hover:underline font-medium py-2 px-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                        className="flex items-center gap-2 text-xs text-primary hover:underline font-medium py-2 px-3 rounded-lg bg-primary/10 border border-primary/20">
                         <FolderOpen size={12} /> Open Raw Footage
                       </a>
                     ) : (
