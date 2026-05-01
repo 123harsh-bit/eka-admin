@@ -83,6 +83,9 @@ export default function AdminTeam() {
         } else if (m.role === 'camera_operator') {
           const { count: c } = await supabase.from('videos').select('*', { count: 'exact', head: true }).eq('assigned_camera_operator', m.id).in('status', ['shoot_assigned', 'shooting']);
           count = c || 0;
+        } else if (m.role === 'social_executive') {
+          const { count: c } = await supabase.from('scheduled_posts').select('*', { count: 'exact', head: true }).eq('created_by', m.id).in('status', ['draft', 'scheduled', 'ready']);
+          count = c || 0;
         }
         return { ...m, taskCount: count };
       })
