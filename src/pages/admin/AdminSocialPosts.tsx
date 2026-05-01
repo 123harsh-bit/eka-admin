@@ -1,0 +1,184 @@
+import { useState, useEffect } from 'react';
+import { AdminLayout } from '@/components/admin/AdminLayout';
+import { supabase } from '@/integrations/supabase/client';
+import { Instagram, Facebook, Youtube, Linkedin, Heart, MessageCircle, Eye, ExternalLink, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
+
+interface Post {
+  id: string;
+  title: string;
+  caption: string | null;
+  status: string;
+  scheduled_at: string | null;
+  published_at: string | null;
+  platforms: string[];
+  media_urls: string[];
+  media_type: string;
+  platform_urls: Record<string, string>;
+  analytics: Record<string, { likes?: number; comments?: number; views?: number; reach?: number }>;
+  client_id: string;
+  clients?: { name: string };
+  created_by_profile?: { full_name: string };
+}
+
+const platformIcon: Record<string, typeof Instagram> = {
+  instagram: Instagram, facebook: Facebook, youtube: Youtube, linkedin: Linkedin,
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  draft: 'bg-muted text-muted-foreground',
+  scheduled: 'bg-blue-500/20 text-blue-400',
+  ready: 'bg-amber-500/20 text-amber-400',
+  published: 'bg-success/20 text-success',
+  failed: 'bg-destructive/20 text-destructive',
+};
+
+export default function AdminSocialPosts() {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+
+  useEffect(() => {
+    supabase.from('scheduled_posts')
+      .select('*, clients(name)')
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        setPosts((data as unknown as Post[]) || []);
+        setLoading(false);
+      });
+  }, []);
+
+  const filtered = posts.filter(p => {
+    const matchSearch = p.title.toLowerCase().includes(search.toLowerCase()) || p.clients?.name.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = !statusFilter || p.status === statusFilter;
+    return matchSearch && matchStatus;
+  });
+
+  const totals = posts.reduce((acc, p) => {
+    Object.values(p.analytics || {}).forEach(a => {
+      acc.likes += a.likes || 0;
+      acc.comments += a.comments || 0;
+      acc.views += a.views || 0;
+    });
+    return acc;
+  }, { likes: 0, comments: 0, views: 0 });
+
+  return (
+    <AdminLayout>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-display font-bold gradient-text">Social Media</h1>
+          <p className="text-muted-foreground mt-1">All posts created by your social executive</p>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="glass-card p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Posts</p>
+            <p className="text-3xl font-bold mt-2">{posts.length}</p>
+          </div>
+          <div className="glass-card p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Likes</p>
+            <p className="text-3xl font-bold mt-2 text-pink-400">{totals.likes.toLocaleString()}</p>
+          </div>
+          <div className="glass-card p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Comments</p>
+            <p className="text-3xl font-bold mt-2 text-blue-400">{totals.comments.toLocaleString()}</p>
+          </div>
+          <div className="glass-card p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Views</p>
+            <p className="text-3xl font-bold mt-2 text-amber-400">{totals.views.toLocaleString()}</p>
+          </div>
+        </div>
+
+        <div className="flex gap-2 flex-wrap">
+          <div className="relative flex-1 min-w-40">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search posts…" className="pl-8" />
+          </div>
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="h-10 rounded-md border border-input bg-background px-3 text-sm">
+            <option value="">All statuses</option>
+            <option value="draft">Draft</option>
+            <option value="scheduled">Scheduled</option>
+            <option value="ready">Ready</option>
+            <option value="published">Published</option>
+            <option value="failed">Failed</option>
+          </select>
+        </div>
+
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, i) => <div key={i} className="glass-card h-72 animate-pulse" />)}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="glass-card p-12 text-center text-muted-foreground">
+            <Instagram size={32} className="mx-auto mb-2 opacity-40" />
+            <p>No posts found.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filtered.map(p => {
+              const totals = Object.values(p.analytics || {}).reduce((acc, a) => ({
+                likes: acc.likes + (a.likes || 0),
+                comments: acc.comments + (a.comments || 0),
+                views: acc.views + (a.views || 0),
+              }), { likes: 0, comments: 0, views: 0 });
+              const firstMedia = p.media_urls?.[0];
+              const isVideo = firstMedia?.match(/\.(mp4|mov|webm)/i);
+              return (
+                <div key={p.id} className="glass-card overflow-hidden group">
+                  {firstMedia ? (
+                    <div className="aspect-video bg-card relative">
+                      {isVideo ? (
+                        <video src={firstMedia} controls className="w-full h-full object-cover" />
+                      ) : (
+                        <img src={firstMedia} alt={p.title} className="w-full h-full object-cover" />
+                      )}
+                      <span className={cn('absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-medium', STATUS_COLORS[p.status])}>
+                        {p.status}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="aspect-video bg-card flex items-center justify-center text-muted-foreground/40">
+                      <Instagram size={28} />
+                    </div>
+                  )}
+                  <div className="p-4 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="font-semibold text-sm text-foreground truncate flex-1">{p.title}</h3>
+                      <div className="flex gap-1">
+                        {p.platforms.map(plat => {
+                          const Icon = platformIcon[plat];
+                          return Icon ? <Icon key={plat} size={12} className="text-muted-foreground" /> : null;
+                        })}
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{p.clients?.name || 'Unknown client'}</p>
+                    {p.caption && <p className="text-xs text-muted-foreground line-clamp-2">{p.caption}</p>}
+
+                    <div className="flex items-center gap-4 pt-2 border-t border-glass-border text-xs">
+                      <span className="flex items-center gap-1 text-pink-400"><Heart size={11} /> {totals.likes}</span>
+                      <span className="flex items-center gap-1 text-blue-400"><MessageCircle size={11} /> {totals.comments}</span>
+                      <span className="flex items-center gap-1 text-amber-400"><Eye size={11} /> {totals.views}</span>
+                    </div>
+
+                    {Object.keys(p.platform_urls || {}).length > 0 && (
+                      <div className="flex gap-2 pt-1">
+                        {Object.entries(p.platform_urls).map(([plat, url]) => (
+                          <a key={plat} href={url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-[11px] flex items-center gap-1">
+                            <ExternalLink size={10} /> {plat}
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </AdminLayout>
+  );
+}
