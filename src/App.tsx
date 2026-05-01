@@ -51,6 +51,15 @@ import CameraClients from "@/pages/camera/CameraClients";
 import CameraDailyTasks from "@/pages/camera/CameraDailyTasks";
 import CameraAttendance from "@/pages/camera/CameraAttendance";
 
+// Social executive pages
+import SocialDashboard from "@/pages/social/SocialDashboard";
+import SocialCompose from "@/pages/social/SocialCompose";
+import SocialCalendar from "@/pages/social/SocialCalendar";
+import SocialAnalytics from "@/pages/social/SocialAnalytics";
+import SocialDailyTasks from "@/pages/social/SocialDailyTasks";
+import SocialAttendance from "@/pages/social/SocialAttendance";
+import AdminSocialPosts from "@/pages/admin/AdminSocialPosts";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -84,6 +93,7 @@ const App = () => (
             <Route path="/admin/notifications" element={<ProtectedRoute allowedRoles={['admin']}><AdminNotifications /></ProtectedRoute>} />
             <Route path="/admin/weekly-report" element={<ProtectedRoute allowedRoles={['admin']}><AdminWeeklyReport /></ProtectedRoute>} />
             <Route path="/admin/content-planner" element={<ProtectedRoute allowedRoles={['admin']}><AdminContentPlanner /></ProtectedRoute>} />
+            <Route path="/admin/social-posts" element={<ProtectedRoute allowedRoles={['admin']}><AdminSocialPosts /></ProtectedRoute>} />
             <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin']}><AdminSettings /></ProtectedRoute>} />
 
             {/* Editor routes */}
@@ -111,6 +121,14 @@ const App = () => (
             <Route path="/camera/clients" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraClients /></ProtectedRoute>} />
             <Route path="/camera/daily-tasks" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraDailyTasks /></ProtectedRoute>} />
             <Route path="/camera/attendance" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraAttendance /></ProtectedRoute>} />
+
+            {/* Social executive routes */}
+            <Route path="/social" element={<ProtectedRoute allowedRoles={['social_executive']}><SocialDashboard /></ProtectedRoute>} />
+            <Route path="/social/compose" element={<ProtectedRoute allowedRoles={['social_executive']}><SocialCompose /></ProtectedRoute>} />
+            <Route path="/social/calendar" element={<ProtectedRoute allowedRoles={['social_executive']}><SocialCalendar /></ProtectedRoute>} />
+            <Route path="/social/analytics" element={<ProtectedRoute allowedRoles={['social_executive']}><SocialAnalytics /></ProtectedRoute>} />
+            <Route path="/social/daily-tasks" element={<ProtectedRoute allowedRoles={['social_executive']}><SocialDailyTasks /></ProtectedRoute>} />
+            <Route path="/social/attendance" element={<ProtectedRoute allowedRoles={['social_executive']}><SocialAttendance /></ProtectedRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
