@@ -240,6 +240,7 @@ export default function AdminTeam() {
                 designer: 'design tasks',
                 writer: 'writing tasks',
                 camera_operator: 'upcoming shoots',
+                social_executive: 'posts in pipeline',
                 admin: 'tasks',
               };
               const taskLabel = TASK_LABELS[member.role] || 'tasks';
@@ -250,7 +251,8 @@ export default function AdminTeam() {
                     member.role === 'editor' ? 'bg-blue-500' : 
                     member.role === 'designer' ? 'bg-pink-500' : 
                     member.role === 'writer' ? 'bg-green-500' : 
-                    member.role === 'camera_operator' ? 'bg-violet-500' : 'bg-primary'
+                    member.role === 'camera_operator' ? 'bg-violet-500' :
+                    member.role === 'social_executive' ? 'bg-amber-500' : 'bg-primary'
                   )} />
                   
                   <div className="flex items-start gap-3 pt-1">
@@ -258,7 +260,8 @@ export default function AdminTeam() {
                       member.role === 'editor' ? 'bg-blue-500/20 text-blue-400' : 
                       member.role === 'designer' ? 'bg-pink-500/20 text-pink-400' : 
                       member.role === 'writer' ? 'bg-green-500/20 text-green-400' : 
-                      member.role === 'camera_operator' ? 'bg-violet-500/20 text-violet-400' : 'bg-primary/20 text-primary'
+                      member.role === 'camera_operator' ? 'bg-violet-500/20 text-violet-400' :
+                      member.role === 'social_executive' ? 'bg-amber-500/20 text-amber-400' : 'bg-primary/20 text-primary'
                     )}>
                       {member.full_name.charAt(0).toUpperCase()}
                     </div>
