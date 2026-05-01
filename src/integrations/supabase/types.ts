@@ -738,6 +738,78 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduled_posts: {
+        Row: {
+          analytics: Json
+          analytics_updated_at: string | null
+          assigned_to: string | null
+          caption: string | null
+          client_id: string
+          created_at: string
+          created_by: string
+          hashtags: string | null
+          id: string
+          linked_design_task_id: string | null
+          linked_video_id: string | null
+          media_type: string
+          media_urls: Json
+          notes: string | null
+          platform_urls: Json
+          platforms: Json
+          published_at: string | null
+          scheduled_at: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          analytics?: Json
+          analytics_updated_at?: string | null
+          assigned_to?: string | null
+          caption?: string | null
+          client_id: string
+          created_at?: string
+          created_by: string
+          hashtags?: string | null
+          id?: string
+          linked_design_task_id?: string | null
+          linked_video_id?: string | null
+          media_type?: string
+          media_urls?: Json
+          notes?: string | null
+          platform_urls?: Json
+          platforms?: Json
+          published_at?: string | null
+          scheduled_at?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          analytics?: Json
+          analytics_updated_at?: string | null
+          assigned_to?: string | null
+          caption?: string | null
+          client_id?: string
+          created_at?: string
+          created_by?: string
+          hashtags?: string | null
+          id?: string
+          linked_design_task_id?: string | null
+          linked_video_id?: string | null
+          media_type?: string
+          media_urls?: Json
+          notes?: string | null
+          platform_urls?: Json
+          platforms?: Json
+          published_at?: string | null
+          scheduled_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       team_messages: {
         Row: {
           channel: string
@@ -1051,6 +1123,7 @@ export type Database = {
         | "writer"
         | "client"
         | "camera_operator"
+        | "social_executive"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1185,6 +1258,7 @@ export const Constants = {
         "writer",
         "client",
         "camera_operator",
+        "social_executive",
       ],
     },
   },

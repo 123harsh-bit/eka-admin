@@ -9,7 +9,7 @@ import {
   LayoutDashboard, Users, Video, Palette, PenTool, Camera,
   UserCircle, Bell, Settings, LogOut, Menu, X, ListTodo,
   Calendar, Scissors, Lightbulb, BarChart3, CalendarRange,
-  ChevronLeft
+  ChevronLeft, Share2
 } from 'lucide-react';
 
 const navGroups = [
@@ -29,6 +29,7 @@ const navGroups = [
       { to: '/admin/writing-tasks', icon: PenTool, label: 'Writing Tasks' },
       { to: '/admin/editor-tasks', icon: Scissors, label: 'Editor Tasks' },
       { to: '/admin/camera-shoots', icon: Camera, label: 'Camera Shoots' },
+      { to: '/admin/social-posts', icon: Share2, label: 'Social Posts' },
     ],
   },
   {

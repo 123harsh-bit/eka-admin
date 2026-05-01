@@ -24,6 +24,7 @@ export function RoleRedirect() {
     designer: '/designer',
     writer: '/writer',
     camera_operator: '/camera',
+    social_executive: '/social',
   };
 
   return <Navigate to={role ? roleRoutes[role] || '/login' : '/login'} replace />;

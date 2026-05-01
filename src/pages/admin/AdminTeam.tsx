@@ -25,6 +25,7 @@ const ROLES = [
   { value: 'designer', label: 'Graphic Designer', color: 'text-pink-400 bg-pink-500/20' },
   { value: 'writer', label: 'Content Writer', color: 'text-green-400 bg-green-500/20' },
   { value: 'camera_operator', label: 'Camera Operator', color: 'text-violet-400 bg-violet-500/20' },
+  { value: 'social_executive', label: 'Social Media Executive', color: 'text-amber-400 bg-amber-500/20' },
   { value: 'admin', label: 'Managing Director', color: 'text-primary bg-primary/20' },
 ];
 
@@ -81,6 +82,9 @@ export default function AdminTeam() {
           count = c || 0;
         } else if (m.role === 'camera_operator') {
           const { count: c } = await supabase.from('videos').select('*', { count: 'exact', head: true }).eq('assigned_camera_operator', m.id).in('status', ['shoot_assigned', 'shooting']);
+          count = c || 0;
+        } else if (m.role === 'social_executive') {
+          const { count: c } = await supabase.from('scheduled_posts').select('*', { count: 'exact', head: true }).eq('created_by', m.id).in('status', ['draft', 'scheduled', 'ready']);
           count = c || 0;
         }
         return { ...m, taskCount: count };
@@ -236,6 +240,7 @@ export default function AdminTeam() {
                 designer: 'design tasks',
                 writer: 'writing tasks',
                 camera_operator: 'upcoming shoots',
+                social_executive: 'posts in pipeline',
                 admin: 'tasks',
               };
               const taskLabel = TASK_LABELS[member.role] || 'tasks';
@@ -246,7 +251,8 @@ export default function AdminTeam() {
                     member.role === 'editor' ? 'bg-blue-500' : 
                     member.role === 'designer' ? 'bg-pink-500' : 
                     member.role === 'writer' ? 'bg-green-500' : 
-                    member.role === 'camera_operator' ? 'bg-violet-500' : 'bg-primary'
+                    member.role === 'camera_operator' ? 'bg-violet-500' :
+                    member.role === 'social_executive' ? 'bg-amber-500' : 'bg-primary'
                   )} />
                   
                   <div className="flex items-start gap-3 pt-1">
@@ -254,7 +260,8 @@ export default function AdminTeam() {
                       member.role === 'editor' ? 'bg-blue-500/20 text-blue-400' : 
                       member.role === 'designer' ? 'bg-pink-500/20 text-pink-400' : 
                       member.role === 'writer' ? 'bg-green-500/20 text-green-400' : 
-                      member.role === 'camera_operator' ? 'bg-violet-500/20 text-violet-400' : 'bg-primary/20 text-primary'
+                      member.role === 'camera_operator' ? 'bg-violet-500/20 text-violet-400' :
+                      member.role === 'social_executive' ? 'bg-amber-500/20 text-amber-400' : 'bg-primary/20 text-primary'
                     )}>
                       {member.full_name.charAt(0).toUpperCase()}
                     </div>
