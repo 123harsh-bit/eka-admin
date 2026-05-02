@@ -29,19 +29,21 @@ export default function SocialDashboard() {
   const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [helperPostId, setHelperPostId] = useState<string | null>(null);
+
+  const refresh = async () => {
+    const { data } = await supabase
+      .from('scheduled_posts')
+      .select('id, title, status, scheduled_at, platforms, client_id, analytics')
+      .order('scheduled_at', { ascending: true, nullsFirst: false })
+      .limit(100);
+    setPosts((data as unknown as Post[]) || []);
+    setLoading(false);
+  };
 
   useEffect(() => {
     if (!user) return;
-    const fetch = async () => {
-      const { data } = await supabase
-        .from('scheduled_posts')
-        .select('id, title, status, scheduled_at, platforms, client_id, analytics')
-        .order('scheduled_at', { ascending: true, nullsFirst: false })
-        .limit(100);
-      setPosts((data as unknown as Post[]) || []);
-      setLoading(false);
-    };
-    fetch();
+    refresh();
   }, [user]);
 
   const stats = {
