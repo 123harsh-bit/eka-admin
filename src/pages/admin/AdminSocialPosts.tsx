@@ -170,7 +170,7 @@ export default function AdminSocialPosts() {
                     </div>
 
                     {Object.keys(p.platform_urls || {}).length > 0 && (
-                      <div className="flex gap-2 pt-1">
+                      <div className="flex gap-2 pt-1 flex-wrap">
                         {Object.entries(p.platform_urls).map(([plat, url]) => (
                           <a key={plat} href={url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-[11px] flex items-center gap-1">
                             <ExternalLink size={10} /> {plat}
@@ -178,12 +178,17 @@ export default function AdminSocialPosts() {
                         ))}
                       </div>
                     )}
+
+                    <Button size="sm" variant="secondary" className="w-full gap-1.5 h-8 text-xs mt-2" onClick={() => setHelperPostId(p.id)}>
+                      <Send size={11} /> {p.status === 'published' ? 'Update analytics' : 'Publish helper'}
+                    </Button>
                   </div>
                 </div>
               );
             })}
           </div>
         )}
+        <PublishHelper postId={helperPostId} open={!!helperPostId} onOpenChange={o => !o && setHelperPostId(null)} onPublished={refresh} />
       </div>
     </AdminLayout>
   );
