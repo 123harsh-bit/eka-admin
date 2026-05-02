@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
-import { Instagram, Facebook, Youtube, Linkedin, Heart, MessageCircle, Eye, ExternalLink, Search } from 'lucide-react';
+import { Instagram, Facebook, Youtube, Linkedin, Heart, MessageCircle, Eye, ExternalLink, Search, Send } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { PublishHelper } from '@/components/social/PublishHelper';
 import { cn } from '@/lib/utils';
 
 interface Post {
