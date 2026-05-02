@@ -94,8 +94,8 @@ export default function SocialDashboard() {
           ) : (
             <div className="space-y-2">
               {upcoming.map(p => (
-                <div key={p.id} className="flex items-center justify-between p-3 rounded-lg bg-card/50 hover:bg-card transition-colors cursor-pointer" onClick={() => navigate(`/social/compose?id=${p.id}`)}>
-                  <div className="flex-1 min-w-0">
+                <div key={p.id} className="flex items-center justify-between p-3 rounded-lg bg-card/50 hover:bg-card transition-colors gap-2">
+                  <div className="flex-1 min-w-0 cursor-pointer" onClick={() => navigate(`/social/compose?id=${p.id}`)}>
                     <p className="font-medium text-sm text-foreground truncate">{p.title}</p>
                     <p className="text-xs text-muted-foreground">
                       {p.scheduled_at ? new Date(p.scheduled_at).toLocaleString() : 'No date set'}
@@ -107,11 +107,15 @@ export default function SocialDashboard() {
                       return Icon ? <Icon key={plat} size={14} className="text-muted-foreground" /> : null;
                     })}
                   </div>
+                  <Button size="sm" variant="secondary" className="gap-1.5 h-8 text-xs" onClick={() => setHelperPostId(p.id)}>
+                    <Send size={11} /> Publish
+                  </Button>
                 </div>
               ))}
             </div>
           )}
         </div>
+        <PublishHelper postId={helperPostId} open={!!helperPostId} onOpenChange={o => !o && setHelperPostId(null)} onPublished={refresh} />
       </div>
     </SocialLayout>
   );
