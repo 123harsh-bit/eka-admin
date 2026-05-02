@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { SocialLayout } from '@/components/social/SocialLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Calendar, Clock, CheckCircle2, AlertCircle, Instagram, Facebook, Youtube, Linkedin } from 'lucide-react';
+import { Calendar, Clock, CheckCircle2, AlertCircle, Instagram, Facebook, Youtube, Linkedin, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { PublishHelper } from '@/components/social/PublishHelper';
 
 interface Post {
   id: string;
