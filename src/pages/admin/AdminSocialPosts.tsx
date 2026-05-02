@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
-import { Instagram, Facebook, Youtube, Linkedin, Heart, MessageCircle, Eye, ExternalLink, Search } from 'lucide-react';
+import { Instagram, Facebook, Youtube, Linkedin, Heart, MessageCircle, Eye, ExternalLink, Search, Send } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { PublishHelper } from '@/components/social/PublishHelper';
 import { cn } from '@/lib/utils';
 
 interface Post {
@@ -39,8 +41,10 @@ export default function AdminSocialPosts() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [helperPostId, setHelperPostId] = useState<string | null>(null);
 
-  useEffect(() => {
+  const refresh = () => {
+    setLoading(true);
     supabase.from('scheduled_posts')
       .select('*, clients(name)')
       .order('created_at', { ascending: false })
@@ -48,7 +52,9 @@ export default function AdminSocialPosts() {
         setPosts((data as unknown as Post[]) || []);
         setLoading(false);
       });
-  }, []);
+  };
+
+  useEffect(() => { refresh(); }, []);
 
   const filtered = posts.filter(p => {
     const matchSearch = p.title.toLowerCase().includes(search.toLowerCase()) || p.clients?.name.toLowerCase().includes(search.toLowerCase());
@@ -164,7 +170,7 @@ export default function AdminSocialPosts() {
                     </div>
 
                     {Object.keys(p.platform_urls || {}).length > 0 && (
-                      <div className="flex gap-2 pt-1">
+                      <div className="flex gap-2 pt-1 flex-wrap">
                         {Object.entries(p.platform_urls).map(([plat, url]) => (
                           <a key={plat} href={url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-[11px] flex items-center gap-1">
                             <ExternalLink size={10} /> {plat}
@@ -172,12 +178,17 @@ export default function AdminSocialPosts() {
                         ))}
                       </div>
                     )}
+
+                    <Button size="sm" variant="secondary" className="w-full gap-1.5 h-8 text-xs mt-2" onClick={() => setHelperPostId(p.id)}>
+                      <Send size={11} /> {p.status === 'published' ? 'Update analytics' : 'Publish helper'}
+                    </Button>
                   </div>
                 </div>
               );
             })}
           </div>
         )}
+        <PublishHelper postId={helperPostId} open={!!helperPostId} onOpenChange={o => !o && setHelperPostId(null)} onPublished={refresh} />
       </div>
     </AdminLayout>
   );

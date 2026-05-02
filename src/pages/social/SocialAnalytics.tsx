@@ -51,8 +51,8 @@ export default function SocialAnalytics() {
         <div className="glass-card p-4 flex items-start gap-3 border-amber-500/30 bg-amber-500/5">
           <Info size={16} className="text-amber-400 flex-shrink-0 mt-0.5" />
           <div className="text-sm">
-            <p className="text-amber-400 font-medium">Live analytics coming in Phase B</p>
-            <p className="text-muted-foreground text-xs mt-1">Once a posting integration (e.g. Ayrshare or native APIs) is connected, this page will auto-populate with likes, comments, views and reach for every published post.</p>
+            <p className="text-amber-400 font-medium">Manual analytics mode</p>
+            <p className="text-muted-foreground text-xs mt-1">Enter likes, comments, views and reach via the Publish Helper on each post. Native API auto-sync (Meta, YouTube, LinkedIn) ships in Phase B.2 once OAuth approval is complete.</p>
           </div>
         </div>
 
