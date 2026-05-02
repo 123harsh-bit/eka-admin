@@ -41,8 +41,10 @@ export default function AdminSocialPosts() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [helperPostId, setHelperPostId] = useState<string | null>(null);
 
-  useEffect(() => {
+  const refresh = () => {
+    setLoading(true);
     supabase.from('scheduled_posts')
       .select('*, clients(name)')
       .order('created_at', { ascending: false })
@@ -50,7 +52,9 @@ export default function AdminSocialPosts() {
         setPosts((data as unknown as Post[]) || []);
         setLoading(false);
       });
-  }, []);
+  };
+
+  useEffect(() => { refresh(); }, []);
 
   const filtered = posts.filter(p => {
     const matchSearch = p.title.toLowerCase().includes(search.toLowerCase()) || p.clients?.name.toLowerCase().includes(search.toLowerCase());
