@@ -172,6 +172,9 @@ export default function AdminSocialPosts() {
                       <span className={cn('absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-medium', STATUS_COLORS[p.status])}>
                         {p.status}
                       </span>
+                      <span className={cn('absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-medium', APPROVAL_COLORS[p.approval_status] || APPROVAL_COLORS.not_submitted)}>
+                        {p.approval_status === 'pending_admin' ? '⏳ pending' : p.approval_status === 'approved' ? '✓ approved' : p.approval_status === 'rejected' ? '✗ rejected' : 'no approval'}
+                      </span>
                     </div>
                   ) : (
                     <div className="aspect-video bg-card flex items-center justify-center text-muted-foreground/40">
