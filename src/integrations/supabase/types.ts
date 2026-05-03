@@ -103,6 +103,45 @@ export type Database = {
           },
         ]
       }
+      caption_templates: {
+        Row: {
+          body: string
+          category: string
+          client_id: string | null
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+          platforms: Json
+          updated_at: string
+          usage_count: number
+        }
+        Insert: {
+          body: string
+          category?: string
+          client_id?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          name: string
+          platforms?: Json
+          updated_at?: string
+          usage_count?: number
+        }
+        Update: {
+          body?: string
+          category?: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+          platforms?: Json
+          updated_at?: string
+          usage_count?: number
+        }
+        Relationships: []
+      }
       client_ideas: {
         Row: {
           admin_response: string | null
@@ -651,6 +690,42 @@ export type Database = {
           },
         ]
       }
+      hashtag_groups: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          created_by: string
+          hashtags: string
+          id: string
+          name: string
+          niche: string | null
+          updated_at: string
+          usage_count: number
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          created_by: string
+          hashtags: string
+          id?: string
+          name: string
+          niche?: string | null
+          updated_at?: string
+          usage_count?: number
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          created_by?: string
+          hashtags?: string
+          id?: string
+          name?: string
+          niche?: string | null
+          updated_at?: string
+          usage_count?: number
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -742,8 +817,15 @@ export type Database = {
         Row: {
           analytics: Json
           analytics_updated_at: string | null
+          approval_status: string
+          approved_at: string | null
+          approved_by: string | null
           assigned_to: string | null
           caption: string | null
+          client_approval_at: string | null
+          client_approval_status: string | null
+          client_approval_token: string | null
+          client_feedback: string | null
           client_id: string
           created_at: string
           created_by: string
@@ -757,16 +839,26 @@ export type Database = {
           platform_urls: Json
           platforms: Json
           published_at: string | null
+          rejection_reason: string | null
+          reminder_sent_at: string | null
           scheduled_at: string | null
           status: string
+          submitted_for_approval_at: string | null
           title: string
           updated_at: string
         }
         Insert: {
           analytics?: Json
           analytics_updated_at?: string | null
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
           assigned_to?: string | null
           caption?: string | null
+          client_approval_at?: string | null
+          client_approval_status?: string | null
+          client_approval_token?: string | null
+          client_feedback?: string | null
           client_id: string
           created_at?: string
           created_by: string
@@ -780,16 +872,26 @@ export type Database = {
           platform_urls?: Json
           platforms?: Json
           published_at?: string | null
+          rejection_reason?: string | null
+          reminder_sent_at?: string | null
           scheduled_at?: string | null
           status?: string
+          submitted_for_approval_at?: string | null
           title: string
           updated_at?: string
         }
         Update: {
           analytics?: Json
           analytics_updated_at?: string | null
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
           assigned_to?: string | null
           caption?: string | null
+          client_approval_at?: string | null
+          client_approval_status?: string | null
+          client_approval_token?: string | null
+          client_feedback?: string | null
           client_id?: string
           created_at?: string
           created_by?: string
@@ -803,8 +905,11 @@ export type Database = {
           platform_urls?: Json
           platforms?: Json
           published_at?: string | null
+          rejection_reason?: string | null
+          reminder_sent_at?: string | null
           scheduled_at?: string | null
           status?: string
+          submitted_for_approval_at?: string | null
           title?: string
           updated_at?: string
         }

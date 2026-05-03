@@ -20,9 +20,18 @@ interface Post {
   platform_urls: Record<string, string>;
   analytics: Record<string, { likes?: number; comments?: number; views?: number; reach?: number }>;
   client_id: string;
+  approval_status: string;
+  client_approval_status: string | null;
   clients?: { name: string };
   created_by_profile?: { full_name: string };
 }
+
+const APPROVAL_COLORS: Record<string, string> = {
+  not_submitted: 'bg-muted/40 text-muted-foreground',
+  pending_admin: 'bg-amber-500/20 text-amber-400 ring-2 ring-amber-500/40',
+  approved: 'bg-success/20 text-success',
+  rejected: 'bg-destructive/20 text-destructive',
+};
 
 const platformIcon: Record<string, typeof Instagram> = {
   instagram: Instagram, facebook: Facebook, youtube: Youtube, linkedin: Linkedin,
@@ -41,6 +50,7 @@ export default function AdminSocialPosts() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [approvalFilter, setApprovalFilter] = useState('');
   const [helperPostId, setHelperPostId] = useState<string | null>(null);
 
   const refresh = () => {
@@ -59,8 +69,11 @@ export default function AdminSocialPosts() {
   const filtered = posts.filter(p => {
     const matchSearch = p.title.toLowerCase().includes(search.toLowerCase()) || p.clients?.name.toLowerCase().includes(search.toLowerCase());
     const matchStatus = !statusFilter || p.status === statusFilter;
-    return matchSearch && matchStatus;
+    const matchApproval = !approvalFilter || p.approval_status === approvalFilter;
+    return matchSearch && matchStatus && matchApproval;
   });
+
+  const pendingCount = posts.filter(p => p.approval_status === 'pending_admin').length;
 
   const totals = posts.reduce((acc, p) => {
     Object.values(p.analytics || {}).forEach(a => {
@@ -74,9 +87,17 @@ export default function AdminSocialPosts() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-display font-bold gradient-text">Social Media</h1>
-          <p className="text-muted-foreground mt-1">All posts created by your social executive</p>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-3xl font-display font-bold gradient-text">Social Media</h1>
+            <p className="text-muted-foreground mt-1">Posts created by social executive — review approvals here</p>
+          </div>
+          {pendingCount > 0 && (
+            <button onClick={() => setApprovalFilter('pending_admin')} className="glass-card px-4 py-2 hover:bg-amber-500/10 transition flex items-center gap-2 ring-2 ring-amber-500/40">
+              <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+              <span className="text-sm font-medium text-amber-400">{pendingCount} awaiting your approval</span>
+            </button>
+          )}
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -111,6 +132,13 @@ export default function AdminSocialPosts() {
             <option value="published">Published</option>
             <option value="failed">Failed</option>
           </select>
+          <select value={approvalFilter} onChange={e => setApprovalFilter(e.target.value)} className="h-10 rounded-md border border-input bg-background px-3 text-sm">
+            <option value="">All approvals</option>
+            <option value="not_submitted">Not submitted</option>
+            <option value="pending_admin">⏳ Pending admin</option>
+            <option value="approved">✓ Approved</option>
+            <option value="rejected">✗ Rejected</option>
+          </select>
         </div>
 
         {loading ? (
@@ -143,6 +171,9 @@ export default function AdminSocialPosts() {
                       )}
                       <span className={cn('absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-medium', STATUS_COLORS[p.status])}>
                         {p.status}
+                      </span>
+                      <span className={cn('absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-medium', APPROVAL_COLORS[p.approval_status] || APPROVAL_COLORS.not_submitted)}>
+                        {p.approval_status === 'pending_admin' ? '⏳ pending' : p.approval_status === 'approved' ? '✓ approved' : p.approval_status === 'rejected' ? '✗ rejected' : 'no approval'}
                       </span>
                     </div>
                   ) : (
