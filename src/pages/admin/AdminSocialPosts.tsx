@@ -20,9 +20,18 @@ interface Post {
   platform_urls: Record<string, string>;
   analytics: Record<string, { likes?: number; comments?: number; views?: number; reach?: number }>;
   client_id: string;
+  approval_status: string;
+  client_approval_status: string | null;
   clients?: { name: string };
   created_by_profile?: { full_name: string };
 }
+
+const APPROVAL_COLORS: Record<string, string> = {
+  not_submitted: 'bg-muted/40 text-muted-foreground',
+  pending_admin: 'bg-amber-500/20 text-amber-400 ring-2 ring-amber-500/40',
+  approved: 'bg-success/20 text-success',
+  rejected: 'bg-destructive/20 text-destructive',
+};
 
 const platformIcon: Record<string, typeof Instagram> = {
   instagram: Instagram, facebook: Facebook, youtube: Youtube, linkedin: Linkedin,
