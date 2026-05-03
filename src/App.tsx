@@ -58,7 +58,10 @@ import SocialCalendar from "@/pages/social/SocialCalendar";
 import SocialAnalytics from "@/pages/social/SocialAnalytics";
 import SocialDailyTasks from "@/pages/social/SocialDailyTasks";
 import SocialAttendance from "@/pages/social/SocialAttendance";
+import SocialLibrary from "@/pages/social/SocialLibrary";
+import SocialAnalyticsImport from "@/pages/social/SocialAnalyticsImport";
 import AdminSocialPosts from "@/pages/admin/AdminSocialPosts";
+import PublicPostPreview from "@/pages/PublicPostPreview";
 
 const queryClient = new QueryClient();
 
@@ -129,6 +132,11 @@ const App = () => (
             <Route path="/social/analytics" element={<ProtectedRoute allowedRoles={['social_executive']}><SocialAnalytics /></ProtectedRoute>} />
             <Route path="/social/daily-tasks" element={<ProtectedRoute allowedRoles={['social_executive']}><SocialDailyTasks /></ProtectedRoute>} />
             <Route path="/social/attendance" element={<ProtectedRoute allowedRoles={['social_executive']}><SocialAttendance /></ProtectedRoute>} />
+            <Route path="/social/library" element={<ProtectedRoute allowedRoles={['social_executive']}><SocialLibrary /></ProtectedRoute>} />
+            <Route path="/social/import" element={<ProtectedRoute allowedRoles={['social_executive', 'admin']}><SocialAnalyticsImport /></ProtectedRoute>} />
+
+            {/* Public client preview/approval (token-gated) */}
+            <Route path="/preview/:token" element={<PublicPostPreview />} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
