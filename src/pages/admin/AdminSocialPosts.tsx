@@ -50,6 +50,7 @@ export default function AdminSocialPosts() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [approvalFilter, setApprovalFilter] = useState('');
   const [helperPostId, setHelperPostId] = useState<string | null>(null);
 
   const refresh = () => {
