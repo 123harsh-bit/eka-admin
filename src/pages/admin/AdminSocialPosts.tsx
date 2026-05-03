@@ -69,8 +69,11 @@ export default function AdminSocialPosts() {
   const filtered = posts.filter(p => {
     const matchSearch = p.title.toLowerCase().includes(search.toLowerCase()) || p.clients?.name.toLowerCase().includes(search.toLowerCase());
     const matchStatus = !statusFilter || p.status === statusFilter;
-    return matchSearch && matchStatus;
+    const matchApproval = !approvalFilter || p.approval_status === approvalFilter;
+    return matchSearch && matchStatus && matchApproval;
   });
+
+  const pendingCount = posts.filter(p => p.approval_status === 'pending_admin').length;
 
   const totals = posts.reduce((acc, p) => {
     Object.values(p.analytics || {}).forEach(a => {
@@ -84,9 +87,17 @@ export default function AdminSocialPosts() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-display font-bold gradient-text">Social Media</h1>
-          <p className="text-muted-foreground mt-1">All posts created by your social executive</p>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-3xl font-display font-bold gradient-text">Social Media</h1>
+            <p className="text-muted-foreground mt-1">Posts created by social executive — review approvals here</p>
+          </div>
+          {pendingCount > 0 && (
+            <button onClick={() => setApprovalFilter('pending_admin')} className="glass-card px-4 py-2 hover:bg-amber-500/10 transition flex items-center gap-2 ring-2 ring-amber-500/40">
+              <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+              <span className="text-sm font-medium text-amber-400">{pendingCount} awaiting your approval</span>
+            </button>
+          )}
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -120,6 +131,13 @@ export default function AdminSocialPosts() {
             <option value="ready">Ready</option>
             <option value="published">Published</option>
             <option value="failed">Failed</option>
+          </select>
+          <select value={approvalFilter} onChange={e => setApprovalFilter(e.target.value)} className="h-10 rounded-md border border-input bg-background px-3 text-sm">
+            <option value="">All approvals</option>
+            <option value="not_submitted">Not submitted</option>
+            <option value="pending_admin">⏳ Pending admin</option>
+            <option value="approved">✓ Approved</option>
+            <option value="rejected">✗ Rejected</option>
           </select>
         </div>
 
