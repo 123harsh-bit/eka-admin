@@ -121,7 +121,7 @@ export default function AdminTeam() {
         if (profileError) throw profileError;
 
         if (editingMember.role !== form.role) {
-          await supabase.from('user_roles').update({ role: form.role as 'admin' | 'editor' | 'designer' | 'writer' | 'client' | 'camera_operator' }).eq('user_id', editingMember.id);
+          await supabase.from('user_roles').update({ role: form.role as 'admin' | 'editor' | 'designer' | 'writer' | 'client' | 'camera_operator' | 'social_executive' }).eq('user_id', editingMember.id);
         }
 
         toast({ title: 'Team member updated' });
