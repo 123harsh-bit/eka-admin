@@ -28,8 +28,8 @@ export default function SocialAnalyticsImport() {
       const header = lines[0].split(',').map(h => h.trim().toLowerCase());
       const idx = (k: string) => header.indexOf(k);
       const iId = idx('post_id'); const iPlat = idx('platform');
-      const iLikes = idx('likes'); const iComments = idx('comments'); const iViews = idx('views'); const iReach = idx('reach');
-      if (iId < 0 || iPlat < 0) throw new Error('CSV must have columns: post_id, platform, likes, comments, views, reach');
+      const iComments = idx('comments'); const iViews = idx('views'); const iReach = idx('reach');
+      if (iId < 0 || iPlat < 0) throw new Error('CSV must have columns: post_id, platform, comments, views, reach');
       let updated = 0;
       for (let i = 1; i < lines.length; i++) {
         const cells = lines[i].split(',');
@@ -42,7 +42,7 @@ export default function SocialAnalyticsImport() {
           ...(post.analytics || {}),
           [platform]: {
             ...(post.analytics?.[platform] || {}),
-            ...(iLikes >= 0 && cells[iLikes] ? { likes: Number(cells[iLikes]) } : {}),
+            
             ...(iComments >= 0 && cells[iComments] ? { comments: Number(cells[iComments]) } : {}),
             ...(iViews >= 0 && cells[iViews] ? { views: Number(cells[iViews]) } : {}),
             ...(iReach >= 0 && cells[iReach] ? { reach: Number(cells[iReach]) } : {}),
@@ -59,8 +59,8 @@ export default function SocialAnalyticsImport() {
   };
 
   const downloadTemplate = () => {
-    const csv = 'post_id,platform,likes,comments,views,reach\n' + posts.slice(0, 5).map(p =>
-      p.platforms.map(plat => `${p.id},${plat},,,,`).join('\n')
+    const csv = 'post_id,platform,comments,views,reach\n' + posts.slice(0, 5).map(p =>
+      p.platforms.map(plat => `${p.id},${plat},,,`).join('\n')
     ).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const a = document.createElement('a');
@@ -81,7 +81,7 @@ export default function SocialAnalyticsImport() {
             <FileText size={16} className="text-primary" />
             <h2 className="font-semibold">CSV Import</h2>
           </div>
-          <p className="text-xs text-muted-foreground">Required columns: <code>post_id, platform, likes, comments, views, reach</code></p>
+          <p className="text-xs text-muted-foreground">Required columns: <code>post_id, platform, comments, views, reach</code></p>
           <div className="flex gap-2 flex-wrap">
             <Button size="sm" variant="outline" onClick={downloadTemplate} className="gap-2">
               <FileText size={12} /> Download template ({posts.length} posts)
@@ -183,8 +183,8 @@ function ScreenshotImport({ posts }: { posts: Post[] }) {
       {extracted && (
         <div className="rounded-md border border-success/40 bg-success/10 p-3 space-y-2">
           <p className="text-xs font-medium">Extracted numbers (review):</p>
-          <div className="grid grid-cols-4 gap-2">
-            {(['likes', 'comments', 'views', 'reach'] as const).map(k => (
+          <div className="grid grid-cols-3 gap-2">
+            {(['comments', 'views', 'reach'] as const).map(k => (
               <div key={k}>
                 <Label className="text-[10px] uppercase">{k}</Label>
                 <Input type="number" value={extracted[k] ?? ''} onChange={e => setExtracted(p => ({ ...p, [k]: Number(e.target.value) || 0 }))} className="h-8 text-xs" />

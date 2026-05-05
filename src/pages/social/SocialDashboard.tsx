@@ -14,7 +14,7 @@ interface Post {
   scheduled_at: string | null;
   platforms: string[];
   client_id: string;
-  analytics: Record<string, { likes?: number; comments?: number; views?: number }>;
+  analytics: Record<string, { comments?: number; views?: number }>;
 }
 
 const platformIcon: Record<string, typeof Instagram> = {
