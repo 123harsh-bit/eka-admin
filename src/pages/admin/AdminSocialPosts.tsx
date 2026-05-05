@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
-import { Instagram, Facebook, Youtube, Linkedin, Heart, MessageCircle, Eye, ExternalLink, Search, Send } from 'lucide-react';
+import { Instagram, Facebook, Youtube, Linkedin, MessageCircle, Eye, ExternalLink, Search, Send } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { PublishHelper } from '@/components/social/PublishHelper';
@@ -18,7 +18,7 @@ interface Post {
   media_urls: string[];
   media_type: string;
   platform_urls: Record<string, string>;
-  analytics: Record<string, { likes?: number; comments?: number; views?: number; reach?: number }>;
+  analytics: Record<string, { comments?: number; views?: number; reach?: number }>;
   client_id: string;
   approval_status: string;
   client_approval_status: string | null;
@@ -77,12 +77,11 @@ export default function AdminSocialPosts() {
 
   const totals = posts.reduce((acc, p) => {
     Object.values(p.analytics || {}).forEach(a => {
-      acc.likes += a.likes || 0;
       acc.comments += a.comments || 0;
       acc.views += a.views || 0;
     });
     return acc;
-  }, { likes: 0, comments: 0, views: 0 });
+  }, { comments: 0, views: 0 });
 
   return (
     <AdminLayout>
@@ -100,14 +99,10 @@ export default function AdminSocialPosts() {
           )}
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <div className="glass-card p-4">
             <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Posts</p>
             <p className="text-3xl font-bold mt-2">{posts.length}</p>
-          </div>
-          <div className="glass-card p-4">
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Likes</p>
-            <p className="text-3xl font-bold mt-2 text-pink-400">{totals.likes.toLocaleString()}</p>
           </div>
           <div className="glass-card p-4">
             <p className="text-xs text-muted-foreground uppercase tracking-wider">Comments</p>
@@ -154,10 +149,9 @@ export default function AdminSocialPosts() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map(p => {
               const totals = Object.values(p.analytics || {}).reduce((acc, a) => ({
-                likes: acc.likes + (a.likes || 0),
                 comments: acc.comments + (a.comments || 0),
                 views: acc.views + (a.views || 0),
-              }), { likes: 0, comments: 0, views: 0 });
+              }), { comments: 0, views: 0 });
               const firstMedia = p.media_urls?.[0];
               const isVideo = firstMedia?.match(/\.(mp4|mov|webm)/i);
               return (
@@ -195,7 +189,6 @@ export default function AdminSocialPosts() {
                     {p.caption && <p className="text-xs text-muted-foreground line-clamp-2">{p.caption}</p>}
 
                     <div className="flex items-center gap-4 pt-2 border-t border-glass-border text-xs">
-                      <span className="flex items-center gap-1 text-pink-400"><Heart size={11} /> {totals.likes}</span>
                       <span className="flex items-center gap-1 text-blue-400"><MessageCircle size={11} /> {totals.comments}</span>
                       <span className="flex items-center gap-1 text-amber-400"><Eye size={11} /> {totals.views}</span>
                     </div>

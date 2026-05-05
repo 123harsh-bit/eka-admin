@@ -23,7 +23,7 @@ interface Post {
   platforms: string[];
   status: string;
   platform_urls: Record<string, string>;
-  analytics: Record<string, { likes?: number; comments?: number; views?: number; reach?: number }>;
+  analytics: Record<string, { comments?: number; views?: number; reach?: number }>;
   approval_status: string;
   rejection_reason: string | null;
   client_approval_token: string | null;
@@ -56,7 +56,7 @@ export function PublishHelper({ postId, open, onOpenChange, onPublished }: Props
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [urls, setUrls] = useState<Record<string, string>>({});
-  const [analytics, setAnalytics] = useState<Record<string, { likes?: number; comments?: number; views?: number; reach?: number }>>({});
+  const [analytics, setAnalytics] = useState<Record<string, { comments?: number; views?: number; reach?: number }>>({});
   const [isAdmin, setIsAdmin] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [showReject, setShowReject] = useState(false);
@@ -335,7 +335,7 @@ export function PublishHelper({ postId, open, onOpenChange, onPublished }: Props
                     <div key={platform} className="flex items-center gap-2 p-2 rounded-md bg-card/50">
                       <Icon size={14} className="text-muted-foreground flex-shrink-0" />
                       <span className="text-xs font-medium w-20 capitalize">{platform}</span>
-                      {(['likes', 'comments', 'views', 'reach'] as const).map(key => (
+                      {(['comments', 'views', 'reach'] as const).map(key => (
                         <Input key={key} type="number" placeholder={key} value={a[key] ?? ''}
                           onChange={e => {
                             const v = e.target.value === '' ? undefined : Number(e.target.value);

@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { SocialLayout } from '@/components/social/SocialLayout';
 import { supabase } from '@/integrations/supabase/client';
-import { Instagram, Facebook, Youtube, Linkedin, Heart, MessageCircle, Eye, TrendingUp, Info } from 'lucide-react';
+import { Instagram, Facebook, Youtube, Linkedin, MessageCircle, Eye, TrendingUp, Info } from 'lucide-react';
 
 interface Post {
   id: string;
   title: string;
   platforms: string[];
   platform_urls: Record<string, string>;
-  analytics: Record<string, { likes?: number; comments?: number; views?: number; reach?: number }>;
+  analytics: Record<string, { comments?: number; views?: number; reach?: number }>;
   published_at: string | null;
 }
 
@@ -33,12 +33,11 @@ export default function SocialAnalytics() {
 
   const totals = posts.reduce((acc, p) => {
     Object.values(p.analytics || {}).forEach(a => {
-      acc.likes += a.likes || 0;
       acc.comments += a.comments || 0;
       acc.views += a.views || 0;
     });
     return acc;
-  }, { likes: 0, comments: 0, views: 0 });
+  }, { comments: 0, views: 0 });
 
   return (
     <SocialLayout>
@@ -52,13 +51,12 @@ export default function SocialAnalytics() {
           <Info size={16} className="text-amber-400 flex-shrink-0 mt-0.5" />
           <div className="text-sm">
             <p className="text-amber-400 font-medium">Manual analytics mode</p>
-            <p className="text-muted-foreground text-xs mt-1">Enter likes, comments, views and reach via the Publish Helper on each post. Native API auto-sync (Meta, YouTube, LinkedIn) ships in Phase B.2 once OAuth approval is complete.</p>
+            <p className="text-muted-foreground text-xs mt-1">Enter comments, views and reach via the Publish Helper on each post. Native API auto-sync (Meta, YouTube, LinkedIn) ships in Phase B.2 once OAuth approval is complete.</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {[
-            { label: 'Total Likes', value: totals.likes, icon: Heart, color: 'text-pink-400' },
             { label: 'Total Comments', value: totals.comments, icon: MessageCircle, color: 'text-blue-400' },
             { label: 'Total Views', value: totals.views, icon: Eye, color: 'text-amber-400' },
           ].map(s => (
@@ -87,7 +85,7 @@ export default function SocialAnalytics() {
             <table className="w-full text-sm">
               <thead className="bg-card/80">
                 <tr>
-                  {['Post', 'Platforms', 'Likes', 'Comments', 'Views', 'Published'].map(h => (
+                  {['Post', 'Platforms', 'Comments', 'Views', 'Published'].map(h => (
                     <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{h}</th>
                   ))}
                 </tr>
@@ -95,10 +93,9 @@ export default function SocialAnalytics() {
               <tbody>
                 {posts.map(p => {
                   const totals = Object.values(p.analytics || {}).reduce((acc, a) => ({
-                    likes: acc.likes + (a.likes || 0),
                     comments: acc.comments + (a.comments || 0),
                     views: acc.views + (a.views || 0),
-                  }), { likes: 0, comments: 0, views: 0 });
+                  }), { comments: 0, views: 0 });
                   return (
                     <tr key={p.id} className="border-b border-glass-border/50">
                       <td className="px-4 py-3 font-medium text-foreground">{p.title}</td>
@@ -110,7 +107,6 @@ export default function SocialAnalytics() {
                           })}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground">{totals.likes.toLocaleString()}</td>
                       <td className="px-4 py-3 text-muted-foreground">{totals.comments.toLocaleString()}</td>
                       <td className="px-4 py-3 text-muted-foreground">{totals.views.toLocaleString()}</td>
                       <td className="px-4 py-3 text-muted-foreground text-xs">{p.published_at ? new Date(p.published_at).toLocaleDateString() : '—'}</td>
