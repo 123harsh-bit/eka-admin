@@ -9,7 +9,7 @@ import { ConfirmDeleteModal } from '@/components/shared/ConfirmDeleteModal';
 import { useToast } from '@/hooks/use-toast';
 import { WRITING_TASK_STATUSES, WRITING_TASK_STATUS_ORDER, WRITING_TASK_TYPES, DURATION_PRESETS, formatDurationShort, type WritingTaskStatus } from '@/lib/statusConfig';
 import { Plus, Search, X, PenTool, Edit2, Trash2, ExternalLink, Loader2, Clock } from 'lucide-react';
-import { syncWritingTaskToVideo } from '@/lib/syncTaskToVideo';
+import { syncWritingTaskToVideo } from '@/lib/pipeline';
 
 interface WritingTask {
   id: string; title: string; task_type: string; status: string;

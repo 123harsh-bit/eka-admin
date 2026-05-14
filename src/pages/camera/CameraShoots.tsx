@@ -7,7 +7,7 @@ import { MyPerformance } from '@/components/shared/MyPerformance';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { handleVideoStatusChange } from '@/lib/handleVideoStatusChange';
+import { handleVideoStatusChange } from '@/lib/pipeline';
 import { Camera, MapPin, Clock, FileText, Loader2, CheckCircle, ChevronRight, X, Calendar, FolderOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { VideoStatus } from '@/lib/statusConfig';
