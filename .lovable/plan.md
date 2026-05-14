@@ -1,150 +1,110 @@
+# Eka Agency OS — Cleanup, Client Portal Revival & New Features
 
-
-# Eka Creative Agency — Full Management System
-
-## Overview
-A production-grade agency management platform for Eka, a video production & creative agency. The system serves as the central operating system with role-based workspaces for 5 user types: Managing Director (Admin), Video Editor, Graphic Designer, Content Writer, and Client.
-
-**Design:** Dark-mode-first with Eka's purple brand system (#7C3AED), glassmorphism cards, gradient accents, Google Fonts pairing (Syne + DM Sans), skeleton loaders, and fully responsive layout.
+Scope is too big for one round. Splitting into 4 phases so each ships clean and testable.
 
 ---
 
-## Phase 1: Foundation & Authentication
+## Phase 1 — Structural cleanup (foundation)
 
-### Database Setup
-- Full Supabase schema: `profiles`, `clients`, `videos`, `design_tasks`, `writing_tasks`, `feedback`, `notifications`, `activity_log`, and `user_roles` tables
-- Row-Level Security policies ensuring clients only see their own data, team members only see assigned work, and admins see everything
-- Security definer helper functions to prevent RLS recursion
-- Storage buckets for voice feedback, client logos, and brand assets
+Do this first so portal + new features land on tidy code.
 
-### Authentication & Routing
-- Dark-themed login page with animated purple gradient, glassmorphism card, and styled "Eka" text logo
-- Email + password auth with show/hide toggle on password fields
-- Forgot password flow via Supabase email reset
-- Role-based redirect after login (admin → admin dashboard, editor → editor tasks, etc.)
-- Plain English error messages throughout (no tech jargon)
-- Auth context and protected route wrappers
+**1.1 Consolidate role layouts**
+Replace `AdminLayout`, `EditorLayout`, `DesignerLayout`, `WriterLayout`, `CameraLayout`, `SocialLayout` with a single `RoleLayout` driven by a config map (nav items, accent color, route prefix per role). Saves ~400 lines, one source of truth for nav/sidebar/bottom-tab/attendance bar.
 
----
+**1.2 Consolidate per-role Attendance + DailyTasks pages**
+Routes for each role currently render thin wrappers. Point them straight at `shared/MyAttendancePage` and `shared/DailyTasksPage`. Delete `*/CameraAttendance.tsx`, `*/EditorAttendance.tsx`, etc. (10 files).
 
-## Phase 2: Managing Director (Admin) Dashboard
+**1.3 Pipeline module**
+Create `src/lib/pipeline/` containing:
+- `stages.ts` (current `statusConfig`)
+- `transitions.ts` (current `handleVideoStatusChange`)
+- `sync.ts` (current `syncTaskToVideo`)
+- `index.ts` re-exports
+Update imports across the codebase.
 
-### Sidebar Navigation
-- Eka logo, sections: Overview, Clients, Videos, Design Tasks, Writing Tasks, Team, Notifications, Settings
-
-### Overview Dashboard
-- Agency health bar (% on-track deliverables)
-- Stats cards: Active Clients, Videos in Production, Pending Reviews, Tasks Due This Week, Videos Live This Month
-- Client snapshot grid with logos and activity
-- Team activity feed (real-time)
-- Upcoming deadlines (next 7 days)
-- Recent client feedback
-
-### Clients Management
-- Client cards grid with logo, industry, contract info, deliverable progress
-- Add/edit client via slide-in panel with full form including logo upload, brand colors, fonts, contract dates
-- Client detail page with tabs: Videos, Design Tasks, Writing Tasks, Feedback, Brand Assets, Notes
-- Reset client password, deactivate client
-
-### Videos Management
-- Filterable/sortable table (by client, status, editor, date)
-- Add video form with client, editor assignment, linked design/writing tasks
-- Slide-in detail panel with full status stepper, links, notes, feedback history
-- Inline status updates
-
-### Design Tasks & Writing Tasks Management
-- Filterable tables for each task type
-- Add task forms with client, assignee, type, due date, links
-- Status tracking per workflow
-
-### Team Management
-- Team member cards with role badges, active task counts
-- Add/edit team members (editors, designers, writers)
-- Password reset and deactivate
-
-### Settings
-- Agency profile, admin accounts (new admin creation with security key), notification preferences, client portal settings, danger zone (archive/export)
-
-### Deletion Protection
-- Reusable confirmation modal requiring security key (`123@xcodeH`) for any destructive action — server-validated, never exposed in UI
+**1.4 Drop `team_messages` table**
+Migration: `DROP TABLE team_messages CASCADE`. Memory already says messaging is disabled.
 
 ---
 
-## Phase 3: Video Editor Dashboard
+## Phase 2 — Client portal revival
 
-- Simplified sidebar: My Tasks, All Clients, Notifications, Profile
-- **My Tasks** as default home: grouped by Due Today / This Week / Upcoming
-- Task cards with client logo, video title, status badge, color-coded due dates
-- Horizontal status stepper for video workflow stages
-- Video detail view: status stepper, Drive link input (with auto-conversion to direct download), internal notes, linked design/writing tasks (read-only), client feedback view
-- All Clients view: grid of clients they've worked with → click to see associated videos
+Restore login + dashboard for clients. Components already exist as dead code; main work is auth + RLS + routing.
 
----
+**2.1 Database**
+- Re-verify `clients.user_id` FK to `auth.users`
+- Confirm RLS policies for `videos`, `content_items`, `content_plans`, `writing_tasks`, `design_tasks`, `client_ideas`, `client_ratings`, `feedback` allow client users via `clients.user_id = auth.uid()` (most already exist)
+- Add `client` value to existing role checks if missing
 
-## Phase 4: Graphic Designer Dashboard
+**2.2 Auth**
+- Re-enable client signup/login on `LoginPage` (or separate `/client/login`)
+- Email + Google OAuth via Lovable Cloud (defaults)
+- Add `/reset-password` page
+- `RoleRedirect` routes client users → `/client`
 
-- Simplified sidebar: My Design Tasks, Client Brand Kits, Notifications, Profile
-- **My Design Tasks** with Kanban board / list view toggle
-- Kanban columns: Briefed → In Progress → In Review → Revisions → Approved → Delivered
-- Task cards with type badge, client info, Figma/Drive link inputs, version notes, linked video status
-- **Client Brand Kits** page: grid of clients showing logo, color swatches, fonts, downloadable brand files
+**2.3 Admin: invite client**
+- "Send portal invite" button on each client row in `AdminClients`
+- Edge function `invite-client-user` creates auth user, links `clients.user_id`, emails invite via Supabase
+- Admin can revoke access (clear `clients.user_id`)
 
----
+**2.4 Restore client routes**
+- `/client` → `ClientDashboard` (deliveries, plan, ideas, ratings)
+- Wire up existing `ClientContentPlan`, `ClientIdeasList`, `IdeaSubmissionForm`, `VideoFeedbackModal`, `ClientRatingModal`, `DeliveryCalendar`, `VideoProgressTracker`
+- Mobile responsive; bottom-tab nav
 
-## Phase 5: Content Writer Dashboard
-
-- Simplified sidebar: My Writing Tasks, Client Briefs, Notifications, Profile
-- **My Writing Tasks** in list view: Active / For Review / Completed sections
-- Task cards with type badge, word count target, Google Doc link, version notes
-- **Client Briefs** page: per-client brief, tone of voice, target audience, content pillars (read-only, populated by admin)
-
----
-
-## Phase 6: Client Portal
-
-- Clean, minimal design — client's own logo in header
-- Welcome header with notification bell, "Need Help?" button (phone: 6304980350), logout
-- **Progress overview**: visual pipeline of monthly deliverables (progress ring/bar)
-- **Video cards grid** with client-friendly status labels and emojis (Planning, Filming, Ready for Your Review, Live!, etc.)
-- "Ready for Review" cards highlighted with Download, Approve, and Request Changes buttons
-- **Feedback modal**: text feedback textarea + voice note recording (MediaRecorder API → Supabase Storage), feedback history with resolved status
-- **Design asset downloads**: grid of approved deliverables with download buttons
-- Sticky contact CTA with phone number
+**2.5 Update memory**
+Replace "Client portal & auth are REMOVED" with the new model.
 
 ---
 
-## Phase 7: Cross-Cutting Features
+## Phase 3 — New features (build in this order)
 
-### Notifications System
-- Auto-generated notifications for: video created, status changes, client feedback, approvals, task updates
-- Bell icon with unread badge, slide-in notification panel
-- Mark individual/all as read
-- Real-time via Supabase Realtime subscriptions
+**3.1 WhatsApp deep-link templates per stage**
+- Per video stage: pre-formatted message ("Hi {client}, your reel is ready for review: {link}")
+- Templates stored in `whatsapp_templates` table (stage, template_text)
+- One-click button on video detail → opens `https://wa.me/{phone}?text=…`
+- Admin-editable templates in Settings
 
-### Real-time Sync
-- Supabase Realtime subscriptions on videos, feedback, and notifications tables
-- Changes appear across all devices without refresh
+**3.2 Capacity planner (14-day workload)**
+- New admin page `/admin/capacity`
+- Heatmap: rows = team members, columns = next 14 days
+- Cell value = sum of due tasks/videos/shoots assigned that day
+- Click cell → list of items, drag to reassign (or open detail)
 
-### Voice Feedback Recording
-- `useVoiceRecorder` hook encapsulating MediaRecorder API
-- Record up to 5 minutes, playback before sending, upload to Supabase Storage
-- Audio player for playback in both client and admin views
+**3.3 Invoice & payment tracker**
+- New tables: `invoices` (client_id, amount, currency, status, due_date, sent_at, paid_at, notes, pdf_url)
+- Admin page `/admin/invoices` with status filters
+- Monthly revenue dashboard widget on `AdminDashboard`
+- Auto-overdue badge if `due_date < today AND status != paid`
+- (PDF generation deferred — manual upload for now)
 
-### Activity Logging
-- All significant actions logged to `activity_log` table
-- Displayed in admin dashboard team activity feed and video detail histories
+**3.4 AI brief generator**
+- "Generate brief" button on `client_ideas` row and on new video creation
+- Edge function `generate-brief` → Lovable AI Gateway (`google/gemini-2.5-flash`)
+- Returns: writing brief, shoot checklist (jsonb array), 3 caption drafts
+- Admin reviews, edits, then "Apply" creates linked writing_task + populates video.shoot_checklist
 
-### Google Drive Link Processing
-- Utility function auto-converts Google Drive share URLs to direct download links
+---
 
-### Responsive Design
-- Mobile (<768px): single column, bottom tab navigation
-- Tablet (768–1024px): 2-column grid, collapsible sidebar
-- Desktop (>1024px): full sidebar, multi-column tables, split-panel details
+## Phase 4 — Wrap up
 
-### Loading & Error States
-- Skeleton loaders for all data grids and tables
-- Optimistic UI for status updates
-- Fade-in page transitions
-- Global error boundary with friendly messaging
+- Run `supabase--linter`, fix any new RLS warnings introduced
+- Update `mem://index.md` Core block
+- Add memory entries for: client portal model, WhatsApp templates, capacity planner, invoices, AI brief generator
+- Quick smoke test: log in as each of 7 roles (admin, 5 team, client), confirm core flows work
 
+---
+
+## Recommendation
+
+Approve **Phase 1 first** (low risk, makes everything after easier). I'll send Phase 2 plan after 1 lands so you can review the auth/RLS changes carefully before clients can log in.
+
+If you'd rather I just do everything in one go without intermediate check-ins, say so and I'll execute all 4 phases sequentially — but expect ~30+ migrations and edits across ~80 files.
+
+## Technical details (skip if non-technical)
+
+- Phase 1 migrations: 1 (drop team_messages). Pure code refactors otherwise.
+- Phase 2 migrations: ~2 (verify clients.user_id FK + audit RLS). 1 edge function.
+- Phase 3 migrations: 3 (whatsapp_templates, invoices, indexes). 1 edge function for brief gen.
+- All RLS uses existing `has_role()` SECURITY DEFINER pattern, no recursion risk.
+- Layout consolidation uses a `RoleConfig` record keyed by `app_role` enum value.
