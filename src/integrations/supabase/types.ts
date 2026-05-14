@@ -915,51 +915,6 @@ export type Database = {
         }
         Relationships: []
       }
-      team_messages: {
-        Row: {
-          channel: string
-          content: string
-          created_at: string
-          id: string
-          is_read: boolean
-          recipient_id: string | null
-          sender_id: string
-        }
-        Insert: {
-          channel?: string
-          content: string
-          created_at?: string
-          id?: string
-          is_read?: boolean
-          recipient_id?: string | null
-          sender_id: string
-        }
-        Update: {
-          channel?: string
-          content?: string
-          created_at?: string
-          id?: string
-          is_read?: boolean
-          recipient_id?: string | null
-          sender_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "team_messages_recipient_id_fkey"
-            columns: ["recipient_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "team_messages_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       user_roles: {
         Row: {
           created_at: string

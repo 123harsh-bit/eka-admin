@@ -1,3 +1,4 @@
+// Moved from src/lib/handleVideoStatusChange.ts
 import { supabase } from '@/integrations/supabase/client';
 
 interface StatusChangeResult {
@@ -26,10 +27,8 @@ export async function handleVideoStatusChange(
 
   switch (newStatus) {
     case 'scripting': {
-      // Auto-create writing task if writer provided
       const writerId = additionalData?.assigned_writer as string;
       if (writerId) {
-        // Check if writing task already exists for this video
         const { data: existing } = await supabase.from('writing_tasks').select('id').eq('video_id', videoId).limit(1);
         if (!existing || existing.length === 0) {
           await supabase.from('writing_tasks').insert({
@@ -47,18 +46,15 @@ export async function handleVideoStatusChange(
       break;
     }
     case 'script_submitted': {
-      // Writer submits — notify admin
       const adminIds = await getAdminIds();
       const { data: writerProfile } = await supabase.from('profiles').select('full_name').eq('id', currentUserId).single();
       for (const adminId of adminIds) {
         await insertNotification(adminId, `📝 ${writerProfile?.full_name || 'Writer'} submitted script for '${title}'. Review it and decide next step.`, videoId, video.client_id);
       }
-      // Update linked writing task status
       await supabase.from('writing_tasks').update({ status: 'review' }).eq('video_id', videoId);
       break;
     }
     case 'script_client_review': {
-      // Admin sends script to client
       if (video.client_id) {
         const { data: clientData } = await supabase.from('clients').select('user_id').eq('id', video.client_id).single();
         if (clientData?.user_id) {
@@ -68,14 +64,11 @@ export async function handleVideoStatusChange(
       break;
     }
     case 'script_approved': {
-      // Client approves script
       const { data: writingTask } = await supabase.from('writing_tasks').select('assigned_writer').eq('video_id', videoId).limit(1).single();
       if (writingTask?.assigned_writer) {
         await insertNotification(writingTask.assigned_writer, `✅ Your script for '${title}' has been approved! Great work.`, videoId, video.client_id);
       }
-      // Update writing task
       await supabase.from('writing_tasks').update({ status: 'approved' }).eq('video_id', videoId);
-      // Notify admin
       const adminIds = await getAdminIds();
       for (const adminId of adminIds) {
         await insertNotification(adminId, `✅ ${clientName} approved the script for '${title}'! Ready to schedule the shoot.`, videoId, video.client_id);
@@ -85,7 +78,7 @@ export async function handleVideoStatusChange(
     case 'shoot_assigned': {
       const camOp = additionalData?.assigned_camera_operator as string;
       if (!camOp) return { success: false, requiresInput: 'shoot_assignment' };
-      
+
       const shootUpdate: Record<string, unknown> = {
         assigned_camera_operator: camOp,
         shoot_date: additionalData?.shoot_date || null,
@@ -203,7 +196,6 @@ export async function handleVideoStatusChange(
     }
   }
 
-  // Default: just update status
   const { error } = await supabase.from('videos').update({ status: newStatus }).eq('id', videoId);
   if (error) return { success: false, error: error.message };
 
