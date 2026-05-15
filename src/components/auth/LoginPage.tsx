@@ -13,6 +13,8 @@ const roleRoutes: Record<string, string> = {
   designer: '/designer',
   writer: '/writer',
   camera_operator: '/camera',
+  social_executive: '/social',
+  client: '/client',
 };
 
 export default function LoginPage() {
