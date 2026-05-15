@@ -62,6 +62,9 @@ import SocialAnalyticsImport from "@/pages/social/SocialAnalyticsImport";
 
 import PublicPostPreview from "@/pages/PublicPostPreview";
 
+// Client portal
+import ClientDashboard from "@/pages/client/ClientDashboard";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -134,6 +137,9 @@ const App = () => (
             <Route path="/social/import" element={<ProtectedRoute allowedRoles={['social_executive', 'admin']}><SocialAnalyticsImport /></ProtectedRoute>} />
             <Route path="/social/daily-tasks" element={<ProtectedRoute allowedRoles={['social_executive']}><SocialLayout><DailyTasksContent /></SocialLayout></ProtectedRoute>} />
             <Route path="/social/attendance" element={<ProtectedRoute allowedRoles={['social_executive']}><SocialLayout><MyAttendancePage /></SocialLayout></ProtectedRoute>} />
+
+            {/* Client portal */}
+            <Route path="/client" element={<ProtectedRoute allowedRoles={['client']}><ClientDashboard /></ProtectedRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
