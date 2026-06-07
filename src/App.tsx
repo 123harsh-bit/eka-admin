@@ -103,6 +103,9 @@ const App = () => (
             <Route path="/admin/weekly-report" element={<ProtectedRoute allowedRoles={['admin']}><AdminWeeklyReport /></ProtectedRoute>} />
             <Route path="/admin/content-planner" element={<ProtectedRoute allowedRoles={['admin']}><AdminContentPlanner /></ProtectedRoute>} />
             <Route path="/admin/social-posts" element={<ProtectedRoute allowedRoles={['admin']}><AdminSocialPosts /></ProtectedRoute>} />
+            <Route path="/admin/invoices" element={<ProtectedRoute allowedRoles={['admin']}><AdminInvoices /></ProtectedRoute>} />
+            <Route path="/admin/capacity" element={<ProtectedRoute allowedRoles={['admin']}><AdminCapacity /></ProtectedRoute>} />
+            <Route path="/admin/whatsapp-templates" element={<ProtectedRoute allowedRoles={['admin']}><AdminWhatsAppTemplates /></ProtectedRoute>} />}
             <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin']}><AdminSettings /></ProtectedRoute>} />
 
             {/* Editor */}
