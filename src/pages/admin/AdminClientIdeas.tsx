@@ -9,6 +9,7 @@ import {
   Loader2, ImagePlus, ArrowRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { AIBriefGenerator } from '@/components/admin/AIBriefGenerator';
 
 interface Idea {
   id: string; client_id: string; submitted_by: string;
@@ -323,6 +324,13 @@ export default function AdminClientIdeas() {
               {/* Action Buttons */}
               {!['converted_to_project', 'declined'].includes(selectedIdea.status) && (
                 <div className="space-y-2 pt-2">
+                  <div className="flex justify-end">
+                    <AIBriefGenerator
+                      topic={selectedIdea.title + (selectedIdea.description ? `\n\n${selectedIdea.description}` : '')}
+                      clientName={selectedIdea.client_name}
+                      triggerLabel="Generate AI brief"
+                    />
+                  </div>
                   {selectedIdea.status !== 'approved' && (
                     <Button onClick={() => handleApprove(selectedIdea)} disabled={actionLoading === selectedIdea.id}
                       className="w-full gap-2 bg-success hover:bg-success/90 text-success-foreground">

@@ -41,6 +41,9 @@ import AdminClientIdeas from "@/pages/admin/AdminClientIdeas";
 import AdminWeeklyReport from "@/pages/admin/AdminWeeklyReport";
 import AdminContentPlanner from "@/pages/admin/AdminContentPlanner";
 import AdminSocialPosts from "@/pages/admin/AdminSocialPosts";
+import AdminInvoices from "@/pages/admin/AdminInvoices";
+import AdminCapacity from "@/pages/admin/AdminCapacity";
+import AdminWhatsAppTemplates from "@/pages/admin/AdminWhatsAppTemplates";
 
 // Role-specific dashboards/sub-pages
 import EditorDashboard from "@/pages/editor/EditorDashboard";
@@ -100,6 +103,9 @@ const App = () => (
             <Route path="/admin/weekly-report" element={<ProtectedRoute allowedRoles={['admin']}><AdminWeeklyReport /></ProtectedRoute>} />
             <Route path="/admin/content-planner" element={<ProtectedRoute allowedRoles={['admin']}><AdminContentPlanner /></ProtectedRoute>} />
             <Route path="/admin/social-posts" element={<ProtectedRoute allowedRoles={['admin']}><AdminSocialPosts /></ProtectedRoute>} />
+            <Route path="/admin/invoices" element={<ProtectedRoute allowedRoles={['admin']}><AdminInvoices /></ProtectedRoute>} />
+            <Route path="/admin/capacity" element={<ProtectedRoute allowedRoles={['admin']}><AdminCapacity /></ProtectedRoute>} />
+            <Route path="/admin/whatsapp-templates" element={<ProtectedRoute allowedRoles={['admin']}><AdminWhatsAppTemplates /></ProtectedRoute>} />
             <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin']}><AdminSettings /></ProtectedRoute>} />
 
             {/* Editor */}
