@@ -41,6 +41,9 @@ import AdminClientIdeas from "@/pages/admin/AdminClientIdeas";
 import AdminWeeklyReport from "@/pages/admin/AdminWeeklyReport";
 import AdminContentPlanner from "@/pages/admin/AdminContentPlanner";
 import AdminSocialPosts from "@/pages/admin/AdminSocialPosts";
+import AdminInvoices from "@/pages/admin/AdminInvoices";
+import AdminCapacity from "@/pages/admin/AdminCapacity";
+import AdminWhatsAppTemplates from "@/pages/admin/AdminWhatsAppTemplates";
 
 // Role-specific dashboards/sub-pages
 import EditorDashboard from "@/pages/editor/EditorDashboard";
