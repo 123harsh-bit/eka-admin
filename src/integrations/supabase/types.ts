@@ -44,6 +44,65 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_briefs: {
+        Row: {
+          applied_video_id: string | null
+          applied_writing_task_id: string | null
+          caption_drafts: Json
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          prompt: string | null
+          shoot_checklist: Json
+          source_id: string | null
+          source_type: string
+          status: string
+          updated_at: string
+          writing_brief: string | null
+        }
+        Insert: {
+          applied_video_id?: string | null
+          applied_writing_task_id?: string | null
+          caption_drafts?: Json
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          prompt?: string | null
+          shoot_checklist?: Json
+          source_id?: string | null
+          source_type: string
+          status?: string
+          updated_at?: string
+          writing_brief?: string | null
+        }
+        Update: {
+          applied_video_id?: string | null
+          applied_writing_task_id?: string | null
+          caption_drafts?: Json
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          prompt?: string | null
+          shoot_checklist?: Json
+          source_id?: string | null
+          source_type?: string
+          status?: string
+          updated_at?: string
+          writing_brief?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_briefs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendance_logs: {
         Row: {
           admin_note: string | null
@@ -726,6 +785,71 @@ export type Database = {
         }
         Relationships: []
       }
+      invoices: {
+        Row: {
+          amount: number
+          client_id: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          due_date: string | null
+          id: string
+          invoice_number: string
+          issue_date: string
+          line_items: Json
+          notes: string | null
+          paid_at: string | null
+          pdf_url: string | null
+          sent_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          due_date?: string | null
+          id?: string
+          invoice_number: string
+          issue_date?: string
+          line_items?: Json
+          notes?: string | null
+          paid_at?: string | null
+          pdf_url?: string | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          due_date?: string | null
+          id?: string
+          invoice_number?: string
+          issue_date?: string
+          line_items?: Json
+          notes?: string | null
+          paid_at?: string | null
+          pdf_url?: string | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string
@@ -1073,6 +1197,50 @@ export type Database = {
           },
           {
             foreignKeyName: "videos_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_templates: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          name: string
+          stage: string
+          template_text: string
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          stage: string
+          template_text: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          stage?: string
+          template_text?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_templates_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
