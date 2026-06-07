@@ -9,6 +9,7 @@ import {
   Loader2, ImagePlus, ArrowRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { AIBriefGenerator } from '@/components/admin/AIBriefGenerator';
 
 interface Idea {
   id: string; client_id: string; submitted_by: string;
