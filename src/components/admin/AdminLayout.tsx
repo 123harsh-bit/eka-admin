@@ -32,7 +32,9 @@ const navGroups = [
     items: [
       { to: '/admin/clients', icon: Users, label: 'Clients' },
       { to: '/admin/client-ideas', icon: Lightbulb, label: 'Client Ideas' },
+      { to: '/admin/invoices', icon: Receipt, label: 'Invoices' },
       { to: '/admin/team', icon: UserCircle, label: 'Team' },
+      { to: '/admin/capacity', icon: Activity, label: 'Capacity' },
       { to: '/admin/attendance', icon: Calendar, label: 'Attendance' },
       { to: '/admin/weekly-report', icon: BarChart3, label: 'Weekly Report' },
     ],
@@ -40,6 +42,7 @@ const navGroups = [
   {
     label: 'System',
     items: [
+      { to: '/admin/whatsapp-templates', icon: MessageCircle, label: 'WhatsApp Templates' },
       { to: '/admin/notifications', icon: Bell, label: 'Notifications' },
       { to: '/admin/settings', icon: Settings, label: 'Settings' },
     ],
