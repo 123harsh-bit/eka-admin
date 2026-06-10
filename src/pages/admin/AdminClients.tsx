@@ -62,8 +62,14 @@ export default function AdminClients() {
 
   const fetchClients = async () => {
     setLoading(true);
-    const { data, error } = await supabase.from('clients').select('*').order('created_at', { ascending: false });
-    if (!error && data) setClients(data);
+    // Admin/COO RPC returns all columns (incl. contact + billing). Falls back to direct query.
+    const { data: rpcData, error: rpcErr } = await (supabase as any).rpc('admin_list_clients');
+    if (!rpcErr && rpcData) {
+      setClients(rpcData as Client[]);
+    } else {
+      const { data } = await supabase.from('clients').select('*').order('created_at', { ascending: false });
+      if (data) setClients(data as Client[]);
+    }
     setLoading(false);
   };
 
@@ -84,6 +90,9 @@ export default function AdminClients() {
       monthly_deliverables: client.monthly_deliverables?.toString() || '',
       contract_start: client.contract_start || '', contract_end: client.contract_end || '',
       service_type: (client as any).service_type || 'full_production',
+      monthly_fee: client.monthly_fee != null ? String(client.monthly_fee) : '',
+      billing_currency: client.billing_currency || 'INR',
+      payment_day: client.payment_day != null ? String(client.payment_day) : '5',
     });
     setLogoPreview(client.logo_url);
     setLogoFile(null);
