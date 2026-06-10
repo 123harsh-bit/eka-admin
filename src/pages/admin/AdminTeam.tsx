@@ -18,16 +18,23 @@ interface TeamMember {
   role: string;
   created_at: string;
   taskCount?: number;
+  designation?: string | null;
+  monthly_salary?: number | null;
+  salary_currency?: string | null;
+  joining_date?: string | null;
 }
 
 const ROLES = [
+  { value: 'admin', label: 'Managing Director', color: 'text-primary bg-primary/20' },
+  { value: 'coo', label: 'Chief Operating Officer', color: 'text-cyan-400 bg-cyan-500/20' },
   { value: 'editor', label: 'Video Editor', color: 'text-blue-400 bg-blue-500/20' },
   { value: 'designer', label: 'Graphic Designer', color: 'text-pink-400 bg-pink-500/20' },
   { value: 'writer', label: 'Content Writer', color: 'text-green-400 bg-green-500/20' },
   { value: 'camera_operator', label: 'Camera Operator', color: 'text-violet-400 bg-violet-500/20' },
   { value: 'social_executive', label: 'Social Media Executive', color: 'text-amber-400 bg-amber-500/20' },
-  { value: 'admin', label: 'Managing Director', color: 'text-primary bg-primary/20' },
 ];
+
+const CURRENCIES = ['INR', 'USD', 'EUR', 'GBP', 'AED', 'AUD', 'CAD', 'SGD'];
 
 export default function AdminTeam() {
   const [members, setMembers] = useState<TeamMember[]>([]);
