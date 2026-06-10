@@ -9,6 +9,7 @@ import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
 const roleRoutes: Record<string, string> = {
   admin: '/admin',
+  coo: '/admin',
   editor: '/editor',
   designer: '/designer',
   writer: '/writer',
