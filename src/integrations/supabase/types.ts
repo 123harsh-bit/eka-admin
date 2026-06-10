@@ -101,6 +101,13 @@ export type Database = {
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "ai_briefs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_admin"
+            referencedColumns: ["id"]
+          },
         ]
       }
       attendance_logs: {
@@ -256,6 +263,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "client_ideas_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_admin"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "client_ideas_converted_video_id_fkey"
             columns: ["converted_video_id"]
             isOneToOne: false
@@ -308,6 +322,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "client_ratings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_admin"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "client_ratings_submitted_by_fkey"
             columns: ["submitted_by"]
             isOneToOne: false
@@ -325,6 +346,7 @@ export type Database = {
       }
       clients: {
         Row: {
+          billing_currency: string | null
           brand_colors: Json | null
           brand_fonts: Json | null
           contact_person: string | null
@@ -337,8 +359,10 @@ export type Database = {
           is_active: boolean
           logo_url: string | null
           monthly_deliverables: number | null
+          monthly_fee: number | null
           name: string
           notes: string | null
+          payment_day: number | null
           phone: string | null
           project_title: string | null
           service_type: string
@@ -346,6 +370,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          billing_currency?: string | null
           brand_colors?: Json | null
           brand_fonts?: Json | null
           contact_person?: string | null
@@ -358,8 +383,10 @@ export type Database = {
           is_active?: boolean
           logo_url?: string | null
           monthly_deliverables?: number | null
+          monthly_fee?: number | null
           name: string
           notes?: string | null
+          payment_day?: number | null
           phone?: string | null
           project_title?: string | null
           service_type?: string
@@ -367,6 +394,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          billing_currency?: string | null
           brand_colors?: Json | null
           brand_fonts?: Json | null
           contact_person?: string | null
@@ -379,8 +407,10 @@ export type Database = {
           is_active?: boolean
           logo_url?: string | null
           monthly_deliverables?: number | null
+          monthly_fee?: number | null
           name?: string
           notes?: string | null
+          payment_day?: number | null
           phone?: string | null
           project_title?: string | null
           service_type?: string
@@ -465,6 +495,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "content_items_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_admin"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "content_items_linked_design_task_id_fkey"
             columns: ["linked_design_task_id"]
             isOneToOne: false
@@ -540,6 +577,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_plans_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_admin"
             referencedColumns: ["id"]
           },
           {
@@ -649,6 +693,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "design_tasks_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_admin"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "design_tasks_video_id_fkey"
             columns: ["video_id"]
             isOneToOne: false
@@ -697,6 +748,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedback_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_admin"
             referencedColumns: ["id"]
           },
           {
@@ -848,6 +906,13 @@ export type Database = {
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_admin"
+            referencedColumns: ["id"]
+          },
         ]
       }
       notifications: {
@@ -890,6 +955,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "notifications_related_client_id_fkey"
+            columns: ["related_client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_admin"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "notifications_related_video_id_fkey"
             columns: ["related_video_id"]
             isOneToOne: false
@@ -902,40 +974,102 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          designation: string | null
           email: string
           full_name: string
           id: string
           is_active: boolean
           is_online: boolean | null
+          joining_date: string | null
           last_seen: string | null
+          monthly_salary: number | null
           phone: string | null
+          salary_currency: string | null
           updated_at: string
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          designation?: string | null
           email?: string
           full_name?: string
           id: string
           is_active?: boolean
           is_online?: boolean | null
+          joining_date?: string | null
           last_seen?: string | null
+          monthly_salary?: number | null
           phone?: string | null
+          salary_currency?: string | null
           updated_at?: string
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
+          designation?: string | null
           email?: string
           full_name?: string
           id?: string
           is_active?: boolean
           is_online?: boolean | null
+          joining_date?: string | null
           last_seen?: string | null
+          monthly_salary?: number | null
           phone?: string | null
+          salary_currency?: string | null
           updated_at?: string
         }
         Relationships: []
+      }
+      salary_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          notes: string | null
+          paid_on: string | null
+          payment_method: string | null
+          period_month: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          paid_on?: string | null
+          payment_method?: string | null
+          period_month: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          paid_on?: string | null
+          payment_method?: string | null
+          period_month?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salary_payments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       scheduled_posts: {
         Row: {
@@ -1202,6 +1336,13 @@ export type Database = {
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "videos_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_admin"
+            referencedColumns: ["id"]
+          },
         ]
       }
       whatsapp_templates: {
@@ -1244,6 +1385,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_templates_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_admin"
             referencedColumns: ["id"]
           },
         ]
@@ -1316,6 +1464,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "writing_tasks_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_admin"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "writing_tasks_video_id_fkey"
             columns: ["video_id"]
             isOneToOne: false
@@ -1326,9 +1481,84 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      clients_admin: {
+        Row: {
+          billing_currency: string | null
+          brand_colors: Json | null
+          brand_fonts: Json | null
+          contact_person: string | null
+          contract_end: string | null
+          contract_start: string | null
+          created_at: string | null
+          email: string | null
+          id: string | null
+          industry: string | null
+          is_active: boolean | null
+          logo_url: string | null
+          monthly_deliverables: number | null
+          monthly_fee: number | null
+          name: string | null
+          notes: string | null
+          payment_day: number | null
+          phone: string | null
+          project_title: string | null
+          service_type: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          billing_currency?: string | null
+          brand_colors?: Json | null
+          brand_fonts?: Json | null
+          contact_person?: string | null
+          contract_end?: string | null
+          contract_start?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string | null
+          industry?: string | null
+          is_active?: boolean | null
+          logo_url?: string | null
+          monthly_deliverables?: number | null
+          monthly_fee?: number | null
+          name?: string | null
+          notes?: string | null
+          payment_day?: number | null
+          phone?: string | null
+          project_title?: string | null
+          service_type?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          billing_currency?: string | null
+          brand_colors?: Json | null
+          brand_fonts?: Json | null
+          contact_person?: string | null
+          contract_end?: string | null
+          contract_start?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string | null
+          industry?: string | null
+          is_active?: boolean | null
+          logo_url?: string | null
+          monthly_deliverables?: number | null
+          monthly_fee?: number | null
+          name?: string | null
+          notes?: string | null
+          payment_day?: number | null
+          phone?: string | null
+          project_title?: string | null
+          service_type?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      clients_admin_guard: { Args: never; Returns: undefined }
       get_client_id_for_user: { Args: { _user_id: string }; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
