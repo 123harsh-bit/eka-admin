@@ -125,7 +125,7 @@ export default function AdminClients() {
       const clientId = editingClient?.id || crypto.randomUUID();
       const logoUrl = await uploadLogo(clientId);
 
-      const payload = {
+      const payload: any = {
         name: form.name.trim(),
         email: form.email || null,
         phone: form.phone || null,
@@ -138,6 +138,9 @@ export default function AdminClients() {
         contract_end: form.contract_end || null,
         logo_url: logoUrl,
         service_type: form.service_type,
+        monthly_fee: form.monthly_fee ? parseFloat(form.monthly_fee) : null,
+        billing_currency: form.billing_currency || 'INR',
+        payment_day: form.payment_day ? parseInt(form.payment_day) : 5,
       };
 
       if (editingClient) {
