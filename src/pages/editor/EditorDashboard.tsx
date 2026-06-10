@@ -48,7 +48,7 @@ export default function EditorDashboard() {
       .from('videos')
       .select('id, title, status, client_id, drive_link, raw_footage_link, internal_notes, date_planned, date_delivered, clients(name)')
       .eq('assigned_editor', user.id)
-      .not('status', 'eq', 'live')
+      .not('status', 'in', '(approved,ready_to_upload,live)')
       .order('date_planned', { ascending: true, nullsFirst: false });
     if (data) {
       setVideos((data as unknown[]).map((v: unknown) => {
