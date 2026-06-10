@@ -24,10 +24,13 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
 
   if (!user) return <Navigate to="/login" replace />;
 
-  if (allowedRoles && role && !allowedRoles.includes(role)) {
-    // Redirect to the appropriate dashboard based on role
+  // COO has full admin-equivalent access: allow wherever admin is allowed.
+  const effectiveRole = (role as string) === 'coo' && allowedRoles?.includes('admin') ? 'admin' : role;
+
+  if (allowedRoles && effectiveRole && !allowedRoles.includes(effectiveRole)) {
     const roleRoutes: Record<string, string> = {
       admin: '/admin',
+      coo: '/admin',
       editor: '/editor',
       designer: '/designer',
       writer: '/writer',
@@ -35,7 +38,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
       social_executive: '/social',
       client: '/client',
     };
-    return <Navigate to={roleRoutes[role] || '/'} replace />;
+    return <Navigate to={roleRoutes[role || ''] || '/'} replace />;
   }
 
   return <>{children}</>;

@@ -29,14 +29,19 @@ interface Client {
   notes: string | null;
   created_at: string;
   user_id: string | null;
+  monthly_fee?: number | null;
+  billing_currency?: string | null;
+  payment_day?: number | null;
 }
 
 const INDUSTRIES = ['Technology', 'E-commerce', 'Health & Fitness', 'Real Estate', 'Education', 'Food & Beverage', 'Fashion', 'Finance', 'Travel', 'Entertainment', 'Other'];
+const CURRENCIES = ['INR', 'USD', 'EUR', 'GBP', 'AED', 'AUD', 'CAD', 'SGD'];
 
 const emptyForm = {
   name: '', email: '', phone: '', industry: '', contact_person: '',
   project_title: '', notes: '', monthly_deliverables: '', contract_start: '', contract_end: '',
   service_type: 'full_production',
+  monthly_fee: '', billing_currency: 'INR', payment_day: '5',
 };
 
 export default function AdminClients() {
@@ -57,8 +62,14 @@ export default function AdminClients() {
 
   const fetchClients = async () => {
     setLoading(true);
-    const { data, error } = await supabase.from('clients').select('*').order('created_at', { ascending: false });
-    if (!error && data) setClients(data);
+    // Admin/COO RPC returns all columns (incl. contact + billing). Falls back to direct query.
+    const { data: rpcData, error: rpcErr } = await (supabase as any).rpc('admin_list_clients');
+    if (!rpcErr && rpcData) {
+      setClients(rpcData as Client[]);
+    } else {
+      const { data } = await supabase.from('clients').select('*').order('created_at', { ascending: false });
+      if (data) setClients(data as Client[]);
+    }
     setLoading(false);
   };
 
@@ -79,6 +90,9 @@ export default function AdminClients() {
       monthly_deliverables: client.monthly_deliverables?.toString() || '',
       contract_start: client.contract_start || '', contract_end: client.contract_end || '',
       service_type: (client as any).service_type || 'full_production',
+      monthly_fee: client.monthly_fee != null ? String(client.monthly_fee) : '',
+      billing_currency: client.billing_currency || 'INR',
+      payment_day: client.payment_day != null ? String(client.payment_day) : '5',
     });
     setLogoPreview(client.logo_url);
     setLogoFile(null);
@@ -111,7 +125,7 @@ export default function AdminClients() {
       const clientId = editingClient?.id || crypto.randomUUID();
       const logoUrl = await uploadLogo(clientId);
 
-      const payload = {
+      const payload: any = {
         name: form.name.trim(),
         email: form.email || null,
         phone: form.phone || null,
@@ -124,6 +138,9 @@ export default function AdminClients() {
         contract_end: form.contract_end || null,
         logo_url: logoUrl,
         service_type: form.service_type,
+        monthly_fee: form.monthly_fee ? parseFloat(form.monthly_fee) : null,
+        billing_currency: form.billing_currency || 'INR',
+        payment_day: form.payment_day ? parseInt(form.payment_day) : 5,
       };
 
       if (editingClient) {
@@ -249,6 +266,12 @@ export default function AdminClients() {
                   )}
                   {client.monthly_deliverables != null && (
                     <p><span className="font-medium text-foreground">{client.monthly_deliverables}</span> deliverables/month</p>
+                  )}
+                  {client.monthly_fee != null && (
+                    <p className="text-success font-medium">
+                      {new Intl.NumberFormat('en-IN', { style: 'currency', currency: client.billing_currency || 'INR', maximumFractionDigits: 0 }).format(Number(client.monthly_fee))}
+                      <span className="text-muted-foreground font-normal"> /mo · pays day {client.payment_day || 5}</span>
+                    </p>
                   )}
                 </div>
 
@@ -379,6 +402,28 @@ export default function AdminClients() {
                 <div className="space-y-1.5">
                   <Label htmlFor="monthly_deliverables">Monthly Deliverables</Label>
                   <Input id="monthly_deliverables" type="number" min="0" value={form.monthly_deliverables} onChange={e => setForm(f => ({ ...f, monthly_deliverables: e.target.value }))} placeholder="8" />
+                </div>
+
+                {/* Billing */}
+                <div className="rounded-lg border border-glass-border bg-muted/20 p-3 space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Billing</p>
+                  <div className="grid grid-cols-[1fr_auto] gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="monthly_fee">Monthly Fee</Label>
+                      <Input id="monthly_fee" type="number" min="0" step="0.01" value={form.monthly_fee} onChange={e => setForm(f => ({ ...f, monthly_fee: e.target.value }))} placeholder="50000" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="billing_currency">Currency</Label>
+                      <select id="billing_currency" value={form.billing_currency} onChange={e => setForm(f => ({ ...f, billing_currency: e.target.value }))} className="flex h-10 w-24 rounded-md border border-input bg-background px-3 text-sm">
+                        {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="payment_day">Payment Day (1–28)</Label>
+                    <Input id="payment_day" type="number" min="1" max="28" value={form.payment_day} onChange={e => setForm(f => ({ ...f, payment_day: e.target.value }))} placeholder="5" />
+                    <p className="text-[11px] text-muted-foreground">Default 5th of each month.</p>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">

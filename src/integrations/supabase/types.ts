@@ -325,6 +325,7 @@ export type Database = {
       }
       clients: {
         Row: {
+          billing_currency: string | null
           brand_colors: Json | null
           brand_fonts: Json | null
           contact_person: string | null
@@ -337,8 +338,10 @@ export type Database = {
           is_active: boolean
           logo_url: string | null
           monthly_deliverables: number | null
+          monthly_fee: number | null
           name: string
           notes: string | null
+          payment_day: number | null
           phone: string | null
           project_title: string | null
           service_type: string
@@ -346,6 +349,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          billing_currency?: string | null
           brand_colors?: Json | null
           brand_fonts?: Json | null
           contact_person?: string | null
@@ -358,8 +362,10 @@ export type Database = {
           is_active?: boolean
           logo_url?: string | null
           monthly_deliverables?: number | null
+          monthly_fee?: number | null
           name: string
           notes?: string | null
+          payment_day?: number | null
           phone?: string | null
           project_title?: string | null
           service_type?: string
@@ -367,6 +373,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          billing_currency?: string | null
           brand_colors?: Json | null
           brand_fonts?: Json | null
           contact_person?: string | null
@@ -379,8 +386,10 @@ export type Database = {
           is_active?: boolean
           logo_url?: string | null
           monthly_deliverables?: number | null
+          monthly_fee?: number | null
           name?: string
           notes?: string | null
+          payment_day?: number | null
           phone?: string | null
           project_title?: string | null
           service_type?: string
@@ -902,40 +911,102 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          designation: string | null
           email: string
           full_name: string
           id: string
           is_active: boolean
           is_online: boolean | null
+          joining_date: string | null
           last_seen: string | null
+          monthly_salary: number | null
           phone: string | null
+          salary_currency: string | null
           updated_at: string
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          designation?: string | null
           email?: string
           full_name?: string
           id: string
           is_active?: boolean
           is_online?: boolean | null
+          joining_date?: string | null
           last_seen?: string | null
+          monthly_salary?: number | null
           phone?: string | null
+          salary_currency?: string | null
           updated_at?: string
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
+          designation?: string | null
           email?: string
           full_name?: string
           id?: string
           is_active?: boolean
           is_online?: boolean | null
+          joining_date?: string | null
           last_seen?: string | null
+          monthly_salary?: number | null
           phone?: string | null
+          salary_currency?: string | null
           updated_at?: string
         }
         Relationships: []
+      }
+      salary_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          notes: string | null
+          paid_on: string | null
+          payment_method: string | null
+          period_month: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          paid_on?: string | null
+          payment_method?: string | null
+          period_month: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          paid_on?: string | null
+          payment_method?: string | null
+          period_month?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salary_payments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       scheduled_posts: {
         Row: {
@@ -1329,6 +1400,72 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_get_client: {
+        Args: { _id: string }
+        Returns: {
+          billing_currency: string | null
+          brand_colors: Json | null
+          brand_fonts: Json | null
+          contact_person: string | null
+          contract_end: string | null
+          contract_start: string | null
+          created_at: string
+          email: string | null
+          id: string
+          industry: string | null
+          is_active: boolean
+          logo_url: string | null
+          monthly_deliverables: number | null
+          monthly_fee: number | null
+          name: string
+          notes: string | null
+          payment_day: number | null
+          phone: string | null
+          project_title: string | null
+          service_type: string
+          updated_at: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "clients"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_list_clients: {
+        Args: never
+        Returns: {
+          billing_currency: string | null
+          brand_colors: Json | null
+          brand_fonts: Json | null
+          contact_person: string | null
+          contract_end: string | null
+          contract_start: string | null
+          created_at: string
+          email: string | null
+          id: string
+          industry: string | null
+          is_active: boolean
+          logo_url: string | null
+          monthly_deliverables: number | null
+          monthly_fee: number | null
+          name: string
+          notes: string | null
+          payment_day: number | null
+          phone: string | null
+          project_title: string | null
+          service_type: string
+          updated_at: string
+          user_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "clients"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_client_id_for_user: { Args: { _user_id: string }; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
@@ -1352,6 +1489,7 @@ export type Database = {
         | "client"
         | "camera_operator"
         | "social_executive"
+        | "coo"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1487,6 +1625,7 @@ export const Constants = {
         "client",
         "camera_operator",
         "social_executive",
+        "coo",
       ],
     },
   },

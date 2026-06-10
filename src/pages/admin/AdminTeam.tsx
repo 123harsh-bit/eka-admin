@@ -18,16 +18,23 @@ interface TeamMember {
   role: string;
   created_at: string;
   taskCount?: number;
+  designation?: string | null;
+  monthly_salary?: number | null;
+  salary_currency?: string | null;
+  joining_date?: string | null;
 }
 
 const ROLES = [
+  { value: 'admin', label: 'Managing Director', color: 'text-primary bg-primary/20' },
+  { value: 'coo', label: 'Chief Operating Officer', color: 'text-cyan-400 bg-cyan-500/20' },
   { value: 'editor', label: 'Video Editor', color: 'text-blue-400 bg-blue-500/20' },
   { value: 'designer', label: 'Graphic Designer', color: 'text-pink-400 bg-pink-500/20' },
   { value: 'writer', label: 'Content Writer', color: 'text-green-400 bg-green-500/20' },
   { value: 'camera_operator', label: 'Camera Operator', color: 'text-violet-400 bg-violet-500/20' },
   { value: 'social_executive', label: 'Social Media Executive', color: 'text-amber-400 bg-amber-500/20' },
-  { value: 'admin', label: 'Managing Director', color: 'text-primary bg-primary/20' },
 ];
+
+const CURRENCIES = ['INR', 'USD', 'EUR', 'GBP', 'AED', 'AUD', 'CAD', 'SGD'];
 
 export default function AdminTeam() {
   const [members, setMembers] = useState<TeamMember[]>([]);
@@ -36,7 +43,7 @@ export default function AdminTeam() {
   const [roleFilter, setRoleFilter] = useState('');
   const [panelOpen, setPanelOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
-  const [form, setForm] = useState({ full_name: '', email: '', phone: '', role: 'editor', password: '' });
+  const [form, setForm] = useState({ full_name: '', email: '', phone: '', role: 'editor', password: '', designation: '', monthly_salary: '', salary_currency: 'INR', joining_date: '' });
   const [saving, setSaving] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; member: TeamMember | null }>({ open: false, member: null });
   const [deleting, setDeleting] = useState(false);
@@ -58,13 +65,17 @@ export default function AdminTeam() {
     const roleMap: Record<string, string> = {};
     roles.forEach(r => { roleMap[r.user_id] = r.role; });
 
-    const team: TeamMember[] = profiles.map(p => ({
+    const team: TeamMember[] = profiles.map((p: any) => ({
       id: p.id,
       full_name: p.full_name,
       email: p.email,
       phone: p.phone,
       role: roleMap[p.id] || 'editor',
       created_at: p.created_at,
+      designation: p.designation || null,
+      monthly_salary: p.monthly_salary != null ? Number(p.monthly_salary) : null,
+      salary_currency: p.salary_currency || 'INR',
+      joining_date: p.joining_date || null,
     }));
 
     // Get task counts
@@ -97,13 +108,13 @@ export default function AdminTeam() {
 
   const openAdd = () => {
     setEditingMember(null);
-    setForm({ full_name: '', email: '', phone: '', role: 'editor', password: '' });
+    setForm({ full_name: '', email: '', phone: '', role: 'editor', password: '', designation: '', monthly_salary: '', salary_currency: 'INR', joining_date: '' });
     setPanelOpen(true);
   };
 
   const openEdit = (member: TeamMember) => {
     setEditingMember(member);
-    setForm({ full_name: member.full_name, email: member.email, phone: member.phone || '', role: member.role, password: '' });
+    setForm({ full_name: member.full_name, email: member.email, phone: member.phone || '', role: member.role, password: '', designation: member.designation || '', monthly_salary: member.monthly_salary != null ? String(member.monthly_salary) : '', salary_currency: member.salary_currency || 'INR', joining_date: member.joining_date || '' });
     setPanelOpen(true);
   };
 
@@ -114,14 +125,18 @@ export default function AdminTeam() {
 
     try {
       if (editingMember) {
-        const { error: profileError } = await supabase.from('profiles').update({
+        const { error: profileError } = await (supabase.from('profiles') as any).update({
           full_name: form.full_name.trim(),
           phone: form.phone || null,
+          designation: form.designation || null,
+          monthly_salary: form.monthly_salary ? parseFloat(form.monthly_salary) : null,
+          salary_currency: form.salary_currency || 'INR',
+          joining_date: form.joining_date || null,
         }).eq('id', editingMember.id);
         if (profileError) throw profileError;
 
         if (editingMember.role !== form.role) {
-          await supabase.from('user_roles').update({ role: form.role as 'admin' | 'editor' | 'designer' | 'writer' | 'client' | 'camera_operator' | 'social_executive' }).eq('user_id', editingMember.id);
+          await (supabase.from('user_roles') as any).update({ role: form.role }).eq('user_id', editingMember.id);
         }
 
         toast({ title: 'Team member updated' });
@@ -148,8 +163,14 @@ export default function AdminTeam() {
         const result = await res.json();
         if (!res.ok) throw new Error(result.error || 'Failed to create user');
 
-        if (form.phone && result.user_id) {
-          await supabase.from('profiles').update({ phone: form.phone }).eq('id', result.user_id);
+        if (result.user_id) {
+          await (supabase.from('profiles') as any).update({
+            phone: form.phone || null,
+            designation: form.designation || null,
+            monthly_salary: form.monthly_salary ? parseFloat(form.monthly_salary) : null,
+            salary_currency: form.salary_currency || 'INR',
+            joining_date: form.joining_date || null,
+          }).eq('id', result.user_id);
         }
 
         toast({ title: 'Team member added', description: `${form.full_name} can now log in.` });
@@ -326,6 +347,32 @@ export default function AdminTeam() {
                 <select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground">
                   {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
                 </select>
+              </div>
+
+              {/* HR & Salary */}
+              <div className="rounded-lg border border-glass-border bg-muted/20 p-3 space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">HR & Salary</p>
+                <div className="space-y-1.5">
+                  <Label>Designation</Label>
+                  <Input value={form.designation} onChange={e => setForm(f => ({ ...f, designation: e.target.value }))} placeholder="Senior Video Editor" />
+                </div>
+                <div className="grid grid-cols-[1fr_auto] gap-3">
+                  <div className="space-y-1.5">
+                    <Label>Monthly Salary</Label>
+                    <Input type="number" min="0" step="0.01" value={form.monthly_salary} onChange={e => setForm(f => ({ ...f, monthly_salary: e.target.value }))} placeholder="50000" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Currency</Label>
+                    <select value={form.salary_currency} onChange={e => setForm(f => ({ ...f, salary_currency: e.target.value }))} className="flex h-10 w-24 rounded-md border border-input bg-background px-3 text-sm">
+                      {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Joining Date</Label>
+                  <Input type="date" value={form.joining_date} onChange={e => setForm(f => ({ ...f, joining_date: e.target.value }))} />
+                </div>
+                <p className="text-[11px] text-muted-foreground">Salaries are paid on the 5th of each month. Track payouts under Salaries.</p>
               </div>
               {!editingMember && (
                 <div className="space-y-1.5">

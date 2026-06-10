@@ -44,18 +44,17 @@ import AdminSocialPosts from "@/pages/admin/AdminSocialPosts";
 import AdminInvoices from "@/pages/admin/AdminInvoices";
 import AdminCapacity from "@/pages/admin/AdminCapacity";
 import AdminWhatsAppTemplates from "@/pages/admin/AdminWhatsAppTemplates";
+import AdminSalaries from "@/pages/admin/AdminSalaries";
 
 // Role-specific dashboards/sub-pages
 import EditorDashboard from "@/pages/editor/EditorDashboard";
 import EditorAllVideos from "@/pages/editor/EditorAllVideos";
-import EditorClients from "@/pages/editor/EditorClients";
 import DesignerDashboard from "@/pages/designer/DesignerDashboard";
 import DesignerBrandKits from "@/pages/designer/DesignerBrandKits";
 import WriterDashboard from "@/pages/writer/WriterDashboard";
 import WriterClientBriefs from "@/pages/writer/WriterClientBriefs";
 import CameraShoots from "@/pages/camera/CameraShoots";
 import CameraFootage from "@/pages/camera/CameraFootage";
-import CameraClients from "@/pages/camera/CameraClients";
 import SocialDashboard from "@/pages/social/SocialDashboard";
 import SocialCompose from "@/pages/social/SocialCompose";
 import SocialCalendar from "@/pages/social/SocialCalendar";
@@ -106,13 +105,13 @@ const App = () => (
             <Route path="/admin/invoices" element={<ProtectedRoute allowedRoles={['admin']}><AdminInvoices /></ProtectedRoute>} />
             <Route path="/admin/capacity" element={<ProtectedRoute allowedRoles={['admin']}><AdminCapacity /></ProtectedRoute>} />
             <Route path="/admin/whatsapp-templates" element={<ProtectedRoute allowedRoles={['admin']}><AdminWhatsAppTemplates /></ProtectedRoute>} />
+            <Route path="/admin/salaries" element={<ProtectedRoute allowedRoles={['admin']}><AdminSalaries /></ProtectedRoute>} />
             <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin']}><AdminSettings /></ProtectedRoute>} />
 
             {/* Editor */}
             <Route path="/editor" element={<ProtectedRoute allowedRoles={['editor']}><EditorDashboard /></ProtectedRoute>} />
             <Route path="/editor/daily-tasks" element={<ProtectedRoute allowedRoles={['editor']}><EditorLayout><DailyTasksContent /></EditorLayout></ProtectedRoute>} />
             <Route path="/editor/videos" element={<ProtectedRoute allowedRoles={['editor']}><EditorAllVideos /></ProtectedRoute>} />
-            <Route path="/editor/clients" element={<ProtectedRoute allowedRoles={['editor']}><EditorClients /></ProtectedRoute>} />
             <Route path="/editor/attendance" element={<ProtectedRoute allowedRoles={['editor']}><EditorLayout><MyAttendancePage /></EditorLayout></ProtectedRoute>} />
 
             {/* Designer */}
@@ -130,7 +129,7 @@ const App = () => (
             {/* Camera */}
             <Route path="/camera" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraShoots /></ProtectedRoute>} />
             <Route path="/camera/footage" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraFootage /></ProtectedRoute>} />
-            <Route path="/camera/clients" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraClients /></ProtectedRoute>} />
+            
             <Route path="/camera/daily-tasks" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraLayout><DailyTasksContent /></CameraLayout></ProtectedRoute>} />
             <Route path="/camera/attendance" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraLayout><MyAttendancePage /></CameraLayout></ProtectedRoute>} />
 
