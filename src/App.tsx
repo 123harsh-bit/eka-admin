@@ -55,7 +55,6 @@ import WriterDashboard from "@/pages/writer/WriterDashboard";
 import WriterClientBriefs from "@/pages/writer/WriterClientBriefs";
 import CameraShoots from "@/pages/camera/CameraShoots";
 import CameraFootage from "@/pages/camera/CameraFootage";
-import CameraClients from "@/pages/camera/CameraClients";
 import SocialDashboard from "@/pages/social/SocialDashboard";
 import SocialCompose from "@/pages/social/SocialCompose";
 import SocialCalendar from "@/pages/social/SocialCalendar";
