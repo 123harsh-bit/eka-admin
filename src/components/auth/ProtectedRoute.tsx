@@ -25,7 +25,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
   if (!user) return <Navigate to="/login" replace />;
 
   // COO has full admin-equivalent access: allow wherever admin is allowed.
-  const effectiveRole = role === 'coo' && allowedRoles?.includes('admin') ? 'admin' : role;
+  const effectiveRole = (role as string) === 'coo' && allowedRoles?.includes('admin') ? 'admin' : role;
 
   if (allowedRoles && effectiveRole && !allowedRoles.includes(effectiveRole)) {
     const roleRoutes: Record<string, string> = {
