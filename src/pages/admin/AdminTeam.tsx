@@ -104,7 +104,7 @@ export default function AdminTeam() {
 
   const openAdd = () => {
     setEditingMember(null);
-    setForm({ full_name: '', email: '', phone: '', role: 'editor', password: '' });
+    setForm({ full_name: '', email: '', phone: '', role: 'editor', password: '', designation: '', monthly_salary: '', salary_currency: 'INR', joining_date: '' });
     setPanelOpen(true);
   };
 
