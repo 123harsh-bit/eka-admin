@@ -267,6 +267,12 @@ export default function AdminClients() {
                   {client.monthly_deliverables != null && (
                     <p><span className="font-medium text-foreground">{client.monthly_deliverables}</span> deliverables/month</p>
                   )}
+                  {client.monthly_fee != null && (
+                    <p className="text-success font-medium">
+                      {new Intl.NumberFormat('en-IN', { style: 'currency', currency: client.billing_currency || 'INR', maximumFractionDigits: 0 }).format(Number(client.monthly_fee))}
+                      <span className="text-muted-foreground font-normal"> /mo · pays on the {client.payment_day || 5}{['th','st','nd','rd'][(client.payment_day || 5) % 10 > 3 ? 0 : ((client.payment_day || 5) % 100 - (client.payment_day || 5) % 10 == 10 ? 0 : (client.payment_day || 5) % 10)]}</span>
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex gap-2 pt-1">
