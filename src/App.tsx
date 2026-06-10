@@ -112,7 +112,6 @@ const App = () => (
             <Route path="/editor" element={<ProtectedRoute allowedRoles={['editor']}><EditorDashboard /></ProtectedRoute>} />
             <Route path="/editor/daily-tasks" element={<ProtectedRoute allowedRoles={['editor']}><EditorLayout><DailyTasksContent /></EditorLayout></ProtectedRoute>} />
             <Route path="/editor/videos" element={<ProtectedRoute allowedRoles={['editor']}><EditorAllVideos /></ProtectedRoute>} />
-            <Route path="/editor/clients" element={<ProtectedRoute allowedRoles={['editor']}><EditorClients /></ProtectedRoute>} />
             <Route path="/editor/attendance" element={<ProtectedRoute allowedRoles={['editor']}><EditorLayout><MyAttendancePage /></EditorLayout></ProtectedRoute>} />
 
             {/* Designer */}
