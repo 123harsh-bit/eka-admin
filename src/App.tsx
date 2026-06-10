@@ -128,7 +128,7 @@ const App = () => (
             {/* Camera */}
             <Route path="/camera" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraShoots /></ProtectedRoute>} />
             <Route path="/camera/footage" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraFootage /></ProtectedRoute>} />
-            <Route path="/camera/clients" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraClients /></ProtectedRoute>} />
+            
             <Route path="/camera/daily-tasks" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraLayout><DailyTasksContent /></CameraLayout></ProtectedRoute>} />
             <Route path="/camera/attendance" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraLayout><MyAttendancePage /></CameraLayout></ProtectedRoute>} />
 
