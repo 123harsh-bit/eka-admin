@@ -125,14 +125,18 @@ export default function AdminTeam() {
 
     try {
       if (editingMember) {
-        const { error: profileError } = await supabase.from('profiles').update({
+        const { error: profileError } = await (supabase.from('profiles') as any).update({
           full_name: form.full_name.trim(),
           phone: form.phone || null,
+          designation: form.designation || null,
+          monthly_salary: form.monthly_salary ? parseFloat(form.monthly_salary) : null,
+          salary_currency: form.salary_currency || 'INR',
+          joining_date: form.joining_date || null,
         }).eq('id', editingMember.id);
         if (profileError) throw profileError;
 
         if (editingMember.role !== form.role) {
-          await supabase.from('user_roles').update({ role: form.role as 'admin' | 'editor' | 'designer' | 'writer' | 'client' | 'camera_operator' | 'social_executive' }).eq('user_id', editingMember.id);
+          await (supabase.from('user_roles') as any).update({ role: form.role }).eq('user_id', editingMember.id);
         }
 
         toast({ title: 'Team member updated' });
