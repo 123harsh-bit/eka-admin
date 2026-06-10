@@ -49,8 +49,26 @@ export function MyPerformance({ role }: MyPerformanceProps) {
       tasks = d || [];
     }
 
-    const completedStatuses = (role === 'editor' || role === 'camera_operator') ? ['live', 'approved', 'footage_delivered'] : ['delivered'];
-    const notStartedStatuses = (role === 'editor' || role === 'camera_operator') ? ['idea', 'scripting'] : ['briefed'];
+    // Per-role completion definitions.
+    // Editor: once a video reaches 'approved', the editor's job is done.
+    // Camera: once footage is delivered, camera's job is done.
+    // Writer: once writing task is 'approved' or 'delivered'.
+    // Designer: once design task is 'delivered'.
+    const editorDone = ['approved', 'ready_to_upload', 'live'];
+    const cameraDone = ['footage_delivered', 'editing', 'internal_review', 'client_review', 'revisions', 'approved', 'ready_to_upload', 'live'];
+    const writerDone = ['approved', 'delivered'];
+    const designerDone = ['delivered'];
+
+    const completedStatuses =
+      role === 'editor' ? editorDone :
+      role === 'camera_operator' ? cameraDone :
+      role === 'writer' ? writerDone :
+      designerDone;
+
+    const notStartedStatuses =
+      role === 'editor' ? ['idea', 'scripting', 'script_submitted', 'script_client_review', 'script_approved', 'shoot_assigned', 'shooting', 'footage_delivered'] :
+      role === 'camera_operator' ? ['idea', 'scripting', 'script_submitted', 'script_client_review', 'script_approved', 'shoot_assigned'] :
+      ['briefed'];
 
     const completed = tasks.filter(t => completedStatuses.includes(t.status) && t.updated_at >= startOfMonth).length;
     const inProgress = tasks.filter(t => !completedStatuses.includes(t.status) && !notStartedStatuses.includes(t.status)).length;
