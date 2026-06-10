@@ -348,6 +348,32 @@ export default function AdminTeam() {
                   {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
                 </select>
               </div>
+
+              {/* HR & Salary */}
+              <div className="rounded-lg border border-glass-border bg-muted/20 p-3 space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">HR & Salary</p>
+                <div className="space-y-1.5">
+                  <Label>Designation</Label>
+                  <Input value={form.designation} onChange={e => setForm(f => ({ ...f, designation: e.target.value }))} placeholder="Senior Video Editor" />
+                </div>
+                <div className="grid grid-cols-[1fr_auto] gap-3">
+                  <div className="space-y-1.5">
+                    <Label>Monthly Salary</Label>
+                    <Input type="number" min="0" step="0.01" value={form.monthly_salary} onChange={e => setForm(f => ({ ...f, monthly_salary: e.target.value }))} placeholder="50000" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Currency</Label>
+                    <select value={form.salary_currency} onChange={e => setForm(f => ({ ...f, salary_currency: e.target.value }))} className="flex h-10 w-24 rounded-md border border-input bg-background px-3 text-sm">
+                      {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Joining Date</Label>
+                  <Input type="date" value={form.joining_date} onChange={e => setForm(f => ({ ...f, joining_date: e.target.value }))} />
+                </div>
+                <p className="text-[11px] text-muted-foreground">Salaries are paid on the 5th of each month. Track payouts under Salaries.</p>
+              </div>
               {!editingMember && (
                 <div className="space-y-1.5">
                   <Label>Password *</Label>
