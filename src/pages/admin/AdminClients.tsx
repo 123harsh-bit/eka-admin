@@ -403,6 +403,28 @@ export default function AdminClients() {
                   <Label htmlFor="monthly_deliverables">Monthly Deliverables</Label>
                   <Input id="monthly_deliverables" type="number" min="0" value={form.monthly_deliverables} onChange={e => setForm(f => ({ ...f, monthly_deliverables: e.target.value }))} placeholder="8" />
                 </div>
+
+                {/* Billing */}
+                <div className="rounded-lg border border-glass-border bg-muted/20 p-3 space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Billing</p>
+                  <div className="grid grid-cols-[1fr_auto] gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="monthly_fee">Monthly Fee</Label>
+                      <Input id="monthly_fee" type="number" min="0" step="0.01" value={form.monthly_fee} onChange={e => setForm(f => ({ ...f, monthly_fee: e.target.value }))} placeholder="50000" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="billing_currency">Currency</Label>
+                      <select id="billing_currency" value={form.billing_currency} onChange={e => setForm(f => ({ ...f, billing_currency: e.target.value }))} className="flex h-10 w-24 rounded-md border border-input bg-background px-3 text-sm">
+                        {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="payment_day">Payment Day (1–28)</Label>
+                    <Input id="payment_day" type="number" min="1" max="28" value={form.payment_day} onChange={e => setForm(f => ({ ...f, payment_day: e.target.value }))} placeholder="5" />
+                    <p className="text-[11px] text-muted-foreground">Default 5th of each month.</p>
+                  </div>
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="contract_start">Contract Start</Label>
