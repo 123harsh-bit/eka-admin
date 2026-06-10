@@ -43,7 +43,7 @@ export default function AdminTeam() {
   const [roleFilter, setRoleFilter] = useState('');
   const [panelOpen, setPanelOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
-  const [form, setForm] = useState({ full_name: '', email: '', phone: '', role: 'editor', password: '' });
+  const [form, setForm] = useState({ full_name: '', email: '', phone: '', role: 'editor', password: '', designation: '', monthly_salary: '', salary_currency: 'INR', joining_date: '' });
   const [saving, setSaving] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; member: TeamMember | null }>({ open: false, member: null });
   const [deleting, setDeleting] = useState(false);
