@@ -163,8 +163,14 @@ export default function AdminTeam() {
         const result = await res.json();
         if (!res.ok) throw new Error(result.error || 'Failed to create user');
 
-        if (form.phone && result.user_id) {
-          await supabase.from('profiles').update({ phone: form.phone }).eq('id', result.user_id);
+        if (result.user_id) {
+          await (supabase.from('profiles') as any).update({
+            phone: form.phone || null,
+            designation: form.designation || null,
+            monthly_salary: form.monthly_salary ? parseFloat(form.monthly_salary) : null,
+            salary_currency: form.salary_currency || 'INR',
+            joining_date: form.joining_date || null,
+          }).eq('id', result.user_id);
         }
 
         toast({ title: 'Team member added', description: `${form.full_name} can now log in.` });
