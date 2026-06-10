@@ -29,14 +29,19 @@ interface Client {
   notes: string | null;
   created_at: string;
   user_id: string | null;
+  monthly_fee?: number | null;
+  billing_currency?: string | null;
+  payment_day?: number | null;
 }
 
 const INDUSTRIES = ['Technology', 'E-commerce', 'Health & Fitness', 'Real Estate', 'Education', 'Food & Beverage', 'Fashion', 'Finance', 'Travel', 'Entertainment', 'Other'];
+const CURRENCIES = ['INR', 'USD', 'EUR', 'GBP', 'AED', 'AUD', 'CAD', 'SGD'];
 
 const emptyForm = {
   name: '', email: '', phone: '', industry: '', contact_person: '',
   project_title: '', notes: '', monthly_deliverables: '', contract_start: '', contract_end: '',
   service_type: 'full_production',
+  monthly_fee: '', billing_currency: 'INR', payment_day: '5',
 };
 
 export default function AdminClients() {
