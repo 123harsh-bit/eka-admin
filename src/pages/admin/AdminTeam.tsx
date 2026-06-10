@@ -65,13 +65,17 @@ export default function AdminTeam() {
     const roleMap: Record<string, string> = {};
     roles.forEach(r => { roleMap[r.user_id] = r.role; });
 
-    const team: TeamMember[] = profiles.map(p => ({
+    const team: TeamMember[] = profiles.map((p: any) => ({
       id: p.id,
       full_name: p.full_name,
       email: p.email,
       phone: p.phone,
       role: roleMap[p.id] || 'editor',
       created_at: p.created_at,
+      designation: p.designation || null,
+      monthly_salary: p.monthly_salary != null ? Number(p.monthly_salary) : null,
+      salary_currency: p.salary_currency || 'INR',
+      joining_date: p.joining_date || null,
     }));
 
     // Get task counts
