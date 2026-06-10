@@ -49,7 +49,6 @@ import AdminSalaries from "@/pages/admin/AdminSalaries";
 // Role-specific dashboards/sub-pages
 import EditorDashboard from "@/pages/editor/EditorDashboard";
 import EditorAllVideos from "@/pages/editor/EditorAllVideos";
-import EditorClients from "@/pages/editor/EditorClients";
 import DesignerDashboard from "@/pages/designer/DesignerDashboard";
 import DesignerBrandKits from "@/pages/designer/DesignerBrandKits";
 import WriterDashboard from "@/pages/writer/WriterDashboard";
