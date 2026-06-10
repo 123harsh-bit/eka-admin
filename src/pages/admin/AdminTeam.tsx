@@ -110,7 +110,7 @@ export default function AdminTeam() {
 
   const openEdit = (member: TeamMember) => {
     setEditingMember(member);
-    setForm({ full_name: member.full_name, email: member.email, phone: member.phone || '', role: member.role, password: '' });
+    setForm({ full_name: member.full_name, email: member.email, phone: member.phone || '', role: member.role, password: '', designation: member.designation || '', monthly_salary: member.monthly_salary != null ? String(member.monthly_salary) : '', salary_currency: member.salary_currency || 'INR', joining_date: member.joining_date || '' });
     setPanelOpen(true);
   };
 
