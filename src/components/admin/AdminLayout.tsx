@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, Video, Palette, PenTool, Camera,
   UserCircle, Bell, Settings, ListTodo,
   Calendar, Scissors, Lightbulb, BarChart3, CalendarRange, Share2,
-  MessageCircle, Receipt, Activity,
+  MessageCircle, Receipt, Activity, Wallet,
 } from 'lucide-react';
 
 const navGroups = [
@@ -34,6 +34,7 @@ const navGroups = [
       { to: '/admin/client-ideas', icon: Lightbulb, label: 'Client Ideas' },
       { to: '/admin/invoices', icon: Receipt, label: 'Invoices' },
       { to: '/admin/team', icon: UserCircle, label: 'Team' },
+      { to: '/admin/salaries', icon: Wallet, label: 'Salaries' },
       { to: '/admin/capacity', icon: Activity, label: 'Capacity' },
       { to: '/admin/attendance', icon: Calendar, label: 'Attendance' },
       { to: '/admin/weekly-report', icon: BarChart3, label: 'Weekly Report' },
