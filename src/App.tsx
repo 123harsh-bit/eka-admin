@@ -44,6 +44,7 @@ import AdminSocialPosts from "@/pages/admin/AdminSocialPosts";
 import AdminInvoices from "@/pages/admin/AdminInvoices";
 import AdminCapacity from "@/pages/admin/AdminCapacity";
 import AdminWhatsAppTemplates from "@/pages/admin/AdminWhatsAppTemplates";
+import AdminSalaries from "@/pages/admin/AdminSalaries";
 
 // Role-specific dashboards/sub-pages
 import EditorDashboard from "@/pages/editor/EditorDashboard";
