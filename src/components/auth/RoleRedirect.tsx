@@ -20,6 +20,7 @@ export function RoleRedirect() {
 
   const roleRoutes: Record<string, string> = {
     admin: '/admin',
+    coo: '/admin',
     editor: '/editor',
     designer: '/designer',
     writer: '/writer',
