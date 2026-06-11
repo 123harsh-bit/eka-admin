@@ -794,6 +794,47 @@ export type Database = {
         }
         Relationships: []
       }
+      invoice_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          id: string
+          invoice_id: string
+          notes: string | null
+          paid_on: string
+          payment_method: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          invoice_id: string
+          notes?: string | null
+          paid_on?: string
+          payment_method?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          invoice_id?: string
+          notes?: string | null
+          paid_on?: string
+          payment_method?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoices: {
         Row: {
           amount: number
@@ -957,6 +998,62 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      salary_advances: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          deduct_from_month: string | null
+          id: string
+          notes: string | null
+          paid_on: string | null
+          payment_method: string | null
+          reason: string | null
+          requested_on: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          deduct_from_month?: string | null
+          id?: string
+          notes?: string | null
+          paid_on?: string | null
+          payment_method?: string | null
+          reason?: string | null
+          requested_on?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          deduct_from_month?: string | null
+          id?: string
+          notes?: string | null
+          paid_on?: string | null
+          payment_method?: string | null
+          reason?: string | null
+          requested_on?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salary_advances_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       salary_payments: {
         Row: {
