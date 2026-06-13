@@ -316,7 +316,8 @@ export default function AdminInvoices() {
           </Tabs>
         )}
 
-        {view === 'list' && (loading ? <p>Loading…</p> : (
+        {view === 'list' && loading && <p>Loading…</p>}
+        {view === 'list' && !loading && (
           <div className="space-y-2">
             {filtered.map(i => {
               const paid = paidFor(i.id);
