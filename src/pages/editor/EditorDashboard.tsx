@@ -18,6 +18,7 @@ interface AssignedVideo {
   drive_link: string | null; raw_footage_link: string | null;
   internal_notes: string | null; date_planned: string | null;
   date_delivered: string | null; client_name?: string;
+  priority?: number;
 }
 
 const EDITOR_STAGES: VideoStatus[] = ['shooting', 'editing', 'internal_review'];
