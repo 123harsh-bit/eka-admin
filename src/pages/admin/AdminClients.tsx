@@ -153,6 +153,7 @@ export default function AdminClients() {
         monthly_fee: form.monthly_fee ? parseFloat(form.monthly_fee) : null,
         billing_currency: form.billing_currency || 'INR',
         payment_day: form.payment_day ? parseInt(form.payment_day) : 5,
+        deliverables: form.deliverables || {},
       };
 
       if (editingClient) {
