@@ -413,9 +413,44 @@ export default function AdminClients() {
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="monthly_deliverables">Monthly Deliverables</Label>
+                  <Label htmlFor="monthly_deliverables">Total Monthly Deliverables</Label>
                   <Input id="monthly_deliverables" type="number" min="0" value={form.monthly_deliverables} onChange={e => setForm(f => ({ ...f, monthly_deliverables: e.target.value }))} placeholder="8" />
                 </div>
+
+                {/* Deliverables breakdown by type */}
+                <div className="rounded-lg border border-glass-border bg-muted/20 p-3 space-y-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Deliverables breakdown</p>
+                    <p className="text-[11px] text-muted-foreground/80 mt-0.5">How many of each per month? Leave blank if not included.</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {DELIVERABLE_TYPES.map(d => (
+                      <div key={d.key} className="space-y-1">
+                        <Label htmlFor={`del-${d.key}`} className="text-[11px] flex items-center gap-1">
+                          <span>{d.emoji}</span> {d.label}
+                        </Label>
+                        <Input
+                          id={`del-${d.key}`}
+                          type="number"
+                          min="0"
+                          value={form.deliverables[d.key] ?? ''}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setForm(f => {
+                              const next = { ...f.deliverables };
+                              if (val === '') delete next[d.key];
+                              else next[d.key] = parseInt(val) || 0;
+                              return { ...f, deliverables: next };
+                            });
+                          }}
+                          placeholder="0"
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
 
                 {/* Billing */}
                 <div className="rounded-lg border border-glass-border bg-muted/20 p-3 space-y-3">
