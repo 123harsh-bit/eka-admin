@@ -385,6 +385,7 @@ export default function AdminInvoices() {
         ))}
       </div>
 
+
       <Dialog open={!!payOpen} onOpenChange={o => !o && setPayOpen(null)}>
         <DialogContent>
           <DialogHeader>
