@@ -45,6 +45,7 @@ const emptyForm = {
   status: 'idea', drive_link: '', live_url: '', raw_footage_link: '',
   internal_notes: '', is_internal_note_visible_to_client: false,
   date_planned: '', date_delivered: '',
+  priority: '100',
 };
 
 function statusIndex(status: string): number {
@@ -91,7 +92,7 @@ export default function AdminVideos() {
   const fetchVideos = async () => {
     const { data } = await supabase
       .from('videos')
-      .select('id, title, description, status, client_id, assigned_editor, assigned_camera_operator, shoot_date, shoot_start_time, shoot_location, shoot_notes, drive_link, live_url, raw_footage_link, internal_notes, is_internal_note_visible_to_client, date_planned, date_delivered, created_at, clients(name)')
+      .select('id, title, description, status, client_id, assigned_editor, assigned_camera_operator, shoot_date, shoot_start_time, shoot_location, shoot_notes, drive_link, live_url, raw_footage_link, internal_notes, is_internal_note_visible_to_client, date_planned, date_delivered, created_at, priority, clients(name)')
       .order('created_at', { ascending: false });
     if (!data) return;
 
@@ -205,6 +206,7 @@ export default function AdminVideos() {
       internal_notes: video.internal_notes || '',
       is_internal_note_visible_to_client: video.is_internal_note_visible_to_client,
       date_planned: video.date_planned || '', date_delivered: video.date_delivered || '',
+      priority: String((video as any).priority ?? 100),
     });
     setPanelOpen(true);
     setDetailVideo(null);
@@ -254,6 +256,7 @@ export default function AdminVideos() {
         is_internal_note_visible_to_client: form.is_internal_note_visible_to_client,
         date_planned: form.date_planned || null,
         date_delivered: form.date_delivered || null,
+        priority: form.priority ? parseInt(form.priority) : 100,
       };
       // Only include gated assignments if status allows (or editing-only client)
       if (isEditingOnly || si >= statusIndex('footage_delivered')) {
@@ -896,6 +899,22 @@ export default function AdminVideos() {
                   <Input type="date" value={form.date_delivered} onChange={e => setForm(f => ({ ...f, date_delivered: e.target.value }))} />
                 </div>
               </div>
+
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-1.5">
+                  🎯 Priority
+                  <span className="text-[10px] font-normal text-muted-foreground">(lower = higher priority; team sorts by this)</span>
+                </Label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="999"
+                  value={form.priority}
+                  onChange={e => setForm(f => ({ ...f, priority: e.target.value }))}
+                  placeholder="1 = top, 2 = next, …"
+                />
+              </div>
+
 
               {/* Writer assignment — visible at idea+ (NOT for editing-only) */}
               {!isEditingOnly && (

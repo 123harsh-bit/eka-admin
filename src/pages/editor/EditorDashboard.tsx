@@ -18,6 +18,7 @@ interface AssignedVideo {
   drive_link: string | null; raw_footage_link: string | null;
   internal_notes: string | null; date_planned: string | null;
   date_delivered: string | null; client_name?: string;
+  priority?: number;
 }
 
 const EDITOR_STAGES: VideoStatus[] = ['shooting', 'editing', 'internal_review'];
@@ -27,6 +28,8 @@ export default function EditorDashboard() {
   const [videos, setVideos] = useState<AssignedVideo[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedVideo, setSelectedVideo] = useState<AssignedVideo | null>(null);
+  const [clientFilter, setClientFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'priority' | 'client' | 'date'>('priority');
   const [driveLink, setDriveLink] = useState('');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
@@ -46,9 +49,10 @@ export default function EditorDashboard() {
     setLoading(true);
     const { data } = await supabase
       .from('videos')
-      .select('id, title, status, client_id, drive_link, raw_footage_link, internal_notes, date_planned, date_delivered, clients(name)')
+      .select('id, title, status, client_id, drive_link, raw_footage_link, internal_notes, date_planned, date_delivered, priority, clients(name)')
       .eq('assigned_editor', user.id)
       .not('status', 'in', '(approved,ready_to_upload,live)')
+      .order('priority', { ascending: true })
       .order('date_planned', { ascending: true, nullsFirst: false });
     if (data) {
       setVideos((data as unknown[]).map((v: unknown) => {
@@ -91,11 +95,23 @@ export default function EditorDashboard() {
 
   const today = new Date().toISOString().split('T')[0];
   const weekFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-  const groups = [
-    { label: 'Due Today', emoji: '🔴', items: videos.filter(v => v.date_planned === today) },
-    { label: 'Due This Week', emoji: '📅', items: videos.filter(v => v.date_planned && v.date_planned > today && v.date_planned <= weekFromNow) },
-    { label: 'Upcoming', emoji: '📋', items: videos.filter(v => !v.date_planned || v.date_planned > weekFromNow) },
-  ];
+
+  const uniqueClients = Array.from(new Map(videos.map(v => [v.client_id, v.client_name || 'Unknown'])).entries());
+
+  const filteredVideos = videos.filter(v => clientFilter === 'all' || v.client_id === clientFilter);
+  const sortedVideos = [...filteredVideos].sort((a, b) => {
+    if (sortBy === 'client') return (a.client_name || '').localeCompare(b.client_name || '');
+    if (sortBy === 'date') return (a.date_planned || '9999').localeCompare(b.date_planned || '9999');
+    return (a.priority ?? 100) - (b.priority ?? 100);
+  });
+
+  const groups = sortBy === 'priority'
+    ? [
+        { label: 'Due Today', emoji: '🔴', items: sortedVideos.filter(v => v.date_planned === today) },
+        { label: 'Due This Week', emoji: '📅', items: sortedVideos.filter(v => v.date_planned && v.date_planned > today && v.date_planned <= weekFromNow) },
+        { label: 'Upcoming', emoji: '📋', items: sortedVideos.filter(v => !v.date_planned || v.date_planned > weekFromNow) },
+      ]
+    : [{ label: sortBy === 'client' ? 'By Client' : 'By Date', emoji: sortBy === 'client' ? '🏢' : '📅', items: sortedVideos }];
 
   return (
     <EditorLayout>
@@ -103,12 +119,26 @@ export default function EditorDashboard() {
         <div className="space-y-5 max-w-5xl mx-auto">
           <MyPerformance role="editor" />
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
               <h1 className="text-2xl font-bold text-foreground">My Tasks</h1>
-              <p className="text-sm text-muted-foreground">{videos.length} active video{videos.length !== 1 ? 's' : ''} assigned to you</p>
+              <p className="text-sm text-muted-foreground">{filteredVideos.length} active video{filteredVideos.length !== 1 ? 's' : ''}</p>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <select value={clientFilter} onChange={e => setClientFilter(e.target.value)}
+                className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground">
+                <option value="all">All clients</option>
+                {uniqueClients.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+              </select>
+              <select value={sortBy} onChange={e => setSortBy(e.target.value as 'priority' | 'client' | 'date')}
+                className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground">
+                <option value="priority">Sort: Priority</option>
+                <option value="client">Sort: Client name</option>
+                <option value="date">Sort: Due date</option>
+              </select>
             </div>
           </div>
+
 
           <div className="flex flex-col lg:flex-row gap-4">
             {/* List */}
@@ -133,8 +163,13 @@ export default function EditorDashboard() {
                         return (
                           <div key={video.id} onClick={() => openVideo(video)}
                             className={cn('glass-card p-3 cursor-pointer flex items-center gap-3 group transition-all hover:bg-card/80', selectedVideo?.id === video.id && 'ring-1 ring-primary')}>
-                            <div className="h-9 w-9 rounded-lg bg-secondary/15 flex items-center justify-center text-xs font-bold text-secondary flex-shrink-0">
+                            <div className="h-9 w-9 rounded-lg bg-secondary/15 flex items-center justify-center text-xs font-bold text-secondary flex-shrink-0 relative">
                               {video.client_name?.charAt(0)}
+                              {video.priority != null && video.priority < 100 && (
+                                <span className="absolute -top-1.5 -right-1.5 h-4 min-w-4 px-1 rounded-full bg-primary text-primary-foreground text-[9px] font-bold flex items-center justify-center" title={`Priority ${video.priority}`}>
+                                  {video.priority}
+                                </span>
+                              )}
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-foreground truncate">{video.title}</p>

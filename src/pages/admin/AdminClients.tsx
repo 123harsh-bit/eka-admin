@@ -32,16 +32,27 @@ interface Client {
   monthly_fee?: number | null;
   billing_currency?: string | null;
   payment_day?: number | null;
+  deliverables?: Record<string, number> | null;
 }
 
 const INDUSTRIES = ['Technology', 'E-commerce', 'Health & Fitness', 'Real Estate', 'Education', 'Food & Beverage', 'Fashion', 'Finance', 'Travel', 'Entertainment', 'Other'];
 const CURRENCIES = ['INR', 'USD', 'EUR', 'GBP', 'AED', 'AUD', 'CAD', 'SGD'];
+
+// Deliverable categories shown on each client (monthly quantity).
+const DELIVERABLE_TYPES: { key: string; label: string; emoji: string }[] = [
+  { key: 'reels', label: 'Reels', emoji: '🎬' },
+  { key: 'long_videos', label: 'Long-form videos', emoji: '📹' },
+  { key: 'thumbnails', label: 'Thumbnails', emoji: '🖼️' },
+  { key: 'posters', label: 'Posters', emoji: '🪧' },
+  { key: 'carousels', label: 'Carousels', emoji: '🎴' },
+];
 
 const emptyForm = {
   name: '', email: '', phone: '', industry: '', contact_person: '',
   project_title: '', notes: '', monthly_deliverables: '', contract_start: '', contract_end: '',
   service_type: 'full_production',
   monthly_fee: '', billing_currency: 'INR', payment_day: '5',
+  deliverables: {} as Record<string, number>,
 };
 
 export default function AdminClients() {
@@ -93,6 +104,7 @@ export default function AdminClients() {
       monthly_fee: client.monthly_fee != null ? String(client.monthly_fee) : '',
       billing_currency: client.billing_currency || 'INR',
       payment_day: client.payment_day != null ? String(client.payment_day) : '5',
+      deliverables: (client.deliverables as Record<string, number>) || {},
     });
     setLogoPreview(client.logo_url);
     setLogoFile(null);
@@ -141,6 +153,7 @@ export default function AdminClients() {
         monthly_fee: form.monthly_fee ? parseFloat(form.monthly_fee) : null,
         billing_currency: form.billing_currency || 'INR',
         payment_day: form.payment_day ? parseInt(form.payment_day) : 5,
+        deliverables: form.deliverables || {},
       };
 
       if (editingClient) {
@@ -266,6 +279,15 @@ export default function AdminClients() {
                   )}
                   {client.monthly_deliverables != null && (
                     <p><span className="font-medium text-foreground">{client.monthly_deliverables}</span> deliverables/month</p>
+                  )}
+                  {client.deliverables && Object.keys(client.deliverables).length > 0 && (
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      {DELIVERABLE_TYPES.filter(d => client.deliverables?.[d.key]).map(d => (
+                        <span key={d.key} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                          {d.emoji} {client.deliverables![d.key]} {d.label}
+                        </span>
+                      ))}
+                    </div>
                   )}
                   {client.monthly_fee != null && (
                     <p className="text-success font-medium">
@@ -400,9 +422,44 @@ export default function AdminClients() {
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="monthly_deliverables">Monthly Deliverables</Label>
+                  <Label htmlFor="monthly_deliverables">Total Monthly Deliverables</Label>
                   <Input id="monthly_deliverables" type="number" min="0" value={form.monthly_deliverables} onChange={e => setForm(f => ({ ...f, monthly_deliverables: e.target.value }))} placeholder="8" />
                 </div>
+
+                {/* Deliverables breakdown by type */}
+                <div className="rounded-lg border border-glass-border bg-muted/20 p-3 space-y-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Deliverables breakdown</p>
+                    <p className="text-[11px] text-muted-foreground/80 mt-0.5">How many of each per month? Leave blank if not included.</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {DELIVERABLE_TYPES.map(d => (
+                      <div key={d.key} className="space-y-1">
+                        <Label htmlFor={`del-${d.key}`} className="text-[11px] flex items-center gap-1">
+                          <span>{d.emoji}</span> {d.label}
+                        </Label>
+                        <Input
+                          id={`del-${d.key}`}
+                          type="number"
+                          min="0"
+                          value={form.deliverables[d.key] ?? ''}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setForm(f => {
+                              const next = { ...f.deliverables };
+                              if (val === '') delete next[d.key];
+                              else next[d.key] = parseInt(val) || 0;
+                              return { ...f, deliverables: next };
+                            });
+                          }}
+                          placeholder="0"
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
 
                 {/* Billing */}
                 <div className="rounded-lg border border-glass-border bg-muted/20 p-3 space-y-3">

@@ -2,21 +2,21 @@
 
 ## Core
 Admin: admin@eka.agency / Eka@Admin2024. Admin key for permanent deletions (no soft-delete): 123@xcodeH.
-Roles: admin (Managing Director), coo (Chief Operating Officer — full admin-equivalent access via ProtectedRoute), editor, designer, writer, camera_operator, social_executive, client. COO routes to /admin.
-Client contact + billing info (email, phone, contact_person, monthly_fee, billing_currency, payment_day) is admin/COO-only. Team members (editor/designer/writer/camera/social) cannot see Clients pages — nav links + routes removed. AdminClients uses RPC `admin_list_clients` for full client data; column GRANTs restrict sensitive cols from non-admin team.
-Clients have monthly_fee, billing_currency, payment_day (default 5). Editable in AdminClients form.
-Team profiles have monthly_salary, salary_currency, designation, joining_date. Salary payouts tracked in `salary_payments` (period_month, amount, status pending/paid/skipped, paid_on). Default pay day = 5th. Admin page: /admin/salaries.
 Client portal is LIVE at /client. Admin generates client logins via ClientPortalAccess (edge fn create-admin-user, action create/reset_password/revoke_client_access). Role 'client' links to clients.user_id.
 Dark theme (bg 220 20% 4%), glassmorphism, Syne/Inter typography. 24px spacing, skeleton loaders, role-colored accents.
 Mobile responsive: Sidebar desktop, bottom tab bar mobile. Mobile uses cards, 44px tap targets, safe-area-inset.
 team_messages table DROPPED. Real-time team messaging is permanently disabled.
 Writing tasks track duration in sec/min; NEVER use word count. "blog" is explicitly excluded from task types.
 Strict workflow gates: Fields for assigning Writers, Camera, Editors are hidden/blocked until specific pipeline stages are reached.
-Social Executive route prefix: /social. Social posts table: scheduled_posts. Phase B.1 LIVE = PublishHelper modal. B.2 pending native OAuth approval. Storage bucket: social-media (private).
+Roles: admin, coo, editor, designer, writer, camera_operator, social_executive, client. COO = full admin-equivalent access. Social Executive route prefix: /social.
+Social posts table: scheduled_posts. Phase B.1 LIVE = PublishHelper modal. B.2 pending native OAuth approval. Storage bucket: social-media (private).
 Pipeline workflow logic lives in `src/lib/pipeline/`. Status constants in `src/lib/statusConfig.ts`.
 TeamLayout is the single layout (supports navItems OR navGroups + showAttendance). Per-role Attendance/DailyTasks pages do NOT exist.
 AI calls use Lovable AI Gateway `google/gemini-2.5-flash` via edge functions (generate-brief, social-ai-tools). Never call from client.
-Editor "done" statuses: approved, ready_to_upload, live. Camera done once footage_delivered. Writer done at approved/delivered.
+Editor "approved" = job done. Filter excludes (approved, ready_to_upload, live) from editor active task list.
+Clients table: sensitive cols (email, phone, contact_person, contract dates, notes, monthly_fee, billing_currency, payment_day) only readable by admin/COO via admin_list_clients/admin_get_client RPCs. Non-admin team has column-level SELECT on safe cols only. Client role uses client_get_own_data() RPC to read own full row.
+videos.priority (int, default 100, lower = higher). Team dashboards sort by priority ASC then date.
+clients.deliverables JSONB stores {reels, long_videos, thumbnails, posters, carousels} monthly quantities.
 
 ## Memories
 - [Video pipeline](mem://logic/video-pipeline) — 15-stage sequential workflow and parallel thumbnail logic

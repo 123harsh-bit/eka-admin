@@ -332,6 +332,7 @@ export type Database = {
           contract_end: string | null
           contract_start: string | null
           created_at: string
+          deliverables: Json
           email: string | null
           id: string
           industry: string | null
@@ -356,6 +357,7 @@ export type Database = {
           contract_end?: string | null
           contract_start?: string | null
           created_at?: string
+          deliverables?: Json
           email?: string | null
           id?: string
           industry?: string | null
@@ -380,6 +382,7 @@ export type Database = {
           contract_end?: string | null
           contract_start?: string | null
           created_at?: string
+          deliverables?: Json
           email?: string | null
           id?: string
           industry?: string | null
@@ -1285,6 +1288,7 @@ export type Database = {
           internal_notes: string | null
           is_internal_note_visible_to_client: boolean
           live_url: string | null
+          priority: number
           raw_footage_link: string | null
           shoot_checklist: Json | null
           shoot_date: string | null
@@ -1311,6 +1315,7 @@ export type Database = {
           internal_notes?: string | null
           is_internal_note_visible_to_client?: boolean
           live_url?: string | null
+          priority?: number
           raw_footage_link?: string | null
           shoot_checklist?: Json | null
           shoot_date?: string | null
@@ -1337,6 +1342,7 @@ export type Database = {
           internal_notes?: string | null
           is_internal_note_visible_to_client?: boolean
           live_url?: string | null
+          priority?: number
           raw_footage_link?: string | null
           shoot_checklist?: Json | null
           shoot_date?: string | null
@@ -1507,6 +1513,7 @@ export type Database = {
           contract_end: string | null
           contract_start: string | null
           created_at: string
+          deliverables: Json
           email: string | null
           id: string
           industry: string | null
@@ -1540,6 +1547,7 @@ export type Database = {
           contract_end: string | null
           contract_start: string | null
           created_at: string
+          deliverables: Json
           email: string | null
           id: string
           industry: string | null
@@ -1561,6 +1569,40 @@ export type Database = {
           to: "clients"
           isOneToOne: false
           isSetofReturn: true
+        }
+      }
+      client_get_own_data: {
+        Args: never
+        Returns: {
+          billing_currency: string | null
+          brand_colors: Json | null
+          brand_fonts: Json | null
+          contact_person: string | null
+          contract_end: string | null
+          contract_start: string | null
+          created_at: string
+          deliverables: Json
+          email: string | null
+          id: string
+          industry: string | null
+          is_active: boolean
+          logo_url: string | null
+          monthly_deliverables: number | null
+          monthly_fee: number | null
+          name: string
+          notes: string | null
+          payment_day: number | null
+          phone: string | null
+          project_title: string | null
+          service_type: string
+          updated_at: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "clients"
+          isOneToOne: true
+          isSetofReturn: false
         }
       }
       get_client_id_for_user: { Args: { _user_id: string }; Returns: string }
