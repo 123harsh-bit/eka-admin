@@ -28,6 +28,8 @@ export default function EditorDashboard() {
   const [videos, setVideos] = useState<AssignedVideo[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedVideo, setSelectedVideo] = useState<AssignedVideo | null>(null);
+  const [clientFilter, setClientFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'priority' | 'client' | 'date'>('priority');
   const [driveLink, setDriveLink] = useState('');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
