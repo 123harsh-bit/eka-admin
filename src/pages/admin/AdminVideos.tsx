@@ -900,6 +900,22 @@ export default function AdminVideos() {
                 </div>
               </div>
 
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-1.5">
+                  🎯 Priority
+                  <span className="text-[10px] font-normal text-muted-foreground">(lower = higher priority; team sorts by this)</span>
+                </Label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="999"
+                  value={form.priority}
+                  onChange={e => setForm(f => ({ ...f, priority: e.target.value }))}
+                  placeholder="1 = top, 2 = next, …"
+                />
+              </div>
+
+
               {/* Writer assignment — visible at idea+ (NOT for editing-only) */}
               {!isEditingOnly && (
                 <>
