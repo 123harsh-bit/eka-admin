@@ -49,9 +49,10 @@ export default function EditorDashboard() {
     setLoading(true);
     const { data } = await supabase
       .from('videos')
-      .select('id, title, status, client_id, drive_link, raw_footage_link, internal_notes, date_planned, date_delivered, clients(name)')
+      .select('id, title, status, client_id, drive_link, raw_footage_link, internal_notes, date_planned, date_delivered, priority, clients(name)')
       .eq('assigned_editor', user.id)
       .not('status', 'in', '(approved,ready_to_upload,live)')
+      .order('priority', { ascending: true })
       .order('date_planned', { ascending: true, nullsFirst: false });
     if (data) {
       setVideos((data as unknown[]).map((v: unknown) => {
