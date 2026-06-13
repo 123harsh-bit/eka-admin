@@ -50,6 +50,7 @@ export default function AdminInvoices() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [filter, setFilter] = useState<string>('all');
+  const [view, setView] = useState<'by_client' | 'list'>('by_client');
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [payOpen, setPayOpen] = useState<Invoice | null>(null);
