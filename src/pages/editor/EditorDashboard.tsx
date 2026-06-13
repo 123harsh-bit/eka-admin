@@ -163,8 +163,13 @@ export default function EditorDashboard() {
                         return (
                           <div key={video.id} onClick={() => openVideo(video)}
                             className={cn('glass-card p-3 cursor-pointer flex items-center gap-3 group transition-all hover:bg-card/80', selectedVideo?.id === video.id && 'ring-1 ring-primary')}>
-                            <div className="h-9 w-9 rounded-lg bg-secondary/15 flex items-center justify-center text-xs font-bold text-secondary flex-shrink-0">
+                            <div className="h-9 w-9 rounded-lg bg-secondary/15 flex items-center justify-center text-xs font-bold text-secondary flex-shrink-0 relative">
                               {video.client_name?.charAt(0)}
+                              {video.priority != null && video.priority < 100 && (
+                                <span className="absolute -top-1.5 -right-1.5 h-4 min-w-4 px-1 rounded-full bg-primary text-primary-foreground text-[9px] font-bold flex items-center justify-center" title={`Priority ${video.priority}`}>
+                                  {video.priority}
+                                </span>
+                              )}
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-foreground truncate">{video.title}</p>
