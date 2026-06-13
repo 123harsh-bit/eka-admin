@@ -104,6 +104,7 @@ export default function AdminClients() {
       monthly_fee: client.monthly_fee != null ? String(client.monthly_fee) : '',
       billing_currency: client.billing_currency || 'INR',
       payment_day: client.payment_day != null ? String(client.payment_day) : '5',
+      deliverables: (client.deliverables as Record<string, number>) || {},
     });
     setLogoPreview(client.logo_url);
     setLogoFile(null);
