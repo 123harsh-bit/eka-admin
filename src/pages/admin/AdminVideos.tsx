@@ -45,6 +45,7 @@ const emptyForm = {
   status: 'idea', drive_link: '', live_url: '', raw_footage_link: '',
   internal_notes: '', is_internal_note_visible_to_client: false,
   date_planned: '', date_delivered: '',
+  priority: '100',
 };
 
 function statusIndex(status: string): number {
