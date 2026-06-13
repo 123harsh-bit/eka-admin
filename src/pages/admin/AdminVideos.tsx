@@ -92,7 +92,7 @@ export default function AdminVideos() {
   const fetchVideos = async () => {
     const { data } = await supabase
       .from('videos')
-      .select('id, title, description, status, client_id, assigned_editor, assigned_camera_operator, shoot_date, shoot_start_time, shoot_location, shoot_notes, drive_link, live_url, raw_footage_link, internal_notes, is_internal_note_visible_to_client, date_planned, date_delivered, created_at, clients(name)')
+      .select('id, title, description, status, client_id, assigned_editor, assigned_camera_operator, shoot_date, shoot_start_time, shoot_location, shoot_notes, drive_link, live_url, raw_footage_link, internal_notes, is_internal_note_visible_to_client, date_planned, date_delivered, created_at, priority, clients(name)')
       .order('created_at', { ascending: false });
     if (!data) return;
 
