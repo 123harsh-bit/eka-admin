@@ -256,6 +256,7 @@ export default function AdminVideos() {
         is_internal_note_visible_to_client: form.is_internal_note_visible_to_client,
         date_planned: form.date_planned || null,
         date_delivered: form.date_delivered || null,
+        priority: form.priority ? parseInt(form.priority) : 100,
       };
       // Only include gated assignments if status allows (or editing-only client)
       if (isEditingOnly || si >= statusIndex('footage_delivered')) {
