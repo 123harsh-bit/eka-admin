@@ -32,16 +32,27 @@ interface Client {
   monthly_fee?: number | null;
   billing_currency?: string | null;
   payment_day?: number | null;
+  deliverables?: Record<string, number> | null;
 }
 
 const INDUSTRIES = ['Technology', 'E-commerce', 'Health & Fitness', 'Real Estate', 'Education', 'Food & Beverage', 'Fashion', 'Finance', 'Travel', 'Entertainment', 'Other'];
 const CURRENCIES = ['INR', 'USD', 'EUR', 'GBP', 'AED', 'AUD', 'CAD', 'SGD'];
+
+// Deliverable categories shown on each client (monthly quantity).
+const DELIVERABLE_TYPES: { key: string; label: string; emoji: string }[] = [
+  { key: 'reels', label: 'Reels', emoji: '🎬' },
+  { key: 'long_videos', label: 'Long-form videos', emoji: '📹' },
+  { key: 'thumbnails', label: 'Thumbnails', emoji: '🖼️' },
+  { key: 'posters', label: 'Posters', emoji: '🪧' },
+  { key: 'carousels', label: 'Carousels', emoji: '🎴' },
+];
 
 const emptyForm = {
   name: '', email: '', phone: '', industry: '', contact_person: '',
   project_title: '', notes: '', monthly_deliverables: '', contract_start: '', contract_end: '',
   service_type: 'full_production',
   monthly_fee: '', billing_currency: 'INR', payment_day: '5',
+  deliverables: {} as Record<string, number>,
 };
 
 export default function AdminClients() {
