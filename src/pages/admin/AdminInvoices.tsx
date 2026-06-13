@@ -241,18 +241,82 @@ export default function AdminInvoices() {
           </Card>
         </div>
 
-        <Tabs value={filter} onValueChange={setFilter}>
+        <Tabs value={view} onValueChange={v => setView(v as 'by_client' | 'list')}>
           <TabsList>
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="draft">Draft</TabsTrigger>
-            <TabsTrigger value="sent">Sent</TabsTrigger>
-            <TabsTrigger value="partially_paid">Partial</TabsTrigger>
-            <TabsTrigger value="overdue">Overdue</TabsTrigger>
-            <TabsTrigger value="paid">Paid</TabsTrigger>
+            <TabsTrigger value="by_client">By client</TabsTrigger>
+            <TabsTrigger value="list">All invoices</TabsTrigger>
           </TabsList>
         </Tabs>
 
-        {loading ? <p>Loading…</p> : (
+        {view === 'by_client' && !loading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {clients.map(c => {
+              const clientInvs = invoices.filter(i => i.client_id === c.id && i.status !== 'cancelled');
+              if (clientInvs.length === 0) return null;
+              const totalBilled = clientInvs.reduce((s, i) => s + Number(i.amount), 0);
+              const totalPaid = clientInvs.reduce((s, i) => s + paidFor(i.id), 0);
+              const remaining = totalBilled - totalPaid;
+              const oldestUnpaid = clientInvs
+                .filter(i => Number(i.amount) - paidFor(i.id) > 0)
+                .sort((a, b) => (a.due_date || '9999').localeCompare(b.due_date || '9999'))[0];
+              return (
+                <Card key={c.id} className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold text-lg">{c.name}</h3>
+                      <p className="text-xs text-muted-foreground">{clientInvs.length} invoice{clientInvs.length !== 1 ? 's' : ''}</p>
+                    </div>
+                    {remaining > 0 ? (
+                      <Badge className="bg-warning/20 text-warning">{clientInvs[0].currency} {remaining.toLocaleString()} due</Badge>
+                    ) : (
+                      <Badge className="bg-success/20 text-success">All clear</Badge>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                    <div className="rounded bg-muted/30 p-2">
+                      <p className="text-muted-foreground">Billed</p>
+                      <p className="font-semibold text-sm">{totalBilled.toLocaleString()}</p>
+                    </div>
+                    <div className="rounded bg-success/10 p-2">
+                      <p className="text-success/80">Paid</p>
+                      <p className="font-semibold text-sm text-success">{totalPaid.toLocaleString()}</p>
+                    </div>
+                    <div className="rounded bg-warning/10 p-2">
+                      <p className="text-warning/80">Remaining</p>
+                      <p className="font-semibold text-sm text-warning">{remaining.toLocaleString()}</p>
+                    </div>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div className="h-full bg-success transition-all" style={{ width: `${totalBilled > 0 ? (totalPaid / totalBilled) * 100 : 0}%` }} />
+                  </div>
+                  {oldestUnpaid && (
+                    <Button size="sm" variant="outline" className="w-full gap-1.5" onClick={() => openPayDialog(oldestUnpaid)}>
+                      <Wallet size={14} /> Record payment ({oldestUnpaid.invoice_number})
+                    </Button>
+                  )}
+                </Card>
+              );
+            })}
+            {clients.every(c => invoices.filter(i => i.client_id === c.id && i.status !== 'cancelled').length === 0) && (
+              <p className="text-muted-foreground col-span-2 text-center py-12">No invoices yet. Create one to get started.</p>
+            )}
+          </div>
+        )}
+
+        {view === 'list' && (
+          <Tabs value={filter} onValueChange={setFilter}>
+            <TabsList>
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="draft">Draft</TabsTrigger>
+              <TabsTrigger value="sent">Sent</TabsTrigger>
+              <TabsTrigger value="partially_paid">Partial</TabsTrigger>
+              <TabsTrigger value="overdue">Overdue</TabsTrigger>
+              <TabsTrigger value="paid">Paid</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
+
+        {view === 'list' && (loading ? <p>Loading…</p> : (
           <div className="space-y-2">
             {filtered.map(i => {
               const paid = paidFor(i.id);
