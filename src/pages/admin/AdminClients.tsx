@@ -280,6 +280,15 @@ export default function AdminClients() {
                   {client.monthly_deliverables != null && (
                     <p><span className="font-medium text-foreground">{client.monthly_deliverables}</span> deliverables/month</p>
                   )}
+                  {client.deliverables && Object.keys(client.deliverables).length > 0 && (
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      {DELIVERABLE_TYPES.filter(d => client.deliverables?.[d.key]).map(d => (
+                        <span key={d.key} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                          {d.emoji} {client.deliverables![d.key]} {d.label}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   {client.monthly_fee != null && (
                     <p className="text-success font-medium">
                       {new Intl.NumberFormat('en-IN', { style: 'currency', currency: client.billing_currency || 'INR', maximumFractionDigits: 0 }).format(Number(client.monthly_fee))}
