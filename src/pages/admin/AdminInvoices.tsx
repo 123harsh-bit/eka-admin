@@ -381,7 +381,7 @@ export default function AdminInvoices() {
             })}
             {filtered.length === 0 && <p className="text-muted-foreground text-center py-12">No invoices in this view.</p>}
           </div>
-        )}
+        ))}
       </div>
 
       <Dialog open={!!payOpen} onOpenChange={o => !o && setPayOpen(null)}>
