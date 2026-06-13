@@ -206,6 +206,7 @@ export default function AdminVideos() {
       internal_notes: video.internal_notes || '',
       is_internal_note_visible_to_client: video.is_internal_note_visible_to_client,
       date_planned: video.date_planned || '', date_delivered: video.date_delivered || '',
+      priority: String((video as any).priority ?? 100),
     });
     setPanelOpen(true);
     setDetailVideo(null);
