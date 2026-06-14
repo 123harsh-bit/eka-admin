@@ -4,12 +4,15 @@ import { useAuth } from '@/hooks/useAuth';
 import { CheckCircle, Clock, FileText, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+interface CompletedItem { id: string; title: string; clientName: string; doneOn: string | null; }
+
 interface PerformanceData {
   completed: number;
   inProgress: number;
   notStarted: number;
   total: number;
   breakdown: { clientName: string; assigned: number; completed: number; inProgress: number }[];
+  completedItems: CompletedItem[];
 }
 
 interface MyPerformanceProps {
@@ -33,19 +36,19 @@ export function MyPerformance({ role }: MyPerformanceProps) {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-    let tasks: { status: string; client_id: string; updated_at: string }[] = [];
+    let tasks: { id: string; title: string; status: string; client_id: string; updated_at: string }[] = [];
 
     if (role === 'editor') {
-      const { data: d } = await supabase.from('videos').select('status, client_id, updated_at').eq('assigned_editor', user.id);
+      const { data: d } = await supabase.from('videos').select('id, title, status, client_id, updated_at').eq('assigned_editor', user.id);
       tasks = d || [];
     } else if (role === 'designer') {
-      const { data: d } = await supabase.from('design_tasks').select('status, client_id, updated_at').eq('assigned_designer', user.id);
+      const { data: d } = await supabase.from('design_tasks').select('id, title, status, client_id, updated_at').eq('assigned_designer', user.id);
       tasks = d || [];
     } else if (role === 'writer') {
-      const { data: d } = await supabase.from('writing_tasks').select('status, client_id, updated_at').eq('assigned_writer', user.id);
+      const { data: d } = await supabase.from('writing_tasks').select('id, title, status, client_id, updated_at').eq('assigned_writer', user.id);
       tasks = d || [];
     } else if (role === 'camera_operator') {
-      const { data: d } = await supabase.from('videos').select('status, client_id, updated_at').eq('assigned_camera_operator', user.id);
+      const { data: d } = await supabase.from('videos').select('id, title, status, client_id, updated_at').eq('assigned_camera_operator', user.id);
       tasks = d || [];
     }
 
@@ -89,7 +92,17 @@ export function MyPerformance({ role }: MyPerformanceProps) {
       };
     });
 
-    setData({ completed, inProgress, notStarted, total: tasks.length, breakdown });
+    const completedItems: CompletedItem[] = tasks
+      .filter(t => completedStatuses.includes(t.status) && t.updated_at >= startOfMonth)
+      .sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''))
+      .map(t => ({
+        id: t.id,
+        title: t.title,
+        clientName: clientNameMap[t.client_id] || 'Unknown',
+        doneOn: t.updated_at,
+      }));
+
+    setData({ completed, inProgress, notStarted, total: tasks.length, breakdown, completedItems });
     setLoading(false);
   };
 
@@ -148,20 +161,49 @@ export function MyPerformance({ role }: MyPerformanceProps) {
       </div>
 
       {/* Expanded breakdown */}
-      {expanded && data.breakdown.length > 0 && (
-        <div className="pt-2 border-t border-border">
-          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">By Client</p>
-          <div className="space-y-1.5">
-            {data.breakdown.map(b => (
-              <div key={b.clientName} className="flex items-center justify-between text-xs p-2 bg-muted/20 rounded-lg">
-                <span className="text-foreground font-medium">{b.clientName}</span>
-                <div className="flex items-center gap-3 text-[10px]">
-                  <span className="text-muted-foreground">{b.assigned} total</span>
-                  <span className="text-success">{b.completed} done</span>
-                  <span className="text-primary">{b.inProgress} active</span>
-                </div>
+      {expanded && (
+        <div className="pt-2 border-t border-border space-y-3">
+          {data.breakdown.length > 0 && (
+            <div>
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">By Client</p>
+              <div className="space-y-1.5">
+                {data.breakdown.map(b => (
+                  <div key={b.clientName} className="flex items-center justify-between text-xs p-2 bg-muted/20 rounded-lg">
+                    <span className="text-foreground font-medium">{b.clientName}</span>
+                    <div className="flex items-center gap-3 text-[10px]">
+                      <span className="text-muted-foreground">{b.assigned} total</span>
+                      <span className="text-success">{b.completed} done</span>
+                      <span className="text-primary">{b.inProgress} active</span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+          )}
+
+          <div>
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+              Completed this {monthName} ({data.completedItems.length})
+            </p>
+            {data.completedItems.length === 0 ? (
+              <p className="text-xs text-muted-foreground/60 italic">Nothing completed yet this month.</p>
+            ) : (
+              <div className="space-y-1 max-h-60 overflow-y-auto pr-1">
+                {data.completedItems.map(it => (
+                  <div key={it.id} className="flex items-center justify-between text-xs p-2 bg-success/5 border border-success/15 rounded-lg">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-foreground font-medium truncate">{it.title}</p>
+                      <p className="text-[10px] text-muted-foreground">{it.clientName}</p>
+                    </div>
+                    {it.doneOn && (
+                      <span className="text-[10px] text-success ml-2 flex-shrink-0">
+                        {new Date(it.doneOn).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

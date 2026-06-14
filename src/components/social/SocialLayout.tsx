@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { TeamLayout } from '@/components/shared/TeamLayout';
-import { LayoutDashboard, CalendarRange, BarChart3, ListTodo, Calendar, Plus, Library, Upload } from 'lucide-react';
+import { LayoutDashboard, CalendarRange, BarChart3, Calendar, Plus, Library, Upload } from 'lucide-react';
 
 const navItems = [
   { to: '/social', icon: LayoutDashboard, label: 'Dashboard', end: true },
@@ -9,7 +9,6 @@ const navItems = [
   { to: '/social/library', icon: Library, label: 'Library + AI' },
   { to: '/social/analytics', icon: BarChart3, label: 'Analytics' },
   { to: '/social/import', icon: Upload, label: 'Bulk Import' },
-  { to: '/social/daily-tasks', icon: ListTodo, label: 'Daily Tasks' },
   { to: '/social/attendance', icon: Calendar, label: 'Attendance' },
 ];
 
