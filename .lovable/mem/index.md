@@ -11,7 +11,7 @@ Strict workflow gates: Fields for assigning Writers, Camera, Editors are hidden/
 Roles: admin, coo, editor, designer, writer, camera_operator, social_executive, client. COO = full admin-equivalent access. Social Executive route prefix: /social.
 Social posts table: scheduled_posts. Phase B.1 LIVE = PublishHelper modal. B.2 pending native OAuth approval. Storage bucket: social-media (private).
 Pipeline workflow logic lives in `src/lib/pipeline/`. Status constants in `src/lib/statusConfig.ts`.
-TeamLayout is the single layout (supports navItems OR navGroups + showAttendance). Per-role Attendance/DailyTasks pages do NOT exist.
+TeamLayout is the single layout (supports navItems OR navGroups + showAttendance). Per-role Attendance/DailyTasks pages do NOT exist. Daily Tasks nav is ADMIN-ONLY (removed from editor/designer/writer/camera/social per request 2026-06-14). Editor "All Videos" page removed — editors only see their own assigned videos.
 AI calls use Lovable AI Gateway `google/gemini-2.5-flash` via edge functions (generate-brief, social-ai-tools). Never call from client.
 Editor "approved" = job done. Filter excludes (approved, ready_to_upload, live) from editor active task list.
 Clients table: sensitive cols (email, phone, contact_person, contract dates, notes, monthly_fee, billing_currency, payment_day) only readable by admin/COO via admin_list_clients/admin_get_client RPCs. Non-admin team has column-level SELECT on safe cols only. Client role uses client_get_own_data() RPC to read own full row.
