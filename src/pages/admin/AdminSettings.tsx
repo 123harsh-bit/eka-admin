@@ -13,7 +13,7 @@ export default function AdminSettings() {
   const { toast } = useToast();
   const [profileForm, setProfileForm] = useState({ full_name: '', email: '', phone: '' });
   const [passwordForm, setPasswordForm] = useState({ current: '', new_password: '', confirm: '' });
-  const [newAdminForm, setNewAdminForm] = useState({ full_name: '', email: '', password: '', security_key: '' });
+  const [newAdminForm, setNewAdminForm] = useState({ full_name: '', email: '', password: '' });
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
   const [savingAdmin, setSavingAdmin] = useState(false);
@@ -62,10 +62,6 @@ export default function AdminSettings() {
 
   const handleCreateAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newAdminForm.security_key !== '123@xcodeH') {
-      toast({ title: 'Invalid security key', description: 'The security key you entered is incorrect.', variant: 'destructive' });
-      return;
-    }
     if (newAdminForm.password.length < 8) {
       toast({ title: 'Password must be at least 8 characters', variant: 'destructive' });
       return;
@@ -89,7 +85,7 @@ export default function AdminSettings() {
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || 'Failed to create admin');
       toast({ title: 'Admin account created', description: `${newAdminForm.full_name} can now log in as admin.` });
-      setNewAdminForm({ full_name: '', email: '', password: '', security_key: '' });
+      setNewAdminForm({ full_name: '', email: '', password: '' });
     } catch (err: unknown) {
       toast({ title: 'Error', description: err instanceof Error ? err.message : 'Something went wrong', variant: 'destructive' });
     } finally {
@@ -158,15 +154,11 @@ export default function AdminSettings() {
             <Shield size={18} className="text-primary" />
             <h2 className="text-lg font-display font-semibold text-foreground">Create Admin Account</h2>
           </div>
-          <p className="text-sm text-muted-foreground">Add another Managing Director to the system. Requires your security key.</p>
+          <p className="text-sm text-muted-foreground">Add another Managing Director to the system. Only existing admins can create new admin accounts.</p>
           <form onSubmit={handleCreateAdmin} className="space-y-4">
             <div className="space-y-1.5"><Label>Full Name *</Label><Input value={newAdminForm.full_name} onChange={e => setNewAdminForm(f => ({ ...f, full_name: e.target.value }))} placeholder="Jane Smith" required /></div>
             <div className="space-y-1.5"><Label>Email *</Label><Input type="email" value={newAdminForm.email} onChange={e => setNewAdminForm(f => ({ ...f, email: e.target.value }))} placeholder="jane@eka.agency" required /></div>
             <div className="space-y-1.5"><Label>Password *</Label><Input type="password" value={newAdminForm.password} onChange={e => setNewAdminForm(f => ({ ...f, password: e.target.value }))} placeholder="Min. 8 characters" minLength={8} required /></div>
-            <div className="space-y-1.5">
-              <Label>Security Key *</Label>
-              <Input type="password" value={newAdminForm.security_key} onChange={e => setNewAdminForm(f => ({ ...f, security_key: e.target.value }))} placeholder="Enter security key" required />
-            </div>
             <Button type="submit" disabled={savingAdmin} className="gap-2">
               {savingAdmin && <Loader2 size={16} className="animate-spin" />} Create Admin Account
             </Button>

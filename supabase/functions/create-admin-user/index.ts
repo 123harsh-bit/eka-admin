@@ -5,6 +5,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+function unauth() {
+  return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+    status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
@@ -17,23 +23,22 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     );
 
-    // Verify caller is admin
+    // Require valid JWT + admin/coo role for EVERY request — no bypass paths.
     const authHeader = req.headers.get('Authorization');
-    if (authHeader) {
-      const token = authHeader.replace('Bearer ', '');
-      const { data: { user } } = await serviceClient.auth.getUser(token);
-      if (user) {
-        const { data: callerRole } = await serviceClient
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .single();
-        if (callerRole?.role !== 'admin') {
-          return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-            status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-      }
+    if (!authHeader) return unauth();
+    const token = authHeader.replace('Bearer ', '');
+    const { data: userData, error: userErr } = await serviceClient.auth.getUser(token);
+    if (userErr || !userData?.user) return unauth();
+
+    const { data: callerRole } = await serviceClient
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userData.user.id)
+      .single();
+    if (!callerRole || !['admin', 'coo'].includes(callerRole.role)) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // Route by action
@@ -62,11 +67,8 @@ Deno.serve(async (req) => {
           status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      // Delete from user_roles first
       await serviceClient.from('user_roles').delete().eq('user_id', user_id);
-      // Delete from profiles
       await serviceClient.from('profiles').delete().eq('id', user_id);
-      // Delete auth user
       const { error } = await serviceClient.auth.admin.deleteUser(user_id);
       if (error) {
         return new Response(JSON.stringify({ error: error.message }), {
@@ -85,11 +87,9 @@ Deno.serve(async (req) => {
           status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      // Remove user_id from client
       if (client_id) {
         await serviceClient.from('clients').update({ user_id: null }).eq('id', client_id);
       }
-      // Delete role, profile, and auth user
       await serviceClient.from('user_roles').delete().eq('user_id', user_id);
       await serviceClient.from('profiles').delete().eq('id', user_id);
       const { error } = await serviceClient.auth.admin.deleteUser(user_id);
@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Default: create user (original behavior)
+    // Default: create user
     const { email, password, full_name, role, client_id } = body;
 
     if (!email || !password || !full_name || !role) {
@@ -112,14 +112,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    const validRoles = ['admin', 'editor', 'designer', 'writer', 'client', 'camera_operator', 'social_executive'];
+    const validRoles = ['admin', 'coo', 'editor', 'designer', 'writer', 'client', 'camera_operator', 'social_executive'];
     if (!validRoles.includes(role)) {
       return new Response(JSON.stringify({ error: 'Invalid role' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Create user via admin API
     const { data: newUser, error: createError } = await serviceClient.auth.admin.createUser({
       email,
       password,
@@ -135,14 +134,12 @@ Deno.serve(async (req) => {
 
     const userId = newUser.user.id;
 
-    // Upsert profile
     await serviceClient.from('profiles').upsert({
       id: userId,
       full_name,
       email,
     });
 
-    // Assign role
     const { error: roleError } = await serviceClient.from('user_roles').insert({
       user_id: userId,
       role,
@@ -154,7 +151,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // If client role, link to client record
     if (role === 'client' && client_id) {
       await serviceClient.from('clients').update({ user_id: userId }).eq('id', client_id);
     }

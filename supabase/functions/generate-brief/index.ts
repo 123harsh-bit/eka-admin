@@ -1,4 +1,6 @@
 // AI brief generator — uses Lovable AI Gateway (Gemini)
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -10,6 +12,31 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
+    // Require authenticated user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
+    const { data: userData } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+    if (!userData?.user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    // Only internal team (not clients) can generate briefs
+    const { data: roleRow } = await supabase.from('user_roles').select('role').eq('user_id', userData.user.id).single();
+    if (!roleRow || roleRow.role === 'client') {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const { topic, clientName, contentType, durationSeconds, notes } = await req.json();
     if (!topic) {
       return new Response(JSON.stringify({ error: 'topic required' }), {
