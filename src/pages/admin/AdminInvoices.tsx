@@ -184,6 +184,16 @@ export default function AdminInvoices() {
     load();
   };
 
+  const deleteInvoice = async (id: string, invoiceNumber: string) => {
+    if (!confirm(`Delete invoice ${invoiceNumber}? This also removes all recorded payments for it. This cannot be undone.`)) return;
+    // Remove payments first (FK), then the invoice
+    await (supabase as any).from('invoice_payments').delete().eq('invoice_id', id);
+    const { error } = await supabase.from('invoices').delete().eq('id', id);
+    if (error) return toast.error(error.message);
+    toast.success('Invoice deleted');
+    load();
+  };
+
   const clientName = (id: string) => clients.find(c => c.id === id)?.name || '—';
 
   return (
@@ -358,6 +368,9 @@ export default function AdminInvoices() {
                         <SelectItem value="cancelled">Cancelled</SelectItem>
                       </SelectContent>
                     </Select>
+                    <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-1.5" onClick={() => deleteInvoice(i.id, i.invoice_number)}>
+                      <Trash2 size={14} /> Delete
+                    </Button>
                   </div>
                   {paid > 0 && (
                     <div className="space-y-2">
