@@ -1,3 +1,5 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -22,7 +24,48 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
+    // Require authenticated internal team user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
+    const { data: userData } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+    if (!userData?.user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const { data: roleRow } = await supabase.from('user_roles').select('role').eq('user_id', userData.user.id).single();
+    if (!roleRow || roleRow.role === 'client') {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const { mode, ...payload } = await req.json();
+
+    // Validate imageUrl for extract_analytics — only allow our own Supabase storage URLs
+    if (mode === 'extract_analytics' && payload?.imageUrl) {
+      const supaUrl = Deno.env.get('SUPABASE_URL') || '';
+      try {
+        const u = new URL(payload.imageUrl);
+        if (u.protocol !== 'https:' || !payload.imageUrl.startsWith(`${supaUrl}/storage/v1/`)) {
+          return new Response(JSON.stringify({ error: 'imageUrl must be a project storage URL' }), {
+            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+      } catch {
+        return new Response(JSON.stringify({ error: 'Invalid imageUrl' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
 
     if (mode === 'caption') {
       const { topic, platform, tone, clientName, language } = payload;
