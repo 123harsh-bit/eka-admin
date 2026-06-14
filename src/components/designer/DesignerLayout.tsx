@@ -1,10 +1,9 @@
 import { ReactNode } from 'react';
 import { TeamLayout } from '@/components/shared/TeamLayout';
-import { Palette, ListTodo, BookOpen, Calendar } from 'lucide-react';
+import { Palette, BookOpen, Calendar } from 'lucide-react';
 
 const navItems = [
   { to: '/designer', icon: Palette, label: 'My Tasks', end: true },
-  { to: '/designer/daily-tasks', icon: ListTodo, label: 'Daily Tasks' },
   { to: '/designer/brand-kits', icon: BookOpen, label: 'Brand Kits' },
   { to: '/designer/attendance', icon: Calendar, label: 'Attendance' },
 ];

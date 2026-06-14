@@ -1,11 +1,9 @@
 import { ReactNode } from 'react';
 import { TeamLayout } from '@/components/shared/TeamLayout';
-import { Video, ListTodo, Calendar } from 'lucide-react';
+import { Video, Calendar } from 'lucide-react';
 
 const navItems = [
   { to: '/editor', icon: Video, label: 'My Tasks', end: true },
-  { to: '/editor/daily-tasks', icon: ListTodo, label: 'Daily Tasks' },
-  { to: '/editor/videos', icon: Video, label: 'All Videos' },
   { to: '/editor/attendance', icon: Calendar, label: 'Attendance' },
 ];
 

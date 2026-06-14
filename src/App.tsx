@@ -22,7 +22,6 @@ import { SocialLayout } from "@/components/social/SocialLayout";
 
 // Shared pages (rendered inside any role layout)
 import MyAttendancePage from "@/pages/shared/MyAttendancePage";
-import { DailyTasksContent } from "@/pages/shared/DailyTasksPage";
 
 // Admin pages
 import AdminDashboard from "@/pages/admin/AdminDashboard";
@@ -48,7 +47,6 @@ import AdminSalaries from "@/pages/admin/AdminSalaries";
 
 // Role-specific dashboards/sub-pages
 import EditorDashboard from "@/pages/editor/EditorDashboard";
-import EditorAllVideos from "@/pages/editor/EditorAllVideos";
 import DesignerDashboard from "@/pages/designer/DesignerDashboard";
 import DesignerBrandKits from "@/pages/designer/DesignerBrandKits";
 import WriterDashboard from "@/pages/writer/WriterDashboard";
@@ -110,27 +108,21 @@ const App = () => (
 
             {/* Editor */}
             <Route path="/editor" element={<ProtectedRoute allowedRoles={['editor']}><EditorDashboard /></ProtectedRoute>} />
-            <Route path="/editor/daily-tasks" element={<ProtectedRoute allowedRoles={['editor']}><EditorLayout><DailyTasksContent /></EditorLayout></ProtectedRoute>} />
-            <Route path="/editor/videos" element={<ProtectedRoute allowedRoles={['editor']}><EditorAllVideos /></ProtectedRoute>} />
             <Route path="/editor/attendance" element={<ProtectedRoute allowedRoles={['editor']}><EditorLayout><MyAttendancePage /></EditorLayout></ProtectedRoute>} />
 
             {/* Designer */}
             <Route path="/designer" element={<ProtectedRoute allowedRoles={['designer']}><DesignerDashboard /></ProtectedRoute>} />
-            <Route path="/designer/daily-tasks" element={<ProtectedRoute allowedRoles={['designer']}><DesignerLayout><DailyTasksContent /></DesignerLayout></ProtectedRoute>} />
             <Route path="/designer/brand-kits" element={<ProtectedRoute allowedRoles={['designer']}><DesignerBrandKits /></ProtectedRoute>} />
             <Route path="/designer/attendance" element={<ProtectedRoute allowedRoles={['designer']}><DesignerLayout><MyAttendancePage /></DesignerLayout></ProtectedRoute>} />
 
             {/* Writer */}
             <Route path="/writer" element={<ProtectedRoute allowedRoles={['writer']}><WriterDashboard /></ProtectedRoute>} />
-            <Route path="/writer/daily-tasks" element={<ProtectedRoute allowedRoles={['writer']}><WriterLayout><DailyTasksContent /></WriterLayout></ProtectedRoute>} />
             <Route path="/writer/briefs" element={<ProtectedRoute allowedRoles={['writer']}><WriterClientBriefs /></ProtectedRoute>} />
             <Route path="/writer/attendance" element={<ProtectedRoute allowedRoles={['writer']}><WriterLayout><MyAttendancePage /></WriterLayout></ProtectedRoute>} />
 
             {/* Camera */}
             <Route path="/camera" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraShoots /></ProtectedRoute>} />
             <Route path="/camera/footage" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraFootage /></ProtectedRoute>} />
-            
-            <Route path="/camera/daily-tasks" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraLayout><DailyTasksContent /></CameraLayout></ProtectedRoute>} />
             <Route path="/camera/attendance" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraLayout><MyAttendancePage /></CameraLayout></ProtectedRoute>} />
 
             {/* Social executive */}
@@ -140,8 +132,8 @@ const App = () => (
             <Route path="/social/analytics" element={<ProtectedRoute allowedRoles={['social_executive']}><SocialAnalytics /></ProtectedRoute>} />
             <Route path="/social/library" element={<ProtectedRoute allowedRoles={['social_executive']}><SocialLibrary /></ProtectedRoute>} />
             <Route path="/social/import" element={<ProtectedRoute allowedRoles={['social_executive', 'admin']}><SocialAnalyticsImport /></ProtectedRoute>} />
-            <Route path="/social/daily-tasks" element={<ProtectedRoute allowedRoles={['social_executive']}><SocialLayout><DailyTasksContent /></SocialLayout></ProtectedRoute>} />
             <Route path="/social/attendance" element={<ProtectedRoute allowedRoles={['social_executive']}><SocialLayout><MyAttendancePage /></SocialLayout></ProtectedRoute>} />
+
 
             {/* Client portal */}
             <Route path="/client" element={<ProtectedRoute allowedRoles={['client']}><ClientDashboard /></ProtectedRoute>} />
