@@ -72,11 +72,12 @@ export default function AdminSalaries() {
     if (!roles) { setLoading(false); return; }
     const ids = roles.map(r => r.user_id);
     if (ids.length === 0) { setMembers([]); setPayments([]); setAdvances([]); setLoading(false); return; }
-    const [{ data: profiles }, { data: pays }, { data: advs }] = await Promise.all([
-      supabase.from('profiles').select('*').in('id', ids),
+    const [profilesRes, { data: pays }, { data: advs }] = await Promise.all([
+      (supabase.rpc as any)('admin_list_profiles'),
       (supabase as any).from('salary_payments').select('*').eq('period_month', periodMonth),
       (supabase as any).from('salary_advances').select('*').in('user_id', ids).order('requested_on', { ascending: false }),
     ]);
+    const profiles = ((profilesRes as any).data || []).filter((p: any) => ids.includes(p.id));
     const roleMap: Record<string, string> = {};
     roles.forEach(r => { roleMap[r.user_id] = r.role; });
     const list: Member[] = (profiles || []).map((p: any) => ({
