@@ -1571,6 +1571,31 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      admin_list_profiles: {
+        Args: never
+        Returns: {
+          avatar_url: string | null
+          created_at: string
+          designation: string | null
+          email: string
+          full_name: string
+          id: string
+          is_active: boolean
+          is_online: boolean | null
+          joining_date: string | null
+          last_seen: string | null
+          monthly_salary: number | null
+          phone: string | null
+          salary_currency: string | null
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       client_get_own_data: {
         Args: never
         Returns: {
@@ -1606,6 +1631,31 @@ export type Database = {
         }
       }
       get_client_id_for_user: { Args: { _user_id: string }; Returns: string }
+      get_own_profile: {
+        Args: never
+        Returns: {
+          avatar_url: string | null
+          created_at: string
+          designation: string | null
+          email: string
+          full_name: string
+          id: string
+          is_active: boolean
+          is_online: boolean | null
+          joining_date: string | null
+          last_seen: string | null
+          monthly_salary: number | null
+          phone: string | null
+          salary_currency: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
