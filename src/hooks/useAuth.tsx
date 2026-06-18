@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchProfileAndRole = useCallback(async (userId: string) => {
     try {
       const [profileRes, roleRes] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', userId).single(),
+        supabase.rpc('get_own_profile').maybeSingle(),
         supabase.from('user_roles').select('role').eq('user_id', userId).single(),
       ]);
 
