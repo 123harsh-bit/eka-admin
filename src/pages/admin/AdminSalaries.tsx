@@ -48,13 +48,20 @@ const fmtINR = (n: number, c = 'INR') =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: c, maximumFractionDigits: 0 }).format(n);
 
 const monthKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+const defaultSalaryPeriod = () => {
+  const today = new Date();
+  return new Date(today.getFullYear(), today.getMonth() - 1, 1);
+};
+const salaryDueDate = (period: Date) => new Date(period.getFullYear(), period.getMonth() + 1, 10);
+type SalaryFilter = 'due' | 'paid' | 'all';
 
 export default function AdminSalaries() {
   const [members, setMembers] = useState<Member[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [advances, setAdvances] = useState<Advance[]>([]);
   const [loading, setLoading] = useState(true);
-  const [cursor, setCursor] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+  const [cursor, setCursor] = useState(defaultSalaryPeriod);
+  const [salaryFilter, setSalaryFilter] = useState<SalaryFilter>('due');
   const [editing, setEditing] = useState<{ member: Member; payment?: Payment } | null>(null);
   const [advanceFor, setAdvanceFor] = useState<Member | null>(null);
   const [saving, setSaving] = useState(false);
@@ -64,7 +71,7 @@ export default function AdminSalaries() {
 
   const periodMonth = monthKey(cursor);
   const periodLabel = cursor.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
-  const dueDate = new Date(cursor.getFullYear(), cursor.getMonth(), 5);
+  const dueDate = salaryDueDate(cursor);
 
   const load = async () => {
     setLoading(true);
@@ -208,6 +215,12 @@ export default function AdminSalaries() {
   };
 
   const memberName = (uid: string) => members.find(m => m.id === uid)?.full_name || '—';
+  const visibleMembers = useMemo(() => members.filter(m => {
+    const p = payments.find(payment => payment.user_id === m.id);
+    if (salaryFilter === 'all') return true;
+    if (salaryFilter === 'paid') return p?.status === 'paid' || p?.status === 'skipped';
+    return !p || p.status === 'pending';
+  }), [members, payments, salaryFilter]);
 
   return (
     <AdminLayout>
