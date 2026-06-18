@@ -59,8 +59,9 @@ export default function AdminTeam() {
     const userIds = roles.map(r => r.user_id);
     if (userIds.length === 0) { setMembers([]); setLoading(false); return; }
 
-    const { data: profiles } = await supabase.from('profiles').select('*').in('id', userIds);
-    if (!profiles) { setLoading(false); return; }
+    const { data: allProfiles } = await (supabase.rpc as any)('admin_list_profiles');
+    const profiles = (allProfiles || []).filter((p: any) => userIds.includes(p.id));
+    if (!profiles.length) { setLoading(false); return; }
 
     const roleMap: Record<string, string> = {};
     roles.forEach(r => { roleMap[r.user_id] = r.role; });
