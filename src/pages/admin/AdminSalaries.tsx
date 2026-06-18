@@ -48,13 +48,20 @@ const fmtINR = (n: number, c = 'INR') =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: c, maximumFractionDigits: 0 }).format(n);
 
 const monthKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+const defaultSalaryPeriod = () => {
+  const today = new Date();
+  return new Date(today.getFullYear(), today.getMonth() - 1, 1);
+};
+const salaryDueDate = (period: Date) => new Date(period.getFullYear(), period.getMonth() + 1, 10);
+type SalaryFilter = 'due' | 'paid' | 'all';
 
 export default function AdminSalaries() {
   const [members, setMembers] = useState<Member[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [advances, setAdvances] = useState<Advance[]>([]);
   const [loading, setLoading] = useState(true);
-  const [cursor, setCursor] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+  const [cursor, setCursor] = useState(defaultSalaryPeriod);
+  const [salaryFilter, setSalaryFilter] = useState<SalaryFilter>('due');
   const [editing, setEditing] = useState<{ member: Member; payment?: Payment } | null>(null);
   const [advanceFor, setAdvanceFor] = useState<Member | null>(null);
   const [saving, setSaving] = useState(false);
@@ -64,7 +71,7 @@ export default function AdminSalaries() {
 
   const periodMonth = monthKey(cursor);
   const periodLabel = cursor.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
-  const dueDate = new Date(cursor.getFullYear(), cursor.getMonth(), 5);
+  const dueDate = salaryDueDate(cursor);
 
   const load = async () => {
     setLoading(true);
@@ -208,6 +215,12 @@ export default function AdminSalaries() {
   };
 
   const memberName = (uid: string) => members.find(m => m.id === uid)?.full_name || '—';
+  const visibleMembers = useMemo(() => members.filter(m => {
+    const p = payments.find(payment => payment.user_id === m.id);
+    if (salaryFilter === 'all') return true;
+    if (salaryFilter === 'paid') return p?.status === 'paid' || p?.status === 'skipped';
+    return !p || p.status === 'pending';
+  }), [members, payments, salaryFilter]);
 
   return (
     <AdminLayout>
@@ -215,12 +228,33 @@ export default function AdminSalaries() {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-3xl font-display font-bold gradient-text">Salaries & Advances</h1>
-            <p className="text-muted-foreground mt-1">Monthly payouts due on the 5th · Track advances given mid-cycle</p>
+            <p className="text-muted-foreground mt-1">Salary for each month is due by the 10th of the next month · Paid rows hide from Due</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap justify-end">
             <Button variant="outline" size="sm" onClick={() => shiftMonth(-1)}><ChevronLeft size={14} /></Button>
-            <div className="px-4 py-1.5 rounded-md bg-muted text-sm font-medium min-w-[150px] text-center">{periodLabel}</div>
+            <Input
+              type="month"
+              value={periodMonth.slice(0, 7)}
+              onChange={e => e.target.value && setCursor(new Date(`${e.target.value}-01T00:00:00`))}
+              className="w-[155px] bg-muted text-center"
+            />
             <Button variant="outline" size="sm" onClick={() => shiftMonth(1)}><ChevronRight size={14} /></Button>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="text-sm text-muted-foreground">Showing {periodLabel} salary · Due {dueDate.toLocaleDateString('en-GB')}</div>
+          <div className="flex rounded-md border border-input overflow-hidden">
+            {(['due', 'paid', 'all'] as SalaryFilter[]).map(filter => (
+              <button
+                key={filter}
+                type="button"
+                onClick={() => setSalaryFilter(filter)}
+                className={`px-3 py-1.5 text-sm capitalize ${salaryFilter === filter ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:text-foreground'}`}
+              >
+                {filter}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -247,6 +281,8 @@ export default function AdminSalaries() {
           <div className="space-y-2">{[...Array(5)].map((_, i) => <div key={i} className="glass-card h-16 animate-pulse" />)}</div>
         ) : members.length === 0 ? (
           <div className="glass-card p-12 text-center text-muted-foreground">No team members.</div>
+        ) : visibleMembers.length === 0 ? (
+          <div className="glass-card p-12 text-center text-muted-foreground">No {salaryFilter} salaries for {periodLabel}.</div>
         ) : (
           <div className="glass-card overflow-hidden">
             <table className="w-full text-sm">
@@ -262,7 +298,7 @@ export default function AdminSalaries() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-glass-border">
-                {members.map(m => {
+                {visibleMembers.map(m => {
                   const p = paymentFor(m.id);
                   const adv = advanceDeduction(m.id);
                   const noSalary = !m.monthly_salary;

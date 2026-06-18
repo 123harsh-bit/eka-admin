@@ -128,6 +128,13 @@ export default function AdminClients() {
     return data.publicUrl;
   };
 
+  const getErrorMessage = (err: unknown) => {
+    if (err && typeof err === 'object' && 'message' in err && typeof (err as { message?: unknown }).message === 'string') {
+      return (err as { message: string }).message;
+    }
+    return 'Something went wrong. Please try again.';
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) return;
@@ -162,16 +169,16 @@ export default function AdminClients() {
         await supabase.from('activity_log').insert({ entity_type: 'client', entity_id: editingClient.id, action: 'updated', details: { name: form.name } });
         toast({ title: 'Client updated', description: `${form.name} has been updated.` });
       } else {
-        const { data, error } = await supabase.from('clients').insert({ id: clientId, ...payload }).select().single();
+        const { error } = await supabase.from('clients').insert({ id: clientId, ...payload });
         if (error) throw error;
-        await supabase.from('activity_log').insert({ entity_type: 'client', entity_id: data.id, action: 'created', details: { name: form.name } });
+        await supabase.from('activity_log').insert({ entity_type: 'client', entity_id: clientId, action: 'created', details: { name: form.name } });
         toast({ title: 'Client added', description: `${form.name} has been added.` });
       }
 
       await fetchClients();
       setPanelOpen(false);
     } catch (err: unknown) {
-      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Something went wrong', variant: 'destructive' });
+      toast({ title: 'Could not save client', description: getErrorMessage(err), variant: 'destructive' });
     } finally {
       setSaving(false);
     }
