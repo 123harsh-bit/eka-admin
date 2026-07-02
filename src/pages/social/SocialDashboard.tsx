@@ -86,6 +86,8 @@ export default function SocialDashboard() {
           ))}
         </div>
 
+        <PublishingQueue />
+
         <div className="glass-card p-5">
           <h2 className="font-semibold text-foreground mb-4">Upcoming Posts</h2>
           {loading ? (
