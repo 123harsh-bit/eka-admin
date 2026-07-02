@@ -744,6 +744,7 @@ export default function AdminVideos() {
                       {!isDetailEditingOnly && <div className="flex justify-between"><span className="text-muted-foreground">Writer:</span><span className="text-foreground">{detailVideo.writer_name || '—'}</span></div>}
                       {!isDetailEditingOnly && <div className="flex justify-between"><span className="text-muted-foreground">Camera Op:</span><span className="text-foreground">{detailVideo.camera_op_name || '—'}</span></div>}
                       <div className="flex justify-between"><span className="text-muted-foreground">Editor:</span><span className="text-foreground">{detailVideo.editor_name || '—'}</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Social Exec:</span><span className="text-foreground">{detailVideo.social_name || '—'}{detailVideo.social_stage ? ` · ${detailVideo.social_stage}` : ''}</span></div>
                       {isDetailEditingOnly && <div className="flex justify-between"><span className="text-muted-foreground">Designer:</span><span className="text-foreground">{detailVideo.designer_name || '—'}</span></div>}
                     </div>
                   );
@@ -1014,6 +1015,29 @@ export default function AdminVideos() {
                   </p>
                 </div>
               ) : null}
+
+              {/* Social Executive assignment — for publishing after approval */}
+              <div className="border-t border-glass-border pt-4 mt-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">📣 Publishing (Social Executive)</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Assigned Social Executive</Label>
+                <select value={form.assigned_social} onChange={e => setForm(f => ({ ...f, assigned_social: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground">
+                  <option value="">Unassigned (auto-assigns on approval)</option>
+                  {socialExecs.map(s => <option key={s.id} value={s.id}>{s.full_name}</option>)}
+                </select>
+                <p className="text-xs text-muted-foreground">Handles download + upload to social platforms after client approval.</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Publishing Stage</Label>
+                <select value={form.social_stage} onChange={e => setForm(f => ({ ...f, social_stage: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground">
+                  <option value="">— None —</option>
+                  <option value="queued">Queued</option>
+                  <option value="downloaded">Downloaded</option>
+                  <option value="scheduled">Scheduled</option>
+                  <option value="posted">Posted (auto sets Live)</option>
+                </select>
+              </div>
 
               {/* Designer field — for editing-only clients (reel covers) */}
               {isEditingOnly && (
