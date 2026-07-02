@@ -25,12 +25,13 @@ interface VideoRow {
   id: string; title: string; description: string | null; status: string;
   client_id: string; assigned_editor: string | null;
   assigned_camera_operator: string | null;
+  assigned_social_id: string | null; social_stage: string | null;
   shoot_date: string | null; shoot_start_time: string | null;
   shoot_location: string | null; shoot_notes: string | null;
   drive_link: string | null; live_url: string | null; raw_footage_link: string | null;
   internal_notes: string | null; is_internal_note_visible_to_client: boolean;
   date_planned: string | null; date_delivered: string | null; created_at: string;
-  client_name?: string; editor_name?: string; camera_op_name?: string; writer_name?: string; writer_id?: string | null; designer_name?: string | null; designer_id?: string | null; feedback_count?: number;
+  client_name?: string; editor_name?: string; camera_op_name?: string; writer_name?: string; writer_id?: string | null; designer_name?: string | null; designer_id?: string | null; social_name?: string | null; feedback_count?: number;
   has_content_plan?: boolean;
 }
 
@@ -46,6 +47,7 @@ const emptyForm = {
   internal_notes: '', is_internal_note_visible_to_client: false,
   date_planned: '', date_delivered: '',
   priority: '100',
+  assigned_social: '', social_stage: '',
 };
 
 function statusIndex(status: string): number {
@@ -59,6 +61,7 @@ export default function AdminVideos() {
   const [writers, setWriters] = useState<TeamMember[]>([]);
   const [designers, setDesigners] = useState<TeamMember[]>([]);
   const [cameraOps, setCameraOps] = useState<TeamMember[]>([]);
+  const [socialExecs, setSocialExecs] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -85,19 +88,19 @@ export default function AdminVideos() {
 
   const fetchAll = async () => {
     setLoading(true);
-    await Promise.all([fetchVideos(), fetchClients(), fetchEditors(), fetchCameraOps(), fetchWriters(), fetchDesigners()]);
+    await Promise.all([fetchVideos(), fetchClients(), fetchEditors(), fetchCameraOps(), fetchWriters(), fetchDesigners(), fetchSocialExecs()]);
     setLoading(false);
   };
 
   const fetchVideos = async () => {
     const { data } = await supabase
       .from('videos')
-      .select('id, title, description, status, client_id, assigned_editor, assigned_camera_operator, shoot_date, shoot_start_time, shoot_location, shoot_notes, drive_link, live_url, raw_footage_link, internal_notes, is_internal_note_visible_to_client, date_planned, date_delivered, created_at, priority, clients(name)')
+      .select('id, title, description, status, client_id, assigned_editor, assigned_camera_operator, assigned_social_id, social_stage, shoot_date, shoot_start_time, shoot_location, shoot_notes, drive_link, live_url, raw_footage_link, internal_notes, is_internal_note_visible_to_client, date_planned, date_delivered, created_at, priority, clients(name)')
       .order('created_at', { ascending: false });
     if (!data) return;
 
     const videoIds = (data as any[]).map(v => v.id);
-    const directProfileIds = [...new Set((data as any[]).flatMap(v => [v.assigned_editor, v.assigned_camera_operator].filter(Boolean)))];
+    const directProfileIds = [...new Set((data as any[]).flatMap(v => [v.assigned_editor, v.assigned_camera_operator, v.assigned_social_id].filter(Boolean)))];
 
     // Parallel: fetch writing_tasks, design_tasks, feedback, and direct profiles all at once
     const [wTasksRes, dTasksRes, fbRes, directProfilesRes] = await Promise.all([
@@ -142,6 +145,7 @@ export default function AdminVideos() {
       client_name: v.clients?.name || 'Unknown',
       editor_name: v.assigned_editor ? profileMap[v.assigned_editor] || null : null,
       camera_op_name: v.assigned_camera_operator ? profileMap[v.assigned_camera_operator] || null : null,
+      social_name: v.assigned_social_id ? profileMap[v.assigned_social_id] || null : null,
       writer_name: writerMap[v.id]?.name || null,
       writer_id: writerMap[v.id]?.id || null,
       designer_name: designerMap[v.id]?.name || null,
@@ -188,6 +192,14 @@ export default function AdminVideos() {
     }
   };
 
+  const fetchSocialExecs = async () => {
+    const { data: roles } = await supabase.from('user_roles').select('user_id').eq('role', 'social_executive');
+    if (roles && roles.length > 0) {
+      const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', roles.map(r => r.user_id));
+      if (profiles) setSocialExecs(profiles.map(p => ({ id: p.id, full_name: p.full_name })));
+    }
+  };
+
   const openAdd = () => { setEditingVideo(null); setForm({ ...emptyForm }); setPanelOpen(true); setDetailVideo(null); };
 
   const openEdit = (video: VideoRow) => {
@@ -207,6 +219,8 @@ export default function AdminVideos() {
       is_internal_note_visible_to_client: video.is_internal_note_visible_to_client,
       date_planned: video.date_planned || '', date_delivered: video.date_delivered || '',
       priority: String((video as any).priority ?? 100),
+      assigned_social: video.assigned_social_id || '',
+      social_stage: video.social_stage || '',
     });
     setPanelOpen(true);
     setDetailVideo(null);
@@ -257,6 +271,8 @@ export default function AdminVideos() {
         date_planned: form.date_planned || null,
         date_delivered: form.date_delivered || null,
         priority: form.priority ? parseInt(form.priority) : 100,
+        assigned_social_id: form.assigned_social || null,
+        social_stage: form.social_stage || null,
       };
       // Only include gated assignments if status allows (or editing-only client)
       if (isEditingOnly || si >= statusIndex('footage_delivered')) {
