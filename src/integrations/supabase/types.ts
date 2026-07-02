@@ -1276,6 +1276,7 @@ export type Database = {
         Row: {
           assigned_camera_operator: string | null
           assigned_editor: string | null
+          assigned_social_id: string | null
           client_id: string
           created_at: string
           date_delivered: string | null
@@ -1295,6 +1296,9 @@ export type Database = {
           shoot_location: string | null
           shoot_notes: string | null
           shoot_start_time: string | null
+          social_posted_at: string | null
+          social_scheduled_at: string | null
+          social_stage: string | null
           status: string
           thumbnail_url: string | null
           title: string
@@ -1303,6 +1307,7 @@ export type Database = {
         Insert: {
           assigned_camera_operator?: string | null
           assigned_editor?: string | null
+          assigned_social_id?: string | null
           client_id: string
           created_at?: string
           date_delivered?: string | null
@@ -1322,6 +1327,9 @@ export type Database = {
           shoot_location?: string | null
           shoot_notes?: string | null
           shoot_start_time?: string | null
+          social_posted_at?: string | null
+          social_scheduled_at?: string | null
+          social_stage?: string | null
           status?: string
           thumbnail_url?: string | null
           title: string
@@ -1330,6 +1338,7 @@ export type Database = {
         Update: {
           assigned_camera_operator?: string | null
           assigned_editor?: string | null
+          assigned_social_id?: string | null
           client_id?: string
           created_at?: string
           date_delivered?: string | null
@@ -1349,6 +1358,9 @@ export type Database = {
           shoot_location?: string | null
           shoot_notes?: string | null
           shoot_start_time?: string | null
+          social_posted_at?: string | null
+          social_scheduled_at?: string | null
+          social_stage?: string | null
           status?: string
           thumbnail_url?: string | null
           title?: string
@@ -1365,6 +1377,13 @@ export type Database = {
           {
             foreignKeyName: "videos_assigned_editor_fkey"
             columns: ["assigned_editor"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "videos_assigned_social_id_fkey"
+            columns: ["assigned_social_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
