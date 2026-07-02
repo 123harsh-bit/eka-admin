@@ -6,6 +6,7 @@ import { Calendar, Clock, CheckCircle2, AlertCircle, Instagram, Facebook, Youtub
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { PublishHelper } from '@/components/social/PublishHelper';
+import { PublishingQueue } from '@/components/social/PublishingQueue';
 
 interface Post {
   id: string;
