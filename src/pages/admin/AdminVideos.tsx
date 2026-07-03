@@ -660,6 +660,10 @@ export default function AdminVideos() {
                       detailVideo?.id === video.id && 'bg-primary/10'
                     )}
                   >
+                    <td className="w-10 px-3 py-3" onClick={e => e.stopPropagation()}>
+                      <input type="checkbox" checked={selected.has(video.id)} onChange={() => toggleSelect(video.id)}
+                        className="h-4 w-4 rounded border-input" />
+                    </td>
                     <td className="px-4 py-3 font-medium text-foreground">{video.title}</td>
                     <td className="px-4 py-3 text-muted-foreground">{video.client_name}</td>
                     <td className="px-4 py-3">
