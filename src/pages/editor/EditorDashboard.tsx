@@ -247,6 +247,26 @@ export default function EditorDashboard() {
                     )}
                   </div>
 
+                  {/* Prominent final drive link section */}
+                  <div className="space-y-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+                    <Label className="text-xs font-semibold text-primary flex items-center gap-1.5">
+                      <ExternalLink size={12} /> Final Video Drive Link
+                    </Label>
+                    <Input value={driveLink} onChange={e => setDriveLink(e.target.value)}
+                      placeholder="Paste Google Drive link here…"
+                      className="text-xs h-9 bg-background" />
+                    <Button size="sm" onClick={handleSaveDetails} disabled={saving} className="w-full gap-2 h-9">
+                      {saving ? <Loader2 size={12} className="animate-spin" /> : <ExternalLink size={12} />}
+                      Save Drive Link
+                    </Button>
+                    {selectedVideo.drive_link && (
+                      <a href={selectedVideo.drive_link} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-[11px] text-primary hover:underline">
+                        <ExternalLink size={10} /> Open current file
+                      </a>
+                    )}
+                  </div>
+
                   {/* Status */}
                   <div>
                     <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Workflow Stage</p>
@@ -275,26 +295,14 @@ export default function EditorDashboard() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-[10px]">Google Drive Link</Label>
-                    <Input value={driveLink} onChange={e => setDriveLink(e.target.value)} placeholder="https://drive.google.com/…" className="text-xs h-8" />
-                  </div>
-                  <div className="space-y-1.5">
                     <Label className="text-[10px]">Internal Notes</Label>
                     <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} placeholder="Notes…"
                       className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-xs text-foreground resize-none" />
+                    <Button size="sm" variant="outline" onClick={handleSaveDetails} disabled={saving} className="w-full gap-2">
+                      {saving && <Loader2 size={12} className="animate-spin" />}
+                      Save Notes
+                    </Button>
                   </div>
-
-                  <Button size="sm" onClick={handleSaveDetails} disabled={saving} className="w-full gap-2">
-                    {saving && <Loader2 size={12} className="animate-spin" />}
-                    Save Changes
-                  </Button>
-
-                  {selectedVideo.drive_link && (
-                    <a href={selectedVideo.drive_link} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 text-xs text-primary hover:underline">
-                      <ExternalLink size={10} /> Open Drive File
-                    </a>
-                  )}
                 </div>
               </div>
             )}
