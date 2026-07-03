@@ -207,7 +207,10 @@ export default function AdminDesignTasks() {
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{task.client_name}</td>
                   <td className="px-4 py-3">
-                    <StatusBadge status={task.status as DesignTaskStatus} type="design" />
+                    <select value={task.status} onChange={e => handleStatusChange(task.id, e.target.value)}
+                      className="h-7 rounded border border-input bg-background px-2 text-xs text-foreground max-w-[160px]">
+                      {DESIGN_TASK_STATUS_ORDER.map(s => <option key={s} value={s}>{DESIGN_TASK_STATUSES[s].label}</option>)}
+                    </select>
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{task.designer_name || '—'}</td>
                   <td className="px-4 py-3 text-muted-foreground text-xs">
