@@ -73,6 +73,9 @@ export default function AdminVideos() {
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{ id: string; content: string | null; type: string; created_at: string; is_resolved?: boolean }[]>([]);
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; video: VideoRow | null }>({ open: false, video: null });
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkStatus, setBulkStatus] = useState('');
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [workflowLoading, setWorkflowLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
