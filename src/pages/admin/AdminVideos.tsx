@@ -471,6 +471,35 @@ export default function AdminVideos() {
     if (detailVideo?.id === deleteModal.video.id) setDetailVideo(null);
   };
 
+  const toggleSelect = (id: string) => {
+    setSelected(prev => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+  };
+
+  const bulkApplyStatus = async () => {
+    if (!bulkStatus || selected.size === 0) return;
+    const ids = Array.from(selected);
+    const { error } = await supabase.from('videos').update({ status: bulkStatus }).in('id', ids);
+    if (error) { toast({ title: 'Bulk update failed', description: error.message, variant: 'destructive' }); return; }
+    toast({ title: `Updated ${ids.length} video${ids.length !== 1 ? 's' : ''}` });
+    setSelected(new Set());
+    setBulkStatus('');
+    fetchVideos();
+  };
+
+  const bulkDelete = async () => {
+    if (selected.size === 0) return;
+    const ids = Array.from(selected);
+    const { error } = await supabase.from('videos').delete().in('id', ids);
+    if (error) { toast({ title: 'Bulk delete failed', description: error.message, variant: 'destructive' }); return; }
+    toast({ title: `Deleted ${ids.length} video${ids.length !== 1 ? 's' : ''}` });
+    setSelected(new Set());
+    setBulkDeleteOpen(false);
+    fetchVideos();
+
   const handleResolveFeedback = async (fbId: string) => {
     await supabase.from('feedback').update({ is_resolved: true }).eq('id', fbId);
     setFeedback(prev => prev.map(f => f.id === fbId ? { ...f, is_resolved: true } : f));
