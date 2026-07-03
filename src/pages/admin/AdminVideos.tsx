@@ -607,11 +607,33 @@ export default function AdminVideos() {
             </select>
           </div>
 
+          {selected.size > 0 && (
+            <div className="glass-card p-3 flex items-center gap-3 flex-wrap flex-shrink-0 border border-primary/40 bg-primary/5">
+              <span className="text-sm font-medium text-foreground">{selected.size} selected</span>
+              <select value={bulkStatus} onChange={e => setBulkStatus(e.target.value)} className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground">
+                <option value="">Change status to…</option>
+                {VIDEO_STATUS_ORDER.map(s => <option key={s} value={s}>{VIDEO_STATUSES[s].emoji} {VIDEO_STATUSES[s].label}</option>)}
+              </select>
+              <Button size="sm" onClick={bulkApplyStatus} disabled={!bulkStatus} className="h-8">Apply</Button>
+              <Button size="sm" variant="destructive" onClick={() => setBulkDeleteOpen(true)} className="h-8 gap-1"><Trash2 size={12} /> Delete</Button>
+              <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())} className="h-8">Clear</Button>
+            </div>
+          )}
+
           <div className="glass-card flex-1 overflow-auto">
             {/* Desktop table — hidden on mobile */}
             <table className="w-full text-sm hidden md:table">
               <thead className="sticky top-0 bg-card/90 backdrop-blur border-b border-glass-border">
                 <tr>
+                  <th className="w-10 px-3 py-3">
+                    <input type="checkbox"
+                      checked={filtered.length > 0 && filtered.every(v => selected.has(v.id))}
+                      onChange={e => {
+                        if (e.target.checked) setSelected(new Set(filtered.map(v => v.id)));
+                        else setSelected(new Set());
+                      }}
+                      className="h-4 w-4 rounded border-input" />
+                  </th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Video</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Client</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stage</th>
