@@ -743,6 +743,10 @@ export default function AdminVideos() {
                     )}
                   >
                     <div className="flex items-start gap-3">
+                      <div onClick={e => e.stopPropagation()} className="pt-1">
+                        <input type="checkbox" checked={selected.has(video.id)} onChange={() => toggleSelect(video.id)}
+                          className="h-4 w-4 rounded border-input" />
+                      </div>
                       <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center text-sm font-bold text-primary flex-shrink-0">
                         {video.client_name?.charAt(0)}
                       </div>
