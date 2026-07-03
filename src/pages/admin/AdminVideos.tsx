@@ -646,9 +646,9 @@ export default function AdminVideos() {
               </thead>
               <tbody>
                 {loading ? [...Array(6)].map((_, i) => (
-                  <tr key={i}><td colSpan={8} className="px-4 py-3"><div className="h-8 bg-muted/50 rounded animate-pulse" /></td></tr>
+                  <tr key={i}><td colSpan={9} className="px-4 py-3"><div className="h-8 bg-muted/50 rounded animate-pulse" /></td></tr>
                 )) : filtered.length === 0 ? (
-                  <tr><td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
+                  <tr><td colSpan={9} className="px-4 py-12 text-center text-muted-foreground">
                     <Video size={32} className="mx-auto mb-2 opacity-40" />
                     No videos found.
                   </td></tr>
