@@ -44,6 +44,12 @@ export default function AdminEditorTasks() {
     setLoading(false);
   };
 
+  const handleStatusChange = async (id: string, status: string) => {
+    const { error } = await supabase.from('videos').update({ status }).eq('id', id);
+    if (error) toast({ title: 'Update failed', description: error.message, variant: 'destructive' });
+    else { toast({ title: 'Status updated' }); fetchVideos(); }
+  };
+
   const fetchVideos = async () => {
     const { data } = await supabase
       .from('videos')
