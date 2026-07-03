@@ -252,7 +252,10 @@ export default function AdminDesignTasks() {
                     <p className="font-medium text-foreground text-sm truncate">{task.title}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">{task.client_name}</p>
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      <StatusBadge status={task.status as DesignTaskStatus} type="design" />
+                      <select value={task.status} onChange={e => handleStatusChange(task.id, e.target.value)}
+                        className="h-7 rounded border border-input bg-background px-2 text-xs text-foreground">
+                        {DESIGN_TASK_STATUS_ORDER.map(s => <option key={s} value={s}>{DESIGN_TASK_STATUSES[s].label}</option>)}
+                      </select>
                       <span className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded-full">{taskTypeLabel(task.task_type)}</span>
                     </div>
                     <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
