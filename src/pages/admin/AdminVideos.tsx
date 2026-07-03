@@ -73,6 +73,9 @@ export default function AdminVideos() {
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{ id: string; content: string | null; type: string; created_at: string; is_resolved?: boolean }[]>([]);
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; video: VideoRow | null }>({ open: false, video: null });
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkStatus, setBulkStatus] = useState('');
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [workflowLoading, setWorkflowLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -468,6 +471,38 @@ export default function AdminVideos() {
     if (detailVideo?.id === deleteModal.video.id) setDetailVideo(null);
   };
 
+  const toggleSelect = (id: string) => {
+    setSelected(prev => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+  };
+
+  const bulkApplyStatus = async () => {
+    if (!bulkStatus || selected.size === 0) return;
+    const ids = Array.from(selected);
+    const { error } = await supabase.from('videos').update({ status: bulkStatus }).in('id', ids);
+    if (error) { toast({ title: 'Bulk update failed', description: error.message, variant: 'destructive' }); return; }
+    toast({ title: `Updated ${ids.length} video${ids.length !== 1 ? 's' : ''}` });
+    setSelected(new Set());
+    setBulkStatus('');
+    fetchVideos();
+  };
+
+  const bulkDelete = async () => {
+    if (selected.size === 0) return;
+    const ids = Array.from(selected);
+    const { error } = await supabase.from('videos').delete().in('id', ids);
+    if (error) { toast({ title: 'Bulk delete failed', description: error.message, variant: 'destructive' }); return; }
+    toast({ title: `Deleted ${ids.length} video${ids.length !== 1 ? 's' : ''}` });
+    setSelected(new Set());
+    setBulkDeleteOpen(false);
+    fetchVideos();
+  };
+
+
+
   const handleResolveFeedback = async (fbId: string) => {
     await supabase.from('feedback').update({ is_resolved: true }).eq('id', fbId);
     setFeedback(prev => prev.map(f => f.id === fbId ? { ...f, is_resolved: true } : f));
@@ -572,11 +607,33 @@ export default function AdminVideos() {
             </select>
           </div>
 
+          {selected.size > 0 && (
+            <div className="glass-card p-3 flex items-center gap-3 flex-wrap flex-shrink-0 border border-primary/40 bg-primary/5">
+              <span className="text-sm font-medium text-foreground">{selected.size} selected</span>
+              <select value={bulkStatus} onChange={e => setBulkStatus(e.target.value)} className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground">
+                <option value="">Change status to…</option>
+                {VIDEO_STATUS_ORDER.map(s => <option key={s} value={s}>{VIDEO_STATUSES[s].emoji} {VIDEO_STATUSES[s].label}</option>)}
+              </select>
+              <Button size="sm" onClick={bulkApplyStatus} disabled={!bulkStatus} className="h-8">Apply</Button>
+              <Button size="sm" variant="destructive" onClick={() => setBulkDeleteOpen(true)} className="h-8 gap-1"><Trash2 size={12} /> Delete</Button>
+              <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())} className="h-8">Clear</Button>
+            </div>
+          )}
+
           <div className="glass-card flex-1 overflow-auto">
             {/* Desktop table — hidden on mobile */}
             <table className="w-full text-sm hidden md:table">
               <thead className="sticky top-0 bg-card/90 backdrop-blur border-b border-glass-border">
                 <tr>
+                  <th className="w-10 px-3 py-3">
+                    <input type="checkbox"
+                      checked={filtered.length > 0 && filtered.every(v => selected.has(v.id))}
+                      onChange={e => {
+                        if (e.target.checked) setSelected(new Set(filtered.map(v => v.id)));
+                        else setSelected(new Set());
+                      }}
+                      className="h-4 w-4 rounded border-input" />
+                  </th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Video</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Client</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stage</th>
@@ -589,9 +646,9 @@ export default function AdminVideos() {
               </thead>
               <tbody>
                 {loading ? [...Array(6)].map((_, i) => (
-                  <tr key={i}><td colSpan={8} className="px-4 py-3"><div className="h-8 bg-muted/50 rounded animate-pulse" /></td></tr>
+                  <tr key={i}><td colSpan={9} className="px-4 py-3"><div className="h-8 bg-muted/50 rounded animate-pulse" /></td></tr>
                 )) : filtered.length === 0 ? (
-                  <tr><td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
+                  <tr><td colSpan={9} className="px-4 py-12 text-center text-muted-foreground">
                     <Video size={32} className="mx-auto mb-2 opacity-40" />
                     No videos found.
                   </td></tr>
@@ -603,6 +660,10 @@ export default function AdminVideos() {
                       detailVideo?.id === video.id && 'bg-primary/10'
                     )}
                   >
+                    <td className="w-10 px-3 py-3" onClick={e => e.stopPropagation()}>
+                      <input type="checkbox" checked={selected.has(video.id)} onChange={() => toggleSelect(video.id)}
+                        className="h-4 w-4 rounded border-input" />
+                    </td>
                     <td className="px-4 py-3 font-medium text-foreground">{video.title}</td>
                     <td className="px-4 py-3 text-muted-foreground">{video.client_name}</td>
                     <td className="px-4 py-3">
@@ -682,6 +743,10 @@ export default function AdminVideos() {
                     )}
                   >
                     <div className="flex items-start gap-3">
+                      <div onClick={e => e.stopPropagation()} className="pt-1">
+                        <input type="checkbox" checked={selected.has(video.id)} onChange={() => toggleSelect(video.id)}
+                          className="h-4 w-4 rounded border-input" />
+                      </div>
                       <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center text-sm font-bold text-primary flex-shrink-0">
                         {video.client_name?.charAt(0)}
                       </div>
@@ -1103,6 +1168,13 @@ export default function AdminVideos() {
         onConfirm={handleDelete}
         title="Delete Video"
         description={`Permanently delete "${deleteModal.video?.title}"?`}
+      />
+      <ConfirmDeleteModal
+        open={bulkDeleteOpen}
+        onOpenChange={(open) => !open && setBulkDeleteOpen(false)}
+        onConfirm={bulkDelete}
+        title="Delete videos"
+        description={`Permanently delete ${selected.size} selected video${selected.size !== 1 ? 's' : ''}? This cannot be undone.`}
       />
     </AdminLayout>
   );

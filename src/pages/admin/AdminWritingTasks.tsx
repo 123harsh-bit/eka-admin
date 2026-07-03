@@ -159,6 +159,14 @@ export default function AdminWritingTasks() {
     setDeleteModal({ open: false, task: null });
   };
 
+  const handleStatusChange = async (task: { id: string; video_id?: string | null; status: string }, newStatus: string) => {
+    const { error } = await supabase.from('writing_tasks').update({ status: newStatus }).eq('id', task.id);
+    if (error) { toast({ title: 'Update failed', description: error.message, variant: 'destructive' }); return; }
+    if (task.video_id && task.status !== newStatus) await syncWritingTaskToVideo(task.video_id, newStatus);
+    toast({ title: 'Status updated' });
+    fetchTasks();
+  };
+
   const filtered = tasks.filter(t => {
     const matchSearch = t.title.toLowerCase().includes(search.toLowerCase()) || t.client_name?.toLowerCase().includes(search.toLowerCase());
     const matchStatus = !statusFilter || t.status === statusFilter;
@@ -224,7 +232,12 @@ export default function AdminWritingTasks() {
                   <td className="px-4 py-3 font-medium text-foreground max-w-48 truncate">{task.title}</td>
                   <td className="px-4 py-3"><span className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded-full">{taskTypeLabel(task.task_type)}</span></td>
                   <td className="px-4 py-3 text-muted-foreground">{task.client_name}</td>
-                  <td className="px-4 py-3"><StatusBadge status={task.status as WritingTaskStatus} type="writing" /></td>
+                  <td className="px-4 py-3">
+                    <select value={task.status} onChange={e => handleStatusChange(task, e.target.value)}
+                      className="h-7 rounded border border-input bg-background px-2 text-xs text-foreground max-w-[160px]">
+                      {WRITING_TASK_STATUS_ORDER.map(s => <option key={s} value={s}>{WRITING_TASK_STATUSES[s].emoji} {WRITING_TASK_STATUSES[s].label}</option>)}
+                    </select>
+                  </td>
                   <td className="px-4 py-3 text-muted-foreground">{task.writer_name || '—'}</td>
                   <td className="px-4 py-3 text-muted-foreground text-xs">
                     <span className="flex items-center gap-1">
@@ -264,7 +277,10 @@ export default function AdminWritingTasks() {
                     <p className="font-medium text-foreground text-sm truncate">{task.title}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">{task.client_name}</p>
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      <StatusBadge status={task.status as WritingTaskStatus} type="writing" />
+                      <select value={task.status} onChange={e => handleStatusChange(task, e.target.value)}
+                        className="h-7 rounded border border-input bg-background px-2 text-xs text-foreground">
+                        {WRITING_TASK_STATUS_ORDER.map(s => <option key={s} value={s}>{WRITING_TASK_STATUSES[s].emoji} {WRITING_TASK_STATUSES[s].label}</option>)}
+                      </select>
                       <span className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded-full">{taskTypeLabel(task.task_type)}</span>
                     </div>
                     <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">

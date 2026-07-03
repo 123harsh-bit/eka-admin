@@ -73,6 +73,12 @@ export default function AdminCameraShoots() {
     }
   };
 
+  const handleStatusChange = async (id: string, status: string) => {
+    const { error } = await supabase.from('videos').update({ status }).eq('id', id);
+    if (error) toast({ title: 'Update failed', description: error.message, variant: 'destructive' });
+    else { toast({ title: 'Status updated' }); fetchVideos(); }
+  };
+
   const filtered = videos.filter(v => {
     const matchSearch = v.title.toLowerCase().includes(search.toLowerCase()) || v.client_name?.toLowerCase().includes(search.toLowerCase());
     const matchStatus = !statusFilter || v.status === statusFilter;
@@ -170,7 +176,12 @@ export default function AdminCameraShoots() {
                       {video.title}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{video.client_name}</td>
-                    <td className="px-4 py-3"><StatusBadge status={video.status as VideoStatus} type="video" /></td>
+                    <td className="px-4 py-3">
+                      <select value={video.status} onChange={e => handleStatusChange(video.id, e.target.value)}
+                        className="h-7 rounded border border-input bg-background px-2 text-xs text-foreground max-w-[170px]">
+                        {CAMERA_STATUSES.map(s => <option key={s} value={s}>{VIDEO_STATUSES[s].emoji} {VIDEO_STATUSES[s].label}</option>)}
+                      </select>
+                    </td>
                     <td className="px-4 py-3 text-muted-foreground">{video.camera_op_name || '—'}</td>
                     <td className="px-4 py-3">
                       {video.shoot_date ? (
@@ -229,7 +240,10 @@ export default function AdminCameraShoots() {
                       <p className="font-medium text-foreground text-sm truncate">{video.title}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">{video.client_name}</p>
                       <div className="flex items-center gap-2 mt-2 flex-wrap">
-                        <StatusBadge status={video.status as VideoStatus} type="video" />
+                        <select value={video.status} onChange={e => handleStatusChange(video.id, e.target.value)}
+                          className="h-7 rounded border border-input bg-background px-2 text-xs text-foreground">
+                          {CAMERA_STATUSES.map(s => <option key={s} value={s}>{VIDEO_STATUSES[s].emoji} {VIDEO_STATUSES[s].label}</option>)}
+                        </select>
                         {video.camera_op_name && <span className="text-xs text-muted-foreground">📷 {video.camera_op_name}</span>}
                       </div>
                       <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">

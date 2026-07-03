@@ -44,6 +44,12 @@ export default function AdminEditorTasks() {
     setLoading(false);
   };
 
+  const handleStatusChange = async (id: string, status: string) => {
+    const { error } = await supabase.from('videos').update({ status }).eq('id', id);
+    if (error) toast({ title: 'Update failed', description: error.message, variant: 'destructive' });
+    else { toast({ title: 'Status updated' }); fetchVideos(); }
+  };
+
   const fetchVideos = async () => {
     const { data } = await supabase
       .from('videos')
@@ -167,10 +173,10 @@ export default function AdminEditorTasks() {
                     <td className="px-4 py-3 font-medium text-foreground max-w-52 truncate">{video.title}</td>
                     <td className="px-4 py-3 text-muted-foreground">{video.client_name}</td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <StatusBadge status={video.status as VideoStatus} type="video" />
-                        <span className="text-[10px] text-muted-foreground">{stageIdx}/15</span>
-                      </div>
+                      <select value={video.status} onChange={e => handleStatusChange(video.id, e.target.value)}
+                        className="h-7 rounded border border-input bg-background px-2 text-xs text-foreground max-w-[180px]">
+                        {VIDEO_STATUS_ORDER.map(s => <option key={s} value={s}>{VIDEO_STATUSES[s].emoji} {VIDEO_STATUSES[s].label}</option>)}
+                      </select>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{video.editor_name || '—'}</td>
                     <td className="px-4 py-3">
@@ -224,8 +230,10 @@ export default function AdminEditorTasks() {
                       <p className="font-medium text-foreground text-sm truncate">{video.title}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">{video.client_name}</p>
                       <div className="flex items-center gap-2 mt-2 flex-wrap">
-                        <StatusBadge status={video.status as VideoStatus} type="video" />
-                        <span className="text-[10px] text-muted-foreground">{stageIdx}/15</span>
+                        <select value={video.status} onChange={e => handleStatusChange(video.id, e.target.value)}
+                          className="h-7 rounded border border-input bg-background px-2 text-xs text-foreground">
+                          {VIDEO_STATUS_ORDER.map(s => <option key={s} value={s}>{VIDEO_STATUSES[s].emoji} {VIDEO_STATUSES[s].label}</option>)}
+                        </select>
                         {video.editor_name && <span className="text-xs text-muted-foreground">👤 {video.editor_name}</span>}
                       </div>
                       <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
