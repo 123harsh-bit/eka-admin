@@ -232,7 +232,12 @@ export default function AdminWritingTasks() {
                   <td className="px-4 py-3 font-medium text-foreground max-w-48 truncate">{task.title}</td>
                   <td className="px-4 py-3"><span className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded-full">{taskTypeLabel(task.task_type)}</span></td>
                   <td className="px-4 py-3 text-muted-foreground">{task.client_name}</td>
-                  <td className="px-4 py-3"><StatusBadge status={task.status as WritingTaskStatus} type="writing" /></td>
+                  <td className="px-4 py-3">
+                    <select value={task.status} onChange={e => handleStatusChange(task, e.target.value)}
+                      className="h-7 rounded border border-input bg-background px-2 text-xs text-foreground max-w-[160px]">
+                      {WRITING_TASK_STATUS_ORDER.map(s => <option key={s} value={s}>{WRITING_TASK_STATUSES[s].emoji} {WRITING_TASK_STATUSES[s].label}</option>)}
+                    </select>
+                  </td>
                   <td className="px-4 py-3 text-muted-foreground">{task.writer_name || '—'}</td>
                   <td className="px-4 py-3 text-muted-foreground text-xs">
                     <span className="flex items-center gap-1">
