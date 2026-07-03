@@ -240,7 +240,10 @@ export default function AdminCameraShoots() {
                       <p className="font-medium text-foreground text-sm truncate">{video.title}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">{video.client_name}</p>
                       <div className="flex items-center gap-2 mt-2 flex-wrap">
-                        <StatusBadge status={video.status as VideoStatus} type="video" />
+                        <select value={video.status} onChange={e => handleStatusChange(video.id, e.target.value)}
+                          className="h-7 rounded border border-input bg-background px-2 text-xs text-foreground">
+                          {CAMERA_STATUSES.map(s => <option key={s} value={s}>{VIDEO_STATUSES[s].emoji} {VIDEO_STATUSES[s].label}</option>)}
+                        </select>
                         {video.camera_op_name && <span className="text-xs text-muted-foreground">📷 {video.camera_op_name}</span>}
                       </div>
                       <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
