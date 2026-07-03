@@ -173,10 +173,10 @@ export default function AdminEditorTasks() {
                     <td className="px-4 py-3 font-medium text-foreground max-w-52 truncate">{video.title}</td>
                     <td className="px-4 py-3 text-muted-foreground">{video.client_name}</td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <StatusBadge status={video.status as VideoStatus} type="video" />
-                        <span className="text-[10px] text-muted-foreground">{stageIdx}/15</span>
-                      </div>
+                      <select value={video.status} onChange={e => handleStatusChange(video.id, e.target.value)}
+                        className="h-7 rounded border border-input bg-background px-2 text-xs text-foreground max-w-[180px]">
+                        {VIDEO_STATUS_ORDER.map(s => <option key={s} value={s}>{VIDEO_STATUSES[s].emoji} {VIDEO_STATUSES[s].label}</option>)}
+                      </select>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{video.editor_name || '—'}</td>
                     <td className="px-4 py-3">
