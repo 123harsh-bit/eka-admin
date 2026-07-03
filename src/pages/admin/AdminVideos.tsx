@@ -1169,6 +1169,13 @@ export default function AdminVideos() {
         title="Delete Video"
         description={`Permanently delete "${deleteModal.video?.title}"?`}
       />
+      <ConfirmDeleteModal
+        open={bulkDeleteOpen}
+        onOpenChange={(open) => !open && setBulkDeleteOpen(false)}
+        onConfirm={bulkDelete}
+        title="Delete videos"
+        description={`Permanently delete ${selected.size} selected video${selected.size !== 1 ? 's' : ''}? This cannot be undone.`}
+      />
     </AdminLayout>
   );
 }
