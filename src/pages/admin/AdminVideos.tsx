@@ -499,6 +499,9 @@ export default function AdminVideos() {
     setSelected(new Set());
     setBulkDeleteOpen(false);
     fetchVideos();
+  };
+
+
 
   const handleResolveFeedback = async (fbId: string) => {
     await supabase.from('feedback').update({ is_resolved: true }).eq('id', fbId);
