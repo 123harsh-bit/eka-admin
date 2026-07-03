@@ -159,6 +159,14 @@ export default function AdminWritingTasks() {
     setDeleteModal({ open: false, task: null });
   };
 
+  const handleStatusChange = async (task: { id: string; video_id?: string | null; status: string }, newStatus: string) => {
+    const { error } = await supabase.from('writing_tasks').update({ status: newStatus }).eq('id', task.id);
+    if (error) { toast({ title: 'Update failed', description: error.message, variant: 'destructive' }); return; }
+    if (task.video_id && task.status !== newStatus) await syncWritingTaskToVideo(task.video_id, newStatus);
+    toast({ title: 'Status updated' });
+    fetchTasks();
+  };
+
   const filtered = tasks.filter(t => {
     const matchSearch = t.title.toLowerCase().includes(search.toLowerCase()) || t.client_name?.toLowerCase().includes(search.toLowerCase());
     const matchStatus = !statusFilter || t.status === statusFilter;
