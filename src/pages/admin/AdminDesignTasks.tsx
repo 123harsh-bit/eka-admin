@@ -138,6 +138,12 @@ export default function AdminDesignTasks() {
     setDeleteModal({ open: false, task: null });
   };
 
+  const handleStatusChange = async (id: string, status: string) => {
+    const { error } = await supabase.from('design_tasks').update({ status }).eq('id', id);
+    if (error) toast({ title: 'Update failed', description: error.message, variant: 'destructive' });
+    else { toast({ title: 'Status updated' }); fetchTasks(); }
+  };
+
   const filtered = tasks.filter(t => {
     const matchSearch = t.title.toLowerCase().includes(search.toLowerCase()) || t.client_name?.toLowerCase().includes(search.toLowerCase());
     const matchStatus = !statusFilter || t.status === statusFilter;
