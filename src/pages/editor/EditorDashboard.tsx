@@ -161,29 +161,55 @@ export default function EditorDashboard() {
                       {group.items.map(video => {
                         const isOverdue = video.date_planned && video.date_planned < today;
                         return (
-                          <div key={video.id} onClick={() => openVideo(video)}
-                            className={cn('glass-card p-3 cursor-pointer flex items-center gap-3 group transition-all hover:bg-card/80', selectedVideo?.id === video.id && 'ring-1 ring-primary')}>
-                            <div className="h-9 w-9 rounded-lg bg-secondary/15 flex items-center justify-center text-xs font-bold text-secondary flex-shrink-0 relative">
-                              {video.client_name?.charAt(0)}
-                              {video.priority != null && video.priority < 100 && (
-                                <span className="absolute -top-1.5 -right-1.5 h-4 min-w-4 px-1 rounded-full bg-primary text-primary-foreground text-[9px] font-bold flex items-center justify-center" title={`Priority ${video.priority}`}>
-                                  {video.priority}
+                          <div key={video.id}
+                            className={cn('glass-card p-3 transition-all hover:bg-card/80', selectedVideo?.id === video.id && 'ring-1 ring-primary')}>
+                            <div onClick={() => openVideo(video)} className="flex items-center gap-3 cursor-pointer">
+                              <div className="h-9 w-9 rounded-lg bg-secondary/15 flex items-center justify-center text-xs font-bold text-secondary flex-shrink-0 relative">
+                                {video.client_name?.charAt(0)}
+                                {video.priority != null && video.priority < 100 && (
+                                  <span className="absolute -top-1.5 -right-1.5 h-4 min-w-4 px-1 rounded-full bg-primary text-primary-foreground text-[9px] font-bold flex items-center justify-center" title={`Priority ${video.priority}`}>
+                                    {video.priority}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-foreground truncate">{video.title}</p>
+                                <p className="text-[11px] text-muted-foreground">{video.client_name}</p>
+                              </div>
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                <StatusBadge status={video.status as VideoStatus} type="video" />
+                                {video.date_planned && (
+                                  <span className={cn('text-[10px] flex items-center gap-1', isOverdue ? 'text-destructive' : 'text-muted-foreground')}>
+                                    <Calendar size={9} />
+                                    {new Date(video.date_planned).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                                  </span>
+                                )}
+                                <ChevronRight size={12} className="text-muted-foreground/40" />
+                              </div>
+                            </div>
+                            {/* Quick-access action row — no need to open panel */}
+                            <div className="flex flex-wrap gap-1.5 mt-2 pt-2 border-t border-border/40">
+                              {video.raw_footage_link ? (
+                                <a href={video.raw_footage_link} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                                  className="flex items-center gap-1 text-[11px] font-medium py-1 px-2 rounded bg-amber-500/15 text-amber-400 hover:bg-amber-500/25">
+                                  <FolderOpen size={11} /> Raw Footage
+                                </a>
+                              ) : (
+                                <span className="flex items-center gap-1 text-[11px] py-1 px-2 rounded bg-muted/30 text-muted-foreground/60">
+                                  <FolderOpen size={11} /> No footage yet
                                 </span>
                               )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-foreground truncate">{video.title}</p>
-                              <p className="text-[11px] text-muted-foreground">{video.client_name}</p>
-                            </div>
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                              <StatusBadge status={video.status as VideoStatus} type="video" />
-                              {video.date_planned && (
-                                <span className={cn('text-[10px] flex items-center gap-1', isOverdue ? 'text-destructive' : 'text-muted-foreground')}>
-                                  <Calendar size={9} />
-                                  {new Date(video.date_planned).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                                </span>
+                              {video.drive_link ? (
+                                <a href={video.drive_link} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                                  className="flex items-center gap-1 text-[11px] font-medium py-1 px-2 rounded bg-primary/15 text-primary hover:bg-primary/25">
+                                  <ExternalLink size={11} /> Final Drive
+                                </a>
+                              ) : (
+                                <button onClick={(e) => { e.stopPropagation(); openVideo(video); }}
+                                  className="flex items-center gap-1 text-[11px] font-medium py-1 px-2 rounded bg-secondary/15 text-secondary hover:bg-secondary/25">
+                                  <ExternalLink size={11} /> + Add Drive Link
+                                </button>
                               )}
-                              <ChevronRight size={12} className="text-muted-foreground/40" />
                             </div>
                           </div>
                         );
