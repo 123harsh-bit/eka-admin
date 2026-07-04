@@ -22,6 +22,10 @@ import { SocialLayout } from "@/components/social/SocialLayout";
 
 // Shared pages (rendered inside any role layout)
 import MyAttendancePage from "@/pages/shared/MyAttendancePage";
+import ScriptsLibrary from "@/pages/shared/ScriptsLibrary";
+import ScriptEditor from "@/pages/shared/ScriptEditor";
+import { WriterLayout as WriterLayoutCmp } from "@/components/writer/WriterLayout";
+import { AdminLayout as AdminLayoutCmp } from "@/components/admin/AdminLayout";
 
 // Admin pages
 import AdminDashboard from "@/pages/admin/AdminDashboard";
