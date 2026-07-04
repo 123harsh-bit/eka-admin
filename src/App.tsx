@@ -24,8 +24,6 @@ import { SocialLayout } from "@/components/social/SocialLayout";
 import MyAttendancePage from "@/pages/shared/MyAttendancePage";
 import ScriptsLibrary from "@/pages/shared/ScriptsLibrary";
 import ScriptEditor from "@/pages/shared/ScriptEditor";
-import { WriterLayout as WriterLayoutCmp } from "@/components/writer/WriterLayout";
-import { AdminLayout as AdminLayoutCmp } from "@/components/admin/AdminLayout";
 
 // Admin pages
 import AdminDashboard from "@/pages/admin/AdminDashboard";
@@ -108,6 +106,8 @@ const App = () => (
             <Route path="/admin/capacity" element={<ProtectedRoute allowedRoles={['admin']}><AdminCapacity /></ProtectedRoute>} />
             <Route path="/admin/whatsapp-templates" element={<ProtectedRoute allowedRoles={['admin']}><AdminWhatsAppTemplates /></ProtectedRoute>} />
             <Route path="/admin/salaries" element={<ProtectedRoute allowedRoles={['admin']}><AdminSalaries /></ProtectedRoute>} />
+            <Route path="/admin/scripts" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><ScriptsLibrary routeBase="/admin/scripts" /></AdminLayout></ProtectedRoute>} />
+            <Route path="/admin/scripts/:id" element={<ProtectedRoute allowedRoles={['admin']}><ScriptEditor routeBase="/admin/scripts" /></ProtectedRoute>} />
             <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin']}><AdminSettings /></ProtectedRoute>} />
 
             {/* Editor */}
@@ -121,6 +121,8 @@ const App = () => (
 
             {/* Writer */}
             <Route path="/writer" element={<ProtectedRoute allowedRoles={['writer']}><WriterDashboard /></ProtectedRoute>} />
+            <Route path="/writer/scripts" element={<ProtectedRoute allowedRoles={['writer']}><WriterLayout><ScriptsLibrary routeBase="/writer/scripts" /></WriterLayout></ProtectedRoute>} />
+            <Route path="/writer/scripts/:id" element={<ProtectedRoute allowedRoles={['writer']}><ScriptEditor routeBase="/writer/scripts" /></ProtectedRoute>} />
             <Route path="/writer/briefs" element={<ProtectedRoute allowedRoles={['writer']}><WriterClientBriefs /></ProtectedRoute>} />
             <Route path="/writer/attendance" element={<ProtectedRoute allowedRoles={['writer']}><WriterLayout><MyAttendancePage /></WriterLayout></ProtectedRoute>} />
 
