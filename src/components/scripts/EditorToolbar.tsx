@@ -50,7 +50,7 @@ export function EditorToolbar({
   const disabled = !canEdit;
   // Bypass strict command typing (extension augmentation not reachable in isolation)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const chain = () => editor.chain().focus() as any;
+  const chain = () => chain() as any;
 
   const promptLink = () => {
     const prev = editor.getAttributes('link').href as string | undefined;
@@ -65,71 +65,71 @@ export function EditorToolbar({
 
   return (
     <div className="sticky top-0 z-30 flex items-center gap-1 flex-wrap px-3 py-2 border-b border-border bg-card/95 backdrop-blur">
-      <Btn title="Undo" disabled={disabled} onClick={() => editor.chain().focus().undo().run()}>
+      <Btn title="Undo" disabled={disabled} onClick={() => chain().undo().run()}>
         <Undo2 size={15} />
       </Btn>
-      <Btn title="Redo" disabled={disabled} onClick={() => editor.chain().focus().redo().run()}>
+      <Btn title="Redo" disabled={disabled} onClick={() => chain().redo().run()}>
         <Redo2 size={15} />
       </Btn>
       <div className="w-px h-5 bg-border mx-1" />
 
       <Btn title="Heading 1" disabled={disabled}
         active={editor.isActive('heading', { level: 1 })}
-        onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}>
+        onClick={() => chain().toggleHeading({ level: 1 }).run()}>
         <Heading1 size={15} />
       </Btn>
       <Btn title="Heading 2" disabled={disabled}
         active={editor.isActive('heading', { level: 2 })}
-        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
+        onClick={() => chain().toggleHeading({ level: 2 }).run()}>
         <Heading2 size={15} />
       </Btn>
       <Btn title="Heading 3" disabled={disabled}
         active={editor.isActive('heading', { level: 3 })}
-        onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}>
+        onClick={() => chain().toggleHeading({ level: 3 }).run()}>
         <Heading3 size={15} />
       </Btn>
 
       <div className="w-px h-5 bg-border mx-1" />
       <Btn title="Bold" disabled={disabled}
         active={editor.isActive('bold')}
-        onClick={() => editor.chain().focus().toggleBold().run()}>
+        onClick={() => chain().toggleBold().run()}>
         <Bold size={15} />
       </Btn>
       <Btn title="Italic" disabled={disabled}
         active={editor.isActive('italic')}
-        onClick={() => editor.chain().focus().toggleItalic().run()}>
+        onClick={() => chain().toggleItalic().run()}>
         <Italic size={15} />
       </Btn>
       <Btn title="Underline" disabled={disabled}
         active={editor.isActive('underline')}
-        onClick={() => editor.chain().focus().toggleUnderline().run()}>
+        onClick={() => chain().toggleUnderline().run()}>
         <UIcon size={15} />
       </Btn>
       <Btn title="Strikethrough" disabled={disabled}
         active={editor.isActive('strike')}
-        onClick={() => editor.chain().focus().toggleStrike().run()}>
+        onClick={() => chain().toggleStrike().run()}>
         <Strikethrough size={15} />
       </Btn>
       <Btn title="Highlight" disabled={disabled}
         active={editor.isActive('highlight')}
-        onClick={() => editor.chain().focus().toggleHighlight().run()}>
+        onClick={() => chain().toggleHighlight().run()}>
         <Highlighter size={15} />
       </Btn>
 
       <div className="w-px h-5 bg-border mx-1" />
       <Btn title="Bullet list" disabled={disabled}
         active={editor.isActive('bulletList')}
-        onClick={() => editor.chain().focus().toggleBulletList().run()}>
+        onClick={() => chain().toggleBulletList().run()}>
         <List size={15} />
       </Btn>
       <Btn title="Numbered list" disabled={disabled}
         active={editor.isActive('orderedList')}
-        onClick={() => editor.chain().focus().toggleOrderedList().run()}>
+        onClick={() => chain().toggleOrderedList().run()}>
         <ListOrdered size={15} />
       </Btn>
       <Btn title="Quote" disabled={disabled}
         active={editor.isActive('blockquote')}
-        onClick={() => editor.chain().focus().toggleBlockquote().run()}>
+        onClick={() => chain().toggleBlockquote().run()}>
         <Quote size={15} />
       </Btn>
 
@@ -142,7 +142,7 @@ export function EditorToolbar({
       </Btn>
       <Btn title="Insert table" disabled={disabled}
         onClick={() =>
-          editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
+          chain().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
         }>
         <TableIcon size={15} />
       </Btn>
