@@ -1,9 +1,10 @@
 import { ReactNode } from 'react';
 import { TeamLayout } from '@/components/shared/TeamLayout';
-import { PenTool, BookOpen, Calendar } from 'lucide-react';
+import { PenTool, BookOpen, Calendar, FileText } from 'lucide-react';
 
 const navItems = [
   { to: '/writer', icon: PenTool, label: 'My Tasks', end: true },
+  { to: '/writer/scripts', icon: FileText, label: 'Scripts' },
   { to: '/writer/briefs', icon: BookOpen, label: 'Client Briefs' },
   { to: '/writer/attendance', icon: Calendar, label: 'Attendance' },
 ];
