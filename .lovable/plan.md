@@ -1,110 +1,94 @@
-# Eka Agency OS — Cleanup, Client Portal Revival & New Features
 
-Scope is too big for one round. Splitting into 4 phases so each ships clean and testable.
+## Scripts Workspace — Plan
 
----
+A built-in Google Docs-style editor for writers (and admins) to create and collaborate on scripts inside the app.
 
-## Phase 1 — Structural cleanup (foundation)
+### 1. Where it lives
 
-Do this first so portal + new features land on tidy code.
+- New nav item **Scripts** for the `writer` role (in `WriterLayout`) and for `admin` (in `AdminLayout`).
+- Two pages:
+  - `/writer/scripts` and `/admin/scripts` → **Scripts Library** (list, search, create, rename, delete, filter by client, link/unlink to writing task).
+  - `/writer/scripts/:id` and `/admin/scripts/:id` → **Script Editor** (the doc).
+- Optional link to a writing task: on the writing-task detail card, an "Open Script" button appears if a script is linked; otherwise "Create Script" creates one linked to the task.
 
-**1.1 Consolidate role layouts**
-Replace `AdminLayout`, `EditorLayout`, `DesignerLayout`, `WriterLayout`, `CameraLayout`, `SocialLayout` with a single `RoleLayout` driven by a config map (nav items, accent color, route prefix per role). Saves ~400 lines, one source of truth for nav/sidebar/bottom-tab/attendance bar.
+### 2. Data model (new tables)
 
-**1.2 Consolidate per-role Attendance + DailyTasks pages**
-Routes for each role currently render thin wrappers. Point them straight at `shared/MyAttendancePage` and `shared/DailyTasksPage`. Delete `*/CameraAttendance.tsx`, `*/EditorAttendance.tsx`, etc. (10 files).
+- `scripts` — id, title, client_id (nullable), linked_writing_task_id (nullable, unique), created_by, updated_by, content_json (jsonb — TipTap doc), content_html (nullable, for previews), word_count, char_count, ydoc_state (bytea — Yjs binary snapshot), archived (bool), created_at, updated_at.
+- `script_collaborators` — script_id, user_id, role ('viewer'|'editor'). Admins always have full access; writer who created it is editor.
+- `script_comments` — id, script_id, author_id, anchor (jsonb — TipTap mark id / range), body (text), parent_id (nullable — replies), resolved (bool), created_at.
+- `script_updates` (Yjs sync log) — id, script_id, update (bytea), created_at. Compact via a scheduled snapshot back into `scripts.ydoc_state` when the log grows past N rows.
 
-**1.3 Pipeline module**
-Create `src/lib/pipeline/` containing:
-- `stages.ts` (current `statusConfig`)
-- `transitions.ts` (current `handleVideoStatusChange`)
-- `sync.ts` (current `syncTaskToVideo`)
-- `index.ts` re-exports
-Update imports across the codebase.
+RLS: admins full access; writers see scripts they created, are collaborators on, or that are linked to their own writing tasks; clients cannot see scripts. GRANTs to `authenticated` + `service_role` (no anon).
 
-**1.4 Drop `team_messages` table**
-Migration: `DROP TABLE team_messages CASCADE`. Memory already says messaging is disabled.
+Realtime enabled on `script_updates`, `script_comments`, `scripts`.
 
----
+### 3. Editor (TipTap)
 
-## Phase 2 — Client portal revival
+Install: `@tiptap/react`, `@tiptap/starter-kit`, `@tiptap/extension-underline`, `@tiptap/extension-highlight`, `@tiptap/extension-image`, `@tiptap/extension-table` (+ row/cell/header), `@tiptap/extension-link`, `@tiptap/extension-placeholder`, `@tiptap/extension-character-count`, `@tiptap/extension-collaboration`, `@tiptap/extension-collaboration-cursor`, plus `yjs` and `y-protocols`.
 
-Restore login + dashboard for clients. Components already exist as dead code; main work is auth + RLS + routing.
+Toolbar: headings (H1–H3), bold/italic/underline/strike, highlight, bullet/ordered list, quote, link, image (upload to a new `script-assets` storage bucket), table, undo/redo, word + char count in the footer.
 
-**2.1 Database**
-- Re-verify `clients.user_id` FK to `auth.users`
-- Confirm RLS policies for `videos`, `content_items`, `content_plans`, `writing_tasks`, `design_tasks`, `client_ideas`, `client_ratings`, `feedback` allow client users via `clients.user_id = auth.uid()` (most already exist)
-- Add `client` value to existing role checks if missing
+Export:
+- **PDF** — client-side using `html2pdf.js` (renders the editor DOM to a PDF).
+- **DOCX** — client-side using `docx` package converting TipTap JSON → DOCX runs/paragraphs.
 
-**2.2 Auth**
-- Re-enable client signup/login on `LoginPage` (or separate `/client/login`)
-- Email + Google OAuth via Lovable Cloud (defaults)
-- Add `/reset-password` page
-- `RoleRedirect` routes client users → `/client`
+Images pasted or uploaded go to Supabase Storage bucket `script-assets` (private; signed URLs, 1-year expiry — matches existing `social-media` bucket pattern).
 
-**2.3 Admin: invite client**
-- "Send portal invite" button on each client row in `AdminClients`
-- Edge function `invite-client-user` creates auth user, links `clients.user_id`, emails invite via Supabase
-- Admin can revoke access (clear `clients.user_id`)
+### 4. Real-time collaboration
 
-**2.4 Restore client routes**
-- `/client` → `ClientDashboard` (deliveries, plan, ideas, ratings)
-- Wire up existing `ClientContentPlan`, `ClientIdeasList`, `IdeaSubmissionForm`, `VideoFeedbackModal`, `ClientRatingModal`, `DeliveryCalendar`, `VideoProgressTracker`
-- Mobile responsive; bottom-tab nav
+- Yjs `Y.Doc` is the source of truth in the editor. TipTap `Collaboration` extension binds it.
+- **Transport (custom Supabase provider)** — one Supabase Realtime channel per script:
+  - **Broadcast** — every local Yjs update is base64-encoded and sent as a `broadcast` event `update`; peers apply the received update to their local Y.Doc.
+  - **Presence** — `CollaborationCursor` awareness state (user id, name, color, cursor) is synced through Supabase Realtime presence.
+  - **Persistence** — on every update we also insert the binary update into `script_updates`. On load, we read `scripts.ydoc_state` (if any) + all newer `script_updates` rows and apply them to build the initial doc. Debounced (~10 s) we also write the merged snapshot back to `scripts.ydoc_state`, `content_json`, `content_html`, `word_count`, `char_count`, and clear consumed `script_updates` rows.
+- Cursor color derived from user id hash; label from `profiles.full_name`.
 
-**2.5 Update memory**
-Replace "Client portal & auth are REMOVED" with the new model.
+This gives real Google-Docs-style multi-cursor collab without requiring us to run a Yjs sync server.
 
----
+### 5. Inline comments
 
-## Phase 3 — New features (build in this order)
+- Custom TipTap `Mark` `comment` with attribute `commentId`. Selecting text → "Comment" button in a floating menu → creates a `script_comments` row and wraps the selection with the mark.
+- Right-side comments panel lists open comments in document order, with reply threads and a **Resolve** button (sets `resolved=true` and removes the mark).
+- Clicking a comment scrolls to and highlights the anchored text.
+- Comments stream in via Realtime on `script_comments`.
 
-**3.1 WhatsApp deep-link templates per stage**
-- Per video stage: pre-formatted message ("Hi {client}, your reel is ready for review: {link}")
-- Templates stored in `whatsapp_templates` table (stage, template_text)
-- One-click button on video detail → opens `https://wa.me/{phone}?text=…`
-- Admin-editable templates in Settings
+### 6. Library UX
 
-**3.2 Capacity planner (14-day workload)**
-- New admin page `/admin/capacity`
-- Heatmap: rows = team members, columns = next 14 days
-- Cell value = sum of due tasks/videos/shoots assigned that day
-- Click cell → list of items, drag to reassign (or open detail)
+- Card grid: title, client badge, linked-task badge, last-edited-by avatar + relative time, word count, quick actions (open, rename, duplicate, archive, delete for admin/owner).
+- Filters: client, "Linked to my tasks", "Shared with me", archived.
+- "New Script" modal: title, optional client, optional writing task to link.
 
-**3.3 Invoice & payment tracker**
-- New tables: `invoices` (client_id, amount, currency, status, due_date, sent_at, paid_at, notes, pdf_url)
-- Admin page `/admin/invoices` with status filters
-- Monthly revenue dashboard widget on `AdminDashboard`
-- Auto-overdue badge if `due_date < today AND status != paid`
-- (PDF generation deferred — manual upload for now)
+### 7. Files to create / edit
 
-**3.4 AI brief generator**
-- "Generate brief" button on `client_ideas` row and on new video creation
-- Edge function `generate-brief` → Lovable AI Gateway (`google/gemini-2.5-flash`)
-- Returns: writing brief, shoot checklist (jsonb array), 3 caption drafts
-- Admin reviews, edits, then "Apply" creates linked writing_task + populates video.shoot_checklist
+Create:
+- `src/pages/shared/ScriptsLibrary.tsx`
+- `src/pages/shared/ScriptEditor.tsx`
+- `src/components/scripts/EditorToolbar.tsx`
+- `src/components/scripts/CommentsPanel.tsx`
+- `src/components/scripts/NewScriptModal.tsx`
+- `src/lib/scripts/useYSupabaseProvider.ts` (Yjs ↔ Supabase Realtime bridge + persistence)
+- `src/lib/scripts/exportDocx.ts`, `src/lib/scripts/exportPdf.ts`
+- `src/lib/scripts/commentMark.ts` (TipTap Mark)
+- Migration: tables, RLS, GRANTs, Realtime publication, `script-assets` storage bucket + policies.
 
----
+Edit:
+- `src/components/writer/WriterLayout.tsx` — add Scripts nav item.
+- `src/components/admin/AdminLayout.tsx` — add Scripts nav item.
+- `src/App.tsx` — add routes.
+- `src/pages/writer/WriterDashboard.tsx` and admin writing-task views — add "Open/Create Script" link on tasks.
 
-## Phase 4 — Wrap up
+### 8. Rollout order
 
-- Run `supabase--linter`, fix any new RLS warnings introduced
-- Update `mem://index.md` Core block
-- Add memory entries for: client portal model, WhatsApp templates, capacity planner, invoices, AI brief generator
-- Quick smoke test: log in as each of 7 roles (admin, 5 team, client), confirm core flows work
+1. Migration + storage bucket (approve first — types file regenerates after).
+2. Install deps.
+3. Library page + New Script modal + routes + nav entries.
+4. Editor shell with TipTap + toolbar + local autosave (no collab yet) — usable checkpoint.
+5. Yjs + Supabase provider + cursors.
+6. Comments (mark + panel + realtime).
+7. Export DOCX / PDF.
+8. Task ↔ script linking on writer + admin task pages.
 
----
+### Notes / trade-offs
 
-## Recommendation
-
-Approve **Phase 1 first** (low risk, makes everything after easier). I'll send Phase 2 plan after 1 lands so you can review the auth/RLS changes carefully before clients can log in.
-
-If you'd rather I just do everything in one go without intermediate check-ins, say so and I'll execute all 4 phases sequentially — but expect ~30+ migrations and edits across ~80 files.
-
-## Technical details (skip if non-technical)
-
-- Phase 1 migrations: 1 (drop team_messages). Pure code refactors otherwise.
-- Phase 2 migrations: ~2 (verify clients.user_id FK + audit RLS). 1 edge function.
-- Phase 3 migrations: 3 (whatsapp_templates, invoices, indexes). 1 edge function for brief gen.
-- All RLS uses existing `has_role()` SECURITY DEFINER pattern, no recursion risk.
-- Layout consolidation uses a `RoleConfig` record keyed by `app_role` enum value.
+- Real-time via Supabase Realtime broadcast is bandwidth-efficient for small teams but is not as battle-tested as a dedicated Yjs server (Hocuspocus). Fine for an in-house tool with a handful of concurrent editors; if you ever have many simultaneous editors on one doc, we can swap in Hocuspocus later without changing the editor code.
+- Rich exports render what's in the editor; very complex layouts (nested tables inside tables, etc.) may look simpler in the exported file than in the browser.
