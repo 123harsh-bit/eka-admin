@@ -1210,6 +1210,187 @@ export type Database = {
         }
         Relationships: []
       }
+      script_collaborators: {
+        Row: {
+          created_at: string
+          id: string
+          role: string
+          script_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: string
+          script_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: string
+          script_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "script_collaborators_script_id_fkey"
+            columns: ["script_id"]
+            isOneToOne: false
+            referencedRelation: "scripts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      script_comments: {
+        Row: {
+          anchor: Json | null
+          author_id: string
+          body: string
+          created_at: string
+          id: string
+          parent_id: string | null
+          resolved: boolean
+          script_id: string
+          updated_at: string
+        }
+        Insert: {
+          anchor?: Json | null
+          author_id: string
+          body: string
+          created_at?: string
+          id?: string
+          parent_id?: string | null
+          resolved?: boolean
+          script_id: string
+          updated_at?: string
+        }
+        Update: {
+          anchor?: Json | null
+          author_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          parent_id?: string | null
+          resolved?: boolean
+          script_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "script_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "script_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "script_comments_script_id_fkey"
+            columns: ["script_id"]
+            isOneToOne: false
+            referencedRelation: "scripts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      script_updates: {
+        Row: {
+          author_id: string | null
+          created_at: string
+          id: number
+          script_id: string
+          update: string
+        }
+        Insert: {
+          author_id?: string | null
+          created_at?: string
+          id?: number
+          script_id: string
+          update: string
+        }
+        Update: {
+          author_id?: string | null
+          created_at?: string
+          id?: number
+          script_id?: string
+          update?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "script_updates_script_id_fkey"
+            columns: ["script_id"]
+            isOneToOne: false
+            referencedRelation: "scripts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scripts: {
+        Row: {
+          archived: boolean
+          char_count: number
+          client_id: string | null
+          content_html: string | null
+          content_json: Json | null
+          created_at: string
+          created_by: string
+          id: string
+          linked_writing_task_id: string | null
+          title: string
+          updated_at: string
+          updated_by: string | null
+          word_count: number
+          ydoc_state: string | null
+        }
+        Insert: {
+          archived?: boolean
+          char_count?: number
+          client_id?: string | null
+          content_html?: string | null
+          content_json?: Json | null
+          created_at?: string
+          created_by: string
+          id?: string
+          linked_writing_task_id?: string | null
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+          word_count?: number
+          ydoc_state?: string | null
+        }
+        Update: {
+          archived?: boolean
+          char_count?: number
+          client_id?: string | null
+          content_html?: string | null
+          content_json?: Json | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          linked_writing_task_id?: string | null
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+          word_count?: number
+          ydoc_state?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scripts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scripts_linked_writing_task_id_fkey"
+            columns: ["linked_writing_task_id"]
+            isOneToOne: true
+            referencedRelation: "writing_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1614,6 +1795,14 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      can_access_script: {
+        Args: { _script_id: string; _user_id: string }
+        Returns: boolean
+      }
+      can_edit_script: {
+        Args: { _script_id: string; _user_id: string }
+        Returns: boolean
       }
       client_get_own_data: {
         Args: never
