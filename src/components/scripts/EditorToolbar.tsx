@@ -48,16 +48,19 @@ export function EditorToolbar({
 }: Props) {
   if (!editor) return null;
   const disabled = !canEdit;
+  // Bypass strict command typing (extension augmentation not reachable in isolation)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const chain = () => editor.chain().focus() as any;
 
   const promptLink = () => {
     const prev = editor.getAttributes('link').href as string | undefined;
     const url = window.prompt('URL', prev || 'https://');
     if (url === null) return;
     if (url === '') {
-      editor.chain().focus().unsetLink().run();
+      chain().unsetLink().run();
       return;
     }
-    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+    chain().extendMarkRange('link').setLink({ href: url }).run();
   };
 
   return (
