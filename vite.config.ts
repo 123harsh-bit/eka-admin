@@ -5,19 +5,23 @@ import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
-  server: {
-    host: "::",
-    port: 8080,
-    hmr: {
-      overlay: false,
+export default defineConfig(({ mode }) => {
+  const enablePwa = mode === "production";
+
+  return {
+    server: {
+      host: "::",
+      port: 8080,
+      hmr: {
+        overlay: false,
+      },
     },
-  },
-  plugins: [
-    react(),
-    mode === "development" && componentTagger(),
-    VitePWA({
+    plugins: [
+      react(),
+      mode === "development" && componentTagger(),
+      enablePwa && VitePWA({
       registerType: "autoUpdate",
+      showMaximumFileSizeToCacheInBytesWarning: true,
       includeAssets: ["favicon.ico", "app-icon.png", "splash.png"],
       workbox: {
         navigateFallbackDenylist: [/^\/~oauth/],
@@ -50,10 +54,11 @@ export default defineConfig(({ mode }) => ({
         ],
       },
     }),
-  ].filter(Boolean),
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
+    ].filter(Boolean),
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
+      },
     },
-  },
-}));
+  };
+});
