@@ -13,7 +13,7 @@ import { TableRow } from '@tiptap/extension-table-row';
 import { TableCell } from '@tiptap/extension-table-cell';
 import { TableHeader } from '@tiptap/extension-table-header';
 import Collaboration from '@tiptap/extension-collaboration';
-import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
+import CollaborationCaret from '@tiptap/extension-collaboration-caret';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -110,7 +110,7 @@ export default function ScriptEditor({ routeBase }: Props) {
       CharacterCount,
       CommentMark,
       Collaboration.configure({ document: provider.ydoc }),
-      CollaborationCursor.configure({
+      CollaborationCaret.configure({
         provider: {
           awareness: provider.awareness,
           // minimal shape required by the extension
