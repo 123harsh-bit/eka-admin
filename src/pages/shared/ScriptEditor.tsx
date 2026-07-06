@@ -13,7 +13,6 @@ import { TableRow } from '@tiptap/extension-table-row';
 import { TableCell } from '@tiptap/extension-table-cell';
 import { TableHeader } from '@tiptap/extension-table-header';
 import Collaboration from '@tiptap/extension-collaboration';
-import CollaborationCaret from '@tiptap/extension-collaboration-caret';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -110,16 +109,6 @@ export default function ScriptEditor({ routeBase }: Props) {
       CharacterCount,
       CommentMark,
       Collaboration.configure({ document: provider.ydoc }),
-      CollaborationCaret.configure({
-        provider: {
-          awareness: provider.awareness,
-          // minimal shape required by the extension
-          on() {},
-          off() {},
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any,
-        user: { name: userName, color: userColor },
-      }),
     ],
   }, [provider.ydoc, canEdit, loading]);
 
