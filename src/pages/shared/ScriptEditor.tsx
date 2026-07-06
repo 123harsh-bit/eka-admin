@@ -96,7 +96,7 @@ export default function ScriptEditor({ routeBase }: Props) {
   const editor = useEditor({
     editable: canEdit && !loading,
     extensions: [
-      StarterKit.configure({ undoRedo: false }),
+      StarterKit.configure({ undoRedo: false, link: false, underline: false }),
       Underline,
       Highlight.configure({ multicolor: false }),
       Link.configure({ openOnClick: false, autolink: true }),
