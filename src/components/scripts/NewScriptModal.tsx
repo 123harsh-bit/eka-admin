@@ -49,23 +49,17 @@ export function NewScriptModal({ open, onOpenChange, onCreated }: Props) {
       return;
     }
     setBusy(true);
-    const { data, error } = await supabase
-      .from('scripts')
-      .insert({
-        title: title.trim(),
-        created_by: user.id,
-        updated_by: user.id,
-        client_id: clientId || null,
-        linked_writing_task_id: taskId || null,
-      })
-      .select('id')
-      .single();
+    const { data, error } = await (supabase.rpc as any)('create_script', {
+      _title: title.trim(),
+      _client_id: clientId || null,
+      _linked_writing_task_id: taskId || null,
+    });
     setBusy(false);
     if (error) {
       toast({ title: 'Could not create script', description: error.message, variant: 'destructive' });
       return;
     }
-    onCreated(data.id);
+    onCreated(data as string);
     onOpenChange(false);
     setTitle(''); setClientId(''); setTaskId('');
   };

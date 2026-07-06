@@ -1838,6 +1838,14 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_script: {
+        Args: {
+          _client_id?: string
+          _linked_writing_task_id?: string
+          _title: string
+        }
+        Returns: string
+      }
       get_client_id_for_user: { Args: { _user_id: string }; Returns: string }
       get_own_profile: {
         Args: never
