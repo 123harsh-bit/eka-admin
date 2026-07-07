@@ -964,6 +964,7 @@ export default function AdminVideos() {
               })}
             </div>
           </div>
+          )}
         </div>
 
         {/* Detail Panel */}
