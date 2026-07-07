@@ -568,17 +568,58 @@ export default function AdminVideos() {
     }
   };
 
+  // Month bucket helper — prefers date_planned, falls back to created_at
+  const bucketFor = (v: VideoRow) => {
+    const src = v.date_planned || v.created_at;
+    return src ? src.slice(0, 7) : 'unknown';
+  };
+
+  const monthsAvailable = Array.from(new Set(videos.map(bucketFor))).sort().reverse();
+
   const filtered = videos.filter(v => {
     const matchSearch = v.title.toLowerCase().includes(search.toLowerCase()) || v.client_name?.toLowerCase().includes(search.toLowerCase());
     const matchStatus = !statusFilter || v.status === statusFilter;
     const matchClient = !clientFilter || v.client_id === clientFilter;
-    return matchSearch && matchStatus && matchClient;
+    const matchMonth = monthKey === 'all' || bucketFor(v) === monthKey;
+    return matchSearch && matchStatus && matchClient && matchMonth;
   }).sort((a, b) => {
     const aReq = getActionRequired(a.status, a);
     const bReq = getActionRequired(b.status, b);
     const priority = { admin: 0, team: 1, client: 2, done: 3 };
     return (priority[aReq.type] ?? 9) - (priority[bReq.type] ?? 9);
   });
+
+  // Group filtered by client for the grouped list view
+  const groupedByClient: Record<string, VideoRow[]> = {};
+  filtered.forEach(v => {
+    const key = v.client_name || 'Unknown';
+    if (!groupedByClient[key]) groupedByClient[key] = [];
+    groupedByClient[key].push(v);
+  });
+
+  // Kanban stages — pipeline phases with concrete statuses
+  const kanbanColumns: { key: string; label: string; statuses: VideoStatus[] }[] = [
+    { key: 'ideation', label: 'Ideation & Script', statuses: ['idea', 'scripting', 'script_client_review', 'script_approved'] },
+    { key: 'shoot', label: 'Shoot', statuses: ['shoot_assigned', 'shooting', 'footage_delivered'] },
+    { key: 'edit', label: 'Editing & Review', statuses: ['editing', 'internal_review', 'client_review', 'revisions'] },
+    { key: 'ready', label: 'Ready', statuses: ['approved', 'ready_to_upload'] },
+    { key: 'live', label: 'Live', statuses: ['live'] },
+  ];
+
+  const toggleGroup = (key: string) => {
+    setCollapsedGroups(prev => {
+      const n = new Set(prev);
+      if (n.has(key)) n.delete(key); else n.add(key);
+      return n;
+    });
+  };
+
+  const monthLabel = (key: string) => {
+    if (key === 'all') return 'All';
+    if (key === 'unknown') return 'Undated';
+    const [y, m] = key.split('-');
+    return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString('en-GB', { month: 'short', year: '2-digit' });
+  };
 
   const si = statusIndex(form.status);
   const selectedClient = clients.find(c => c.id === form.client_id);
