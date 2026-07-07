@@ -395,6 +395,15 @@ export default function ScriptEditor({ routeBase }: Props) {
           </aside>
         )}
       </div>
+      {id && (
+        <ShareScriptDialog
+          open={showShare}
+          onOpenChange={setShowShare}
+          scriptId={id}
+          ownerId={ownerId}
+          canManage={canManageShare}
+        />
+      )}
     </div>
   );
 }
