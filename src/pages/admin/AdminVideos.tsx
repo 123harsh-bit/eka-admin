@@ -654,6 +654,55 @@ export default function AdminVideos() {
             </select>
           </div>
 
+          {/* Organizer bar: month tabs + view mode */}
+          <div className="flex items-center gap-2 flex-wrap flex-shrink-0 border-b border-glass-border/40 pb-2">
+            <div className="flex items-center gap-1 flex-wrap flex-1 min-w-0">
+              <button
+                onClick={() => setMonthKey('all')}
+                className={cn('h-7 px-2.5 rounded-md text-xs font-medium transition-colors',
+                  monthKey === 'all' ? 'bg-primary text-primary-foreground' : 'bg-muted/30 text-muted-foreground hover:bg-muted/50')}
+              >All</button>
+              {monthsAvailable.slice(0, 8).map(k => (
+                <button
+                  key={k}
+                  onClick={() => setMonthKey(k)}
+                  className={cn('h-7 px-2.5 rounded-md text-xs font-medium transition-colors',
+                    monthKey === k ? 'bg-primary text-primary-foreground' : 'bg-muted/30 text-muted-foreground hover:bg-muted/50',
+                    k === currentMonthKey && monthKey !== k && 'ring-1 ring-primary/40')}
+                  title={k === currentMonthKey ? 'This month' : undefined}
+                >{monthLabel(k)}{k === currentMonthKey && ' •'}</button>
+              ))}
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              {viewMode === 'list' && (
+                <button
+                  onClick={() => setGroupByClient(g => !g)}
+                  className={cn('h-8 px-2 rounded-md text-xs flex items-center gap-1.5 border transition-colors',
+                    groupByClient ? 'border-primary/50 bg-primary/10 text-primary' : 'border-input bg-background text-muted-foreground hover:text-foreground')}
+                  title="Group by client"
+                >
+                  <Layers size={13} /> By client
+                </button>
+              )}
+              <div className="flex rounded-md border border-input overflow-hidden">
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={cn('h-8 px-2.5 text-xs flex items-center gap-1.5 transition-colors',
+                    viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:text-foreground')}
+                >
+                  <LayoutList size={13} /> List
+                </button>
+                <button
+                  onClick={() => setViewMode('kanban')}
+                  className={cn('h-8 px-2.5 text-xs flex items-center gap-1.5 border-l border-input transition-colors',
+                    viewMode === 'kanban' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:text-foreground')}
+                >
+                  <LayoutGrid size={13} /> Kanban
+                </button>
+              </div>
+            </div>
+          </div>
+
           {selected.size > 0 && (
             <div className="glass-card p-3 flex items-center gap-3 flex-wrap flex-shrink-0 border border-primary/40 bg-primary/5">
               <span className="text-sm font-medium text-foreground">{selected.size} selected</span>
