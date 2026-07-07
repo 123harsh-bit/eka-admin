@@ -1335,6 +1335,8 @@ export type Database = {
           created_at: string
           created_by: string
           id: string
+          linked_content_item_id: string | null
+          linked_video_id: string | null
           linked_writing_task_id: string | null
           title: string
           updated_at: string
@@ -1351,6 +1353,8 @@ export type Database = {
           created_at?: string
           created_by: string
           id?: string
+          linked_content_item_id?: string | null
+          linked_video_id?: string | null
           linked_writing_task_id?: string | null
           title?: string
           updated_at?: string
@@ -1367,6 +1371,8 @@ export type Database = {
           created_at?: string
           created_by?: string
           id?: string
+          linked_content_item_id?: string | null
+          linked_video_id?: string | null
           linked_writing_task_id?: string | null
           title?: string
           updated_at?: string
@@ -1380,6 +1386,20 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scripts_linked_content_item_id_fkey"
+            columns: ["linked_content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scripts_linked_video_id_fkey"
+            columns: ["linked_video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
             referencedColumns: ["id"]
           },
           {
@@ -1841,6 +1861,8 @@ export type Database = {
       create_script: {
         Args: {
           _client_id?: string
+          _linked_content_item_id?: string
+          _linked_video_id?: string
           _linked_writing_task_id?: string
           _title: string
         }

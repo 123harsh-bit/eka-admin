@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NewScriptModal } from '@/components/scripts/NewScriptModal';
 import {
-  FileText, Plus, Search, Trash2, Archive, Link2, Users, Clock, Loader2, ArchiveRestore,
+  FileText, Plus, Search, Trash2, Archive, Link2, Users, Clock, Loader2, ArchiveRestore, Video as VideoIcon, CalendarRange,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -17,6 +17,8 @@ interface ScriptRow {
   title: string;
   client_id: string | null;
   linked_writing_task_id: string | null;
+  linked_video_id: string | null;
+  linked_content_item_id: string | null;
   created_by: string;
   updated_by: string | null;
   word_count: number;
@@ -36,6 +38,8 @@ export default function ScriptsLibrary({ routeBase }: Props) {
   const [scripts, setScripts] = useState<ScriptRow[]>([]);
   const [clients, setClients] = useState<Record<string, string>>({});
   const [tasks, setTasks] = useState<Record<string, string>>({});
+  const [videos, setVideos] = useState<Record<string, string>>({});
+  const [items, setItems] = useState<Record<string, string>>({});
   const [authors, setAuthors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
@@ -54,20 +58,22 @@ export default function ScriptsLibrary({ routeBase }: Props) {
 
     const clientIds = Array.from(new Set(rows.map((r) => r.client_id).filter(Boolean))) as string[];
     const taskIds = Array.from(new Set(rows.map((r) => r.linked_writing_task_id).filter(Boolean))) as string[];
+    const videoIds = Array.from(new Set(rows.map((r) => r.linked_video_id).filter(Boolean))) as string[];
+    const itemIds = Array.from(new Set(rows.map((r) => r.linked_content_item_id).filter(Boolean))) as string[];
     const userIds = Array.from(new Set([...rows.map((r) => r.created_by), ...rows.map((r) => r.updated_by)].filter(Boolean))) as string[];
 
-    if (clientIds.length) {
-      const { data: cs } = await supabase.from('clients').select('id, name').in('id', clientIds);
-      setClients(Object.fromEntries((cs || []).map((c) => [c.id, c.name])));
-    }
-    if (taskIds.length) {
-      const { data: ts } = await supabase.from('writing_tasks').select('id, title').in('id', taskIds);
-      setTasks(Object.fromEntries((ts || []).map((t) => [t.id, t.title])));
-    }
-    if (userIds.length) {
-      const { data: ps } = await supabase.from('profiles').select('id, full_name').in('id', userIds);
-      setAuthors(Object.fromEntries((ps || []).map((p) => [p.id, (p as { full_name: string }).full_name || 'Team member'])));
-    }
+    const [csRes, tsRes, vsRes, isRes, psRes] = await Promise.all([
+      clientIds.length ? supabase.from('clients').select('id, name').in('id', clientIds) : Promise.resolve({ data: [] }),
+      taskIds.length ? supabase.from('writing_tasks').select('id, title').in('id', taskIds) : Promise.resolve({ data: [] }),
+      videoIds.length ? supabase.from('videos').select('id, title').in('id', videoIds) : Promise.resolve({ data: [] }),
+      itemIds.length ? supabase.from('content_items').select('id, title').in('id', itemIds) : Promise.resolve({ data: [] }),
+      userIds.length ? supabase.from('profiles').select('id, full_name').in('id', userIds) : Promise.resolve({ data: [] }),
+    ]);
+    setClients(Object.fromEntries((csRes.data || []).map((c: { id: string; name: string }) => [c.id, c.name])));
+    setTasks(Object.fromEntries((tsRes.data || []).map((t: { id: string; title: string }) => [t.id, t.title])));
+    setVideos(Object.fromEntries((vsRes.data || []).map((v: { id: string; title: string }) => [v.id, v.title])));
+    setItems(Object.fromEntries((isRes.data || []).map((i: { id: string; title: string }) => [i.id, i.title])));
+    setAuthors(Object.fromEntries((psRes.data || []).map((p: { id: string; full_name: string }) => [p.id, p.full_name || 'Team member'])));
     setLoading(false);
   };
 
@@ -200,10 +206,22 @@ export default function ScriptsLibrary({ routeBase }: Props) {
                     <Users size={10} /> {clients[s.client_id]}
                   </span>
                 )}
+                {s.linked_video_id && videos[s.linked_video_id] && (
+                  <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 flex items-center gap-1 max-w-full">
+                    <VideoIcon size={10} />
+                    <span className="truncate">{videos[s.linked_video_id]}</span>
+                  </span>
+                )}
                 {s.linked_writing_task_id && tasks[s.linked_writing_task_id] && (
                   <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center gap-1 max-w-full">
                     <Link2 size={10} />
                     <span className="truncate">{tasks[s.linked_writing_task_id]}</span>
+                  </span>
+                )}
+                {s.linked_content_item_id && items[s.linked_content_item_id] && (
+                  <span className="px-2 py-0.5 rounded-full bg-fuchsia-500/10 text-fuchsia-400 flex items-center gap-1 max-w-full">
+                    <CalendarRange size={10} />
+                    <span className="truncate">{items[s.linked_content_item_id]}</span>
                   </span>
                 )}
               </div>

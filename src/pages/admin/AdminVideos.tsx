@@ -9,7 +9,7 @@ import { ConfirmDeleteModal } from '@/components/shared/ConfirmDeleteModal';
 import { useToast } from '@/hooks/use-toast';
 import { VIDEO_STATUSES, VIDEO_STATUS_ORDER, EDITING_ONLY_STATUS_ORDER, EDITING_ONLY_ADMIN_LABELS, type VideoStatus, type ClientServiceType, getActionRequired, getStatusOrderForClient, getAdminLabel } from '@/lib/statusConfig';
 import { getDirectDownloadLink } from '@/lib/driveUtils';
-import { Plus, Search, X, Video, Edit2, Trash2, ExternalLink, MessageSquare, Loader2, FolderOpen, Lock } from 'lucide-react';
+import { Plus, Search, X, Video, Edit2, Trash2, ExternalLink, MessageSquare, Loader2, FolderOpen, Lock, LayoutList, LayoutGrid, Layers, ChevronRight, ChevronDown } from 'lucide-react';
 import { ContentPlanBadge } from '@/components/shared/ContentPlanBadge';
 import { WorkflowPrompt } from '@/components/shared/WorkflowPrompt';
 import { handleVideoStatusChange } from '@/lib/pipeline';
@@ -77,6 +77,12 @@ export default function AdminVideos() {
   const [bulkStatus, setBulkStatus] = useState('');
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [workflowLoading, setWorkflowLoading] = useState(false);
+  // Organization controls
+  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
+  const [groupByClient, setGroupByClient] = useState(false);
+  const currentMonthKey = new Date().toISOString().slice(0, 7);
+  const [monthKey, setMonthKey] = useState<string>(currentMonthKey);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -562,17 +568,58 @@ export default function AdminVideos() {
     }
   };
 
+  // Month bucket helper — prefers date_planned, falls back to created_at
+  const bucketFor = (v: VideoRow) => {
+    const src = v.date_planned || v.created_at;
+    return src ? src.slice(0, 7) : 'unknown';
+  };
+
+  const monthsAvailable = Array.from(new Set(videos.map(bucketFor))).sort().reverse();
+
   const filtered = videos.filter(v => {
     const matchSearch = v.title.toLowerCase().includes(search.toLowerCase()) || v.client_name?.toLowerCase().includes(search.toLowerCase());
     const matchStatus = !statusFilter || v.status === statusFilter;
     const matchClient = !clientFilter || v.client_id === clientFilter;
-    return matchSearch && matchStatus && matchClient;
+    const matchMonth = monthKey === 'all' || bucketFor(v) === monthKey;
+    return matchSearch && matchStatus && matchClient && matchMonth;
   }).sort((a, b) => {
     const aReq = getActionRequired(a.status, a);
     const bReq = getActionRequired(b.status, b);
     const priority = { admin: 0, team: 1, client: 2, done: 3 };
     return (priority[aReq.type] ?? 9) - (priority[bReq.type] ?? 9);
   });
+
+  // Group filtered by client for the grouped list view
+  const groupedByClient: Record<string, VideoRow[]> = {};
+  filtered.forEach(v => {
+    const key = v.client_name || 'Unknown';
+    if (!groupedByClient[key]) groupedByClient[key] = [];
+    groupedByClient[key].push(v);
+  });
+
+  // Kanban stages — pipeline phases with concrete statuses
+  const kanbanColumns: { key: string; label: string; statuses: VideoStatus[] }[] = [
+    { key: 'ideation', label: 'Ideation & Script', statuses: ['idea', 'scripting', 'script_client_review', 'script_approved'] },
+    { key: 'shoot', label: 'Shoot', statuses: ['shoot_assigned', 'shooting', 'footage_delivered'] },
+    { key: 'edit', label: 'Editing & Review', statuses: ['editing', 'internal_review', 'client_review', 'revisions'] },
+    { key: 'ready', label: 'Ready', statuses: ['approved', 'ready_to_upload'] },
+    { key: 'live', label: 'Live', statuses: ['live'] },
+  ];
+
+  const toggleGroup = (key: string) => {
+    setCollapsedGroups(prev => {
+      const n = new Set(prev);
+      if (n.has(key)) n.delete(key); else n.add(key);
+      return n;
+    });
+  };
+
+  const monthLabel = (key: string) => {
+    if (key === 'all') return 'All';
+    if (key === 'unknown') return 'Undated';
+    const [y, m] = key.split('-');
+    return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString('en-GB', { month: 'short', year: '2-digit' });
+  };
 
   const si = statusIndex(form.status);
   const selectedClient = clients.find(c => c.id === form.client_id);
@@ -607,6 +654,55 @@ export default function AdminVideos() {
             </select>
           </div>
 
+          {/* Organizer bar: month tabs + view mode */}
+          <div className="flex items-center gap-2 flex-wrap flex-shrink-0 border-b border-glass-border/40 pb-2">
+            <div className="flex items-center gap-1 flex-wrap flex-1 min-w-0">
+              <button
+                onClick={() => setMonthKey('all')}
+                className={cn('h-7 px-2.5 rounded-md text-xs font-medium transition-colors',
+                  monthKey === 'all' ? 'bg-primary text-primary-foreground' : 'bg-muted/30 text-muted-foreground hover:bg-muted/50')}
+              >All</button>
+              {monthsAvailable.slice(0, 8).map(k => (
+                <button
+                  key={k}
+                  onClick={() => setMonthKey(k)}
+                  className={cn('h-7 px-2.5 rounded-md text-xs font-medium transition-colors',
+                    monthKey === k ? 'bg-primary text-primary-foreground' : 'bg-muted/30 text-muted-foreground hover:bg-muted/50',
+                    k === currentMonthKey && monthKey !== k && 'ring-1 ring-primary/40')}
+                  title={k === currentMonthKey ? 'This month' : undefined}
+                >{monthLabel(k)}{k === currentMonthKey && ' •'}</button>
+              ))}
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              {viewMode === 'list' && (
+                <button
+                  onClick={() => setGroupByClient(g => !g)}
+                  className={cn('h-8 px-2 rounded-md text-xs flex items-center gap-1.5 border transition-colors',
+                    groupByClient ? 'border-primary/50 bg-primary/10 text-primary' : 'border-input bg-background text-muted-foreground hover:text-foreground')}
+                  title="Group by client"
+                >
+                  <Layers size={13} /> By client
+                </button>
+              )}
+              <div className="flex rounded-md border border-input overflow-hidden">
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={cn('h-8 px-2.5 text-xs flex items-center gap-1.5 transition-colors',
+                    viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:text-foreground')}
+                >
+                  <LayoutList size={13} /> List
+                </button>
+                <button
+                  onClick={() => setViewMode('kanban')}
+                  className={cn('h-8 px-2.5 text-xs flex items-center gap-1.5 border-l border-input transition-colors',
+                    viewMode === 'kanban' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:text-foreground')}
+                >
+                  <LayoutGrid size={13} /> Kanban
+                </button>
+              </div>
+            </div>
+          </div>
+
           {selected.size > 0 && (
             <div className="glass-card p-3 flex items-center gap-3 flex-wrap flex-shrink-0 border border-primary/40 bg-primary/5">
               <span className="text-sm font-medium text-foreground">{selected.size} selected</span>
@@ -620,6 +716,103 @@ export default function AdminVideos() {
             </div>
           )}
 
+          {viewMode === 'kanban' ? (
+            <div className="flex-1 overflow-x-auto overflow-y-hidden">
+              <div className="flex gap-3 h-full min-w-fit pb-2">
+                {kanbanColumns.map(col => {
+                  const items = filtered.filter(v => col.statuses.includes(v.status as VideoStatus));
+                  return (
+                    <div key={col.key} className="glass-card w-72 shrink-0 flex flex-col max-h-full">
+                      <div className="px-3 py-2 border-b border-glass-border flex items-center justify-between sticky top-0 bg-card/80 backdrop-blur">
+                        <p className="text-xs font-semibold text-foreground uppercase tracking-wider">{col.label}</p>
+                        <span className="text-[10px] text-muted-foreground bg-muted/40 px-1.5 py-0.5 rounded-full">{items.length}</span>
+                      </div>
+                      <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                        {items.length === 0 ? (
+                          <p className="text-[11px] text-muted-foreground text-center py-4 italic">Empty</p>
+                        ) : items.map(video => {
+                          const ar = getActionRequired(video.status, video);
+                          return (
+                            <div
+                              key={video.id}
+                              onClick={() => openDetail(video)}
+                              className={cn('p-2.5 rounded-md border border-border/40 bg-background/40 hover:border-primary/50 cursor-pointer transition-all space-y-1.5',
+                                detailVideo?.id === video.id && 'border-primary bg-primary/5')}
+                            >
+                              <p className="text-xs font-medium text-foreground line-clamp-2">{video.title}</p>
+                              <p className="text-[10px] text-muted-foreground truncate">{video.client_name}</p>
+                              <div className="flex items-center justify-between gap-1">
+                                <StatusBadge status={video.status as VideoStatus} type="video" />
+                                {video.date_planned && (
+                                  <span className="text-[10px] text-muted-foreground">
+                                    {new Date(video.date_planned).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                                  </span>
+                                )}
+                              </div>
+                              <span className={cn('inline-block text-[10px] px-1.5 py-0.5 rounded-full font-medium', ar.color)}>{ar.label}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : groupByClient ? (
+            <div className="flex-1 overflow-y-auto space-y-3">
+              {Object.keys(groupedByClient).length === 0 ? (
+                <div className="glass-card p-12 text-center text-muted-foreground">
+                  <Video size={32} className="mx-auto mb-2 opacity-40" />
+                  No videos found.
+                </div>
+              ) : Object.entries(groupedByClient).sort(([a],[b]) => a.localeCompare(b)).map(([clientName, vids]) => {
+                const collapsed = collapsedGroups.has(clientName);
+                return (
+                  <div key={clientName} className="glass-card overflow-hidden">
+                    <button
+                      onClick={() => toggleGroup(clientName)}
+                      className="w-full flex items-center justify-between px-4 py-2.5 bg-card/60 hover:bg-card/80 transition-colors border-b border-glass-border"
+                    >
+                      <div className="flex items-center gap-2">
+                        {collapsed ? <ChevronRight size={14} className="text-muted-foreground" /> : <ChevronDown size={14} className="text-muted-foreground" />}
+                        <span className="font-medium text-sm text-foreground">{clientName}</span>
+                        <span className="text-[10px] text-muted-foreground bg-muted/40 px-1.5 py-0.5 rounded-full">{vids.length}</span>
+                      </div>
+                    </button>
+                    {!collapsed && (
+                      <div className="divide-y divide-glass-border/40">
+                        {vids.map(video => {
+                          const ar = getActionRequired(video.status, video);
+                          return (
+                            <div
+                              key={video.id}
+                              onClick={() => openDetail(video)}
+                              className={cn('flex items-center gap-3 px-4 py-2.5 hover:bg-muted/20 cursor-pointer transition-colors',
+                                detailVideo?.id === video.id && 'bg-primary/10')}
+                            >
+                              <StatusBadge status={video.status as VideoStatus} type="video" />
+                              <span className="flex-1 text-sm text-foreground truncate">{video.title}</span>
+                              <span className={cn('text-[11px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap', ar.color)}>{ar.label}</span>
+                              {video.date_planned && (
+                                <span className="text-[11px] text-muted-foreground whitespace-nowrap hidden md:inline">
+                                  {new Date(video.date_planned).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                                </span>
+                              )}
+                              <div className="flex gap-1" onClick={e => e.stopPropagation()}>
+                                <button onClick={() => openEdit(video)} className="p-1 hover:text-primary transition-colors"><Edit2 size={13} /></button>
+                                <button onClick={() => setDeleteModal({ open: true, video })} className="p-1 hover:text-destructive transition-colors"><Trash2 size={13} /></button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
           <div className="glass-card flex-1 overflow-auto">
             {/* Desktop table — hidden on mobile */}
             <table className="w-full text-sm hidden md:table">
@@ -771,6 +964,7 @@ export default function AdminVideos() {
               })}
             </div>
           </div>
+          )}
         </div>
 
         {/* Detail Panel */}
