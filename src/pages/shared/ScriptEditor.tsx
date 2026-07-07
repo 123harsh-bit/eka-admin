@@ -20,11 +20,12 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { EditorToolbar } from '@/components/scripts/EditorToolbar';
 import { CommentsPanel } from '@/components/scripts/CommentsPanel';
+import { ShareScriptDialog } from '@/components/scripts/ShareScriptDialog';
 import { CommentMark } from '@/lib/scripts/commentMark';
 import { useYSupabaseProvider, encodeSnapshotBase64 } from '@/lib/scripts/useYSupabaseProvider';
 import { exportEditorToPdf } from '@/lib/scripts/exportPdf';
 import { exportEditorToDocx } from '@/lib/scripts/exportDocx';
-import { ArrowLeft, Users, Circle, MessageSquare, Loader2 } from 'lucide-react';
+import { ArrowLeft, Users, Circle, MessageSquare, Loader2, Share2, Video as VideoIcon, PenTool, CalendarRange, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -50,9 +51,22 @@ export default function ScriptEditor({ routeBase }: Props) {
   const [canEdit, setCanEdit] = useState(false);
   const [saving, setSaving] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [showComments, setShowComments] = useState(false);
-  const [meta, setMeta] = useState<{ client_id: string | null; linked_writing_task_id: string | null }>({
+  const [showShare, setShowShare] = useState(false);
+  const [ownerId, setOwnerId] = useState<string>('');
+  const [meta, setMeta] = useState<{
+    client_id: string | null;
+    linked_writing_task_id: string | null;
+    linked_video_id: string | null;
+    linked_content_item_id: string | null;
+    client_name?: string | null;
+    video_title?: string | null;
+    task_title?: string | null;
+    content_item_title?: string | null;
+  }>({
     client_id: null,
     linked_writing_task_id: null,
+    linked_video_id: null,
+    linked_content_item_id: null,
   });
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const editorContainerRef = useRef<HTMLDivElement>(null);
@@ -74,7 +88,30 @@ export default function ScriptEditor({ routeBase }: Props) {
         return;
       }
       setScriptTitle(data.title);
-      setMeta({ client_id: data.client_id, linked_writing_task_id: data.linked_writing_task_id });
+      setOwnerId(data.created_by);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const d = data as any;
+      // Resolve link labels in parallel
+      const [clientRes, videoRes, taskRes, itemRes] = await Promise.all([
+        d.client_id ? supabase.from('clients').select('name').eq('id', d.client_id).maybeSingle() : Promise.resolve({ data: null }),
+        d.linked_video_id ? supabase.from('videos').select('title').eq('id', d.linked_video_id).maybeSingle() : Promise.resolve({ data: null }),
+        d.linked_writing_task_id ? supabase.from('writing_tasks').select('title').eq('id', d.linked_writing_task_id).maybeSingle() : Promise.resolve({ data: null }),
+        d.linked_content_item_id ? supabase.from('content_items').select('title').eq('id', d.linked_content_item_id).maybeSingle() : Promise.resolve({ data: null }),
+      ]);
+      setMeta({
+        client_id: d.client_id,
+        linked_writing_task_id: d.linked_writing_task_id,
+        linked_video_id: d.linked_video_id,
+        linked_content_item_id: d.linked_content_item_id,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        client_name: (clientRes.data as any)?.name,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        video_title: (videoRes.data as any)?.title,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        task_title: (taskRes.data as any)?.title,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        content_item_title: (itemRes.data as any)?.title,
+      });
       // Determine edit permission via RLS test update — try a no-op update
       const { error: upErr } = await supabase
         .from('scripts')
@@ -84,6 +121,9 @@ export default function ScriptEditor({ routeBase }: Props) {
       setLoading(false);
     })();
   }, [id, navigate, routeBase, toast, user?.id]);
+
+  const isAdminRoute = routeBase === '/admin/scripts';
+  const canManageShare = user?.id === ownerId || isAdminRoute;
 
   const provider = useYSupabaseProvider({
     scriptId: id!,
