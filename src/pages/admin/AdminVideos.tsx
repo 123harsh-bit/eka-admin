@@ -9,7 +9,7 @@ import { ConfirmDeleteModal } from '@/components/shared/ConfirmDeleteModal';
 import { useToast } from '@/hooks/use-toast';
 import { VIDEO_STATUSES, VIDEO_STATUS_ORDER, EDITING_ONLY_STATUS_ORDER, EDITING_ONLY_ADMIN_LABELS, type VideoStatus, type ClientServiceType, getActionRequired, getStatusOrderForClient, getAdminLabel } from '@/lib/statusConfig';
 import { getDirectDownloadLink } from '@/lib/driveUtils';
-import { Plus, Search, X, Video, Edit2, Trash2, ExternalLink, MessageSquare, Loader2, FolderOpen, Lock } from 'lucide-react';
+import { Plus, Search, X, Video, Edit2, Trash2, ExternalLink, MessageSquare, Loader2, FolderOpen, Lock, LayoutList, LayoutGrid, Layers, ChevronRight, ChevronDown } from 'lucide-react';
 import { ContentPlanBadge } from '@/components/shared/ContentPlanBadge';
 import { WorkflowPrompt } from '@/components/shared/WorkflowPrompt';
 import { handleVideoStatusChange } from '@/lib/pipeline';
@@ -77,6 +77,12 @@ export default function AdminVideos() {
   const [bulkStatus, setBulkStatus] = useState('');
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [workflowLoading, setWorkflowLoading] = useState(false);
+  // Organization controls
+  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
+  const [groupByClient, setGroupByClient] = useState(false);
+  const currentMonthKey = new Date().toISOString().slice(0, 7);
+  const [monthKey, setMonthKey] = useState<string>(currentMonthKey);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const { user } = useAuth();
   const { toast } = useToast();
 
