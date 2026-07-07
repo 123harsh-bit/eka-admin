@@ -303,8 +303,47 @@ export default function ScriptEditor({ routeBase }: Props) {
           >
             <MessageSquare size={14} /> Comments
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => setShowShare(true)}
+          >
+            <Share2 size={14} /> Share
+          </Button>
         </div>
       </header>
+
+      {/* Linked-to chips */}
+      {(meta.video_title || meta.task_title || meta.content_item_title || meta.client_name) && (
+        <div className="border-b border-border bg-card/30 px-4 py-1.5 flex items-center gap-2 flex-wrap text-[11px]">
+          <span className="text-muted-foreground">Linked to:</span>
+          {meta.video_title && meta.linked_video_id && (
+            <button
+              onClick={() => navigate(`/admin/videos`)}
+              className="px-2 py-0.5 rounded-full bg-primary/10 text-primary flex items-center gap-1 hover:bg-primary/20"
+              title="Open Videos"
+            >
+              <VideoIcon size={10} /> {meta.video_title}
+            </button>
+          )}
+          {meta.task_title && (
+            <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center gap-1">
+              <PenTool size={10} /> {meta.task_title}
+            </span>
+          )}
+          {meta.content_item_title && (
+            <span className="px-2 py-0.5 rounded-full bg-fuchsia-500/10 text-fuchsia-400 flex items-center gap-1">
+              <CalendarRange size={10} /> {meta.content_item_title}
+            </span>
+          )}
+          {meta.client_name && (
+            <span className="px-2 py-0.5 rounded-full bg-muted/40 text-muted-foreground flex items-center gap-1">
+              <Building2 size={10} /> {meta.client_name}
+            </span>
+          )}
+        </div>
+      )}
 
       <div className="flex flex-1 overflow-hidden">
         <div className="flex-1 flex flex-col overflow-hidden">
