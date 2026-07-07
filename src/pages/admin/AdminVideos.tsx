@@ -716,6 +716,103 @@ export default function AdminVideos() {
             </div>
           )}
 
+          {viewMode === 'kanban' ? (
+            <div className="flex-1 overflow-x-auto overflow-y-hidden">
+              <div className="flex gap-3 h-full min-w-fit pb-2">
+                {kanbanColumns.map(col => {
+                  const items = filtered.filter(v => col.statuses.includes(v.status as VideoStatus));
+                  return (
+                    <div key={col.key} className="glass-card w-72 shrink-0 flex flex-col max-h-full">
+                      <div className="px-3 py-2 border-b border-glass-border flex items-center justify-between sticky top-0 bg-card/80 backdrop-blur">
+                        <p className="text-xs font-semibold text-foreground uppercase tracking-wider">{col.label}</p>
+                        <span className="text-[10px] text-muted-foreground bg-muted/40 px-1.5 py-0.5 rounded-full">{items.length}</span>
+                      </div>
+                      <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                        {items.length === 0 ? (
+                          <p className="text-[11px] text-muted-foreground text-center py-4 italic">Empty</p>
+                        ) : items.map(video => {
+                          const ar = getActionRequired(video.status, video);
+                          return (
+                            <div
+                              key={video.id}
+                              onClick={() => openDetail(video)}
+                              className={cn('p-2.5 rounded-md border border-border/40 bg-background/40 hover:border-primary/50 cursor-pointer transition-all space-y-1.5',
+                                detailVideo?.id === video.id && 'border-primary bg-primary/5')}
+                            >
+                              <p className="text-xs font-medium text-foreground line-clamp-2">{video.title}</p>
+                              <p className="text-[10px] text-muted-foreground truncate">{video.client_name}</p>
+                              <div className="flex items-center justify-between gap-1">
+                                <StatusBadge status={video.status as VideoStatus} type="video" />
+                                {video.date_planned && (
+                                  <span className="text-[10px] text-muted-foreground">
+                                    {new Date(video.date_planned).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                                  </span>
+                                )}
+                              </div>
+                              <span className={cn('inline-block text-[10px] px-1.5 py-0.5 rounded-full font-medium', ar.color)}>{ar.label}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : groupByClient ? (
+            <div className="flex-1 overflow-y-auto space-y-3">
+              {Object.keys(groupedByClient).length === 0 ? (
+                <div className="glass-card p-12 text-center text-muted-foreground">
+                  <Video size={32} className="mx-auto mb-2 opacity-40" />
+                  No videos found.
+                </div>
+              ) : Object.entries(groupedByClient).sort(([a],[b]) => a.localeCompare(b)).map(([clientName, vids]) => {
+                const collapsed = collapsedGroups.has(clientName);
+                return (
+                  <div key={clientName} className="glass-card overflow-hidden">
+                    <button
+                      onClick={() => toggleGroup(clientName)}
+                      className="w-full flex items-center justify-between px-4 py-2.5 bg-card/60 hover:bg-card/80 transition-colors border-b border-glass-border"
+                    >
+                      <div className="flex items-center gap-2">
+                        {collapsed ? <ChevronRight size={14} className="text-muted-foreground" /> : <ChevronDown size={14} className="text-muted-foreground" />}
+                        <span className="font-medium text-sm text-foreground">{clientName}</span>
+                        <span className="text-[10px] text-muted-foreground bg-muted/40 px-1.5 py-0.5 rounded-full">{vids.length}</span>
+                      </div>
+                    </button>
+                    {!collapsed && (
+                      <div className="divide-y divide-glass-border/40">
+                        {vids.map(video => {
+                          const ar = getActionRequired(video.status, video);
+                          return (
+                            <div
+                              key={video.id}
+                              onClick={() => openDetail(video)}
+                              className={cn('flex items-center gap-3 px-4 py-2.5 hover:bg-muted/20 cursor-pointer transition-colors',
+                                detailVideo?.id === video.id && 'bg-primary/10')}
+                            >
+                              <StatusBadge status={video.status as VideoStatus} type="video" />
+                              <span className="flex-1 text-sm text-foreground truncate">{video.title}</span>
+                              <span className={cn('text-[11px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap', ar.color)}>{ar.label}</span>
+                              {video.date_planned && (
+                                <span className="text-[11px] text-muted-foreground whitespace-nowrap hidden md:inline">
+                                  {new Date(video.date_planned).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                                </span>
+                              )}
+                              <div className="flex gap-1" onClick={e => e.stopPropagation()}>
+                                <button onClick={() => openEdit(video)} className="p-1 hover:text-primary transition-colors"><Edit2 size={13} /></button>
+                                <button onClick={() => setDeleteModal({ open: true, video })} className="p-1 hover:text-destructive transition-colors"><Trash2 size={13} /></button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
           <div className="glass-card flex-1 overflow-auto">
             {/* Desktop table — hidden on mobile */}
             <table className="w-full text-sm hidden md:table">
