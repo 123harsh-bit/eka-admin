@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Bell, X, Check, CheckCheck } from 'lucide-react';
+import { Bell, X, Check, CheckCheck, Settings2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, isToday, isYesterday, format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { NotificationPreferences } from '@/components/shared/NotificationPreferences';
+
 
 interface Notification {
   id: string;
@@ -16,8 +18,17 @@ interface Notification {
 export function NotificationBell() {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
+  const [showPrefs, setShowPrefs] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const unreadCount = notifications.filter(n => !n.is_read).length;
+
+  const dayLabel = (iso: string) => {
+    const d = new Date(iso);
+    if (isToday(d)) return 'Today';
+    if (isYesterday(d)) return 'Yesterday';
+    return format(d, 'd MMM yyyy');
+  };
+
 
   useEffect(() => {
     if (!user) return;
@@ -87,9 +98,22 @@ export function NotificationBell() {
                     <CheckCheck size={12} /> Mark all read
                   </button>
                 )}
+                <button
+                  onClick={() => setShowPrefs(p => !p)}
+                  className={cn('transition-colors', showPrefs ? 'text-primary' : 'text-muted-foreground hover:text-foreground')}
+                  aria-label="Notification preferences"
+                >
+                  <Settings2 size={15} />
+                </button>
                 <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground"><X size={16} /></button>
               </div>
             </div>
+            {showPrefs ? (
+              <div className="p-4 max-h-80 overflow-y-auto">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Preferences</p>
+                <NotificationPreferences compact />
+              </div>
+            ) : (
             <div className="max-h-80 overflow-y-auto">
               {notifications.length === 0 ? (
                 <div className="p-6 text-center">
@@ -97,25 +121,40 @@ export function NotificationBell() {
                   <p className="text-xs text-muted-foreground">No notifications yet</p>
                 </div>
               ) : (
-                notifications.map(n => (
-                  <div
-                    key={n.id}
-                    className={cn('flex gap-3 px-4 py-3 border-b border-glass-border/50 transition-colors', !n.is_read ? 'bg-primary/5' : 'hover:bg-muted/20')}
-                  >
-                    <span className={cn('mt-0.5 h-2 w-2 rounded-full flex-shrink-0', !n.is_read ? 'bg-primary' : 'bg-transparent')} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-foreground leading-relaxed">{n.message}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}</p>
-                    </div>
-                    {!n.is_read && (
-                      <button onClick={() => markRead(n.id)} className="text-muted-foreground hover:text-primary flex-shrink-0 mt-0.5">
-                        <Check size={14} />
-                      </button>
-                    )}
+                Object.entries(
+                  notifications.reduce<Record<string, Notification[]>>((acc, n) => {
+                    const k = dayLabel(n.created_at);
+                    (acc[k] ||= []).push(n);
+                    return acc;
+                  }, {})
+                ).map(([day, items]) => (
+                  <div key={day}>
+                    <p className="px-4 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground bg-muted/20 sticky top-0 backdrop-blur">
+                      {day}
+                    </p>
+                    {items.map(n => (
+                      <div
+                        key={n.id}
+                        className={cn('flex gap-3 px-4 py-3 border-b border-glass-border/50 transition-colors', !n.is_read ? 'bg-primary/5' : 'hover:bg-muted/20')}
+                      >
+                        <span className={cn('mt-0.5 h-2 w-2 rounded-full flex-shrink-0', !n.is_read ? 'bg-primary' : 'bg-transparent')} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-foreground leading-relaxed">{n.message}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}</p>
+                        </div>
+                        {!n.is_read && (
+                          <button onClick={() => markRead(n.id)} className="text-muted-foreground hover:text-primary flex-shrink-0 mt-0.5">
+                            <Check size={14} />
+                          </button>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 ))
               )}
             </div>
+            )}
+
           </div>
         </>
       )}

@@ -23,8 +23,6 @@ import { CommentsPanel } from '@/components/scripts/CommentsPanel';
 import { ShareScriptDialog } from '@/components/scripts/ShareScriptDialog';
 import { CommentMark } from '@/lib/scripts/commentMark';
 import { useYSupabaseProvider, encodeSnapshotBase64 } from '@/lib/scripts/useYSupabaseProvider';
-import { exportEditorToPdf } from '@/lib/scripts/exportPdf';
-import { exportEditorToDocx } from '@/lib/scripts/exportDocx';
 import { ArrowLeft, Users, Circle, MessageSquare, Loader2, Share2, Video as VideoIcon, PenTool, CalendarRange, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -248,15 +246,18 @@ export default function ScriptEditor({ routeBase }: Props) {
     }
   }, []);
 
-  const doExportPdf = () => {
+  const doExportPdf = async () => {
     const el = editorContainerRef.current?.querySelector('.ProseMirror');
     if (!el) return;
+    const { exportEditorToPdf } = await import('@/lib/scripts/exportPdf');
     exportEditorToPdf(el as HTMLElement, scriptTitle || 'script');
   };
-  const doExportDocx = () => {
+  const doExportDocx = async () => {
     if (!editor) return;
+    const { exportEditorToDocx } = await import('@/lib/scripts/exportDocx');
     exportEditorToDocx(editor.getJSON(), scriptTitle || 'script');
   };
+
 
   const words = editor?.storage.characterCount?.words?.() ?? 0;
   const chars = editor?.storage.characterCount?.characters?.() ?? 0;

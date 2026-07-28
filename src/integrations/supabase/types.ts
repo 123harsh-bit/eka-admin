@@ -903,6 +903,42 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          approvals: boolean
+          assignments: boolean
+          client_feedback: boolean
+          created_at: string
+          daily_digest: boolean
+          deadlines: boolean
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          approvals?: boolean
+          assignments?: boolean
+          client_feedback?: boolean
+          created_at?: string
+          daily_digest?: boolean
+          deadlines?: boolean
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          approvals?: boolean
+          assignments?: boolean
+          client_feedback?: boolean
+          created_at?: string
+          daily_digest?: boolean
+          deadlines?: boolean
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
