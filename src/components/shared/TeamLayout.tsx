@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { EkaLogo } from '@/components/shared/EkaLogo';
@@ -8,7 +8,9 @@ import { NotificationBell } from '@/components/shared/NotificationBell';
 import { StartWorkday } from '@/components/auth/StartWorkday';
 import { AttendanceBar } from '@/components/shared/AttendanceBar';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
 import { LogOut, Menu, X, ChevronLeft, type LucideIcon } from 'lucide-react';
+
 
 interface NavItem {
   to: string;
