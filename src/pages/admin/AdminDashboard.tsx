@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { TeamLiveStatus } from '@/components/admin/TeamLiveStatus';
 import { ContentPlanStatusWidget } from '@/components/admin/ContentPlanStatusWidget';
 import { formatDistanceToNow } from 'date-fns';
-import { Users, Video, Clock, CheckCircle, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Users, Video, Clock, CheckCircle, TrendingUp, AlertTriangle, UploadCloud, Share2 } from 'lucide-react';
 import { PullToRefresh } from '@/components/shared/PullToRefresh';
 
 interface DashboardStats {
@@ -28,11 +28,21 @@ interface ClientSnapshot {
   id: string; name: string; industry: string | null; videoCount: number;
 }
 
+interface OperationsSnapshot {
+  awaitingApproval: number;
+  socialHandoff: number;
+  missingRawFootage: number;
+  missingFinalDrive: number;
+  overdueTasks: number;
+  clientsMissingAssets: number;
+}
+
 export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [deadlines, setDeadlines] = useState<UpcomingDeadline[]>([]);
   const [clients, setClients] = useState<ClientSnapshot[]>([]);
+  const [ops, setOps] = useState<OperationsSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -46,7 +56,7 @@ export default function AdminDashboard() {
 
   const fetchDashboardData = async () => {
     setLoading(true);
-    await Promise.all([fetchStats(), fetchActivity(), fetchDeadlines(), fetchClients()]);
+    await Promise.all([fetchStats(), fetchActivity(), fetchDeadlines(), fetchClients(), fetchOperationsSnapshot()]);
     setLoading(false);
   };
 
@@ -105,12 +115,52 @@ export default function AdminDashboard() {
   const fetchClients = async () => {
     const { data: cl } = await supabase.from('clients').select('id, name, industry').eq('is_active', true).limit(6);
     if (cl) {
-      const withCounts = await Promise.all(cl.map(async c => {
-        const { count } = await supabase.from('videos').select('*', { count: 'exact', head: true }).eq('client_id', c.id);
-        return { ...c, videoCount: count || 0 };
-      }));
+      const clientIds = cl.map(c => c.id);
+      const { data: videoRows } = clientIds.length > 0
+        ? await supabase.from('videos').select('client_id').in('client_id', clientIds)
+        : { data: [] };
+      const counts = (videoRows || []).reduce<Record<string, number>>((acc, row) => {
+        acc[row.client_id] = (acc[row.client_id] || 0) + 1;
+        return acc;
+      }, {});
+      const withCounts = cl.map(c => ({ ...c, videoCount: counts[c.id] || 0 }));
       setClients(withCounts);
     }
+  };
+
+  const fetchOperationsSnapshot = async () => {
+    const today = new Date().toISOString().split('T')[0];
+    const [
+      awaitingApproval,
+      socialHandoff,
+      missingRawFootage,
+      missingFinalDrive,
+      overdueDesign,
+      overdueWriting,
+      activeClients,
+      assetClients,
+    ] = await Promise.all([
+      supabase.from('videos').select('id', { count: 'exact', head: true }).eq('status', 'internal_review'),
+      supabase.from('videos').select('id', { count: 'exact', head: true }).in('status', ['approved', 'ready_to_upload']).neq('social_stage', 'posted'),
+      supabase.from('videos').select('id', { count: 'exact', head: true }).is('raw_footage_link', null).not('status', 'in', '("idea","live")'),
+      supabase.from('videos').select('id', { count: 'exact', head: true }).is('drive_link', null).in('status', ['editing', 'internal_review', 'client_review', 'approved']),
+      supabase.from('design_tasks').select('id', { count: 'exact', head: true }).lt('due_date', today).not('status', 'in', '("delivered","approved")'),
+      supabase.from('writing_tasks').select('id', { count: 'exact', head: true }).lt('due_date', today).not('status', 'in', '("delivered","approved")'),
+      supabase.from('clients').select('id, logo_url').eq('is_active', true),
+      supabase.from('client_assets').select('client_id'),
+    ]);
+
+    const assetClientIds = new Set((assetClients.data || []).map(row => row.client_id));
+    const missingAssets = (activeClients.data || []).filter(client => !client.logo_url && !assetClientIds.has(client.id)).length;
+
+    setOps({
+      awaitingApproval: awaitingApproval.count || 0,
+      socialHandoff: socialHandoff.count || 0,
+      missingRawFootage: missingRawFootage.count || 0,
+      missingFinalDrive: missingFinalDrive.count || 0,
+      overdueTasks: (overdueDesign.count || 0) + (overdueWriting.count || 0),
+      clientsMissingAssets: missingAssets,
+    });
   };
 
   const statCards = [
@@ -160,6 +210,33 @@ export default function AdminDashboard() {
                 )}
               </div>
             ))}
+          </div>
+
+          <div className="glass-card p-4 space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-semibold text-foreground">Operations Snapshot</h2>
+                <p className="text-xs text-muted-foreground">Work that needs attention today.</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2">
+              {[
+                { label: 'Awaiting approval', value: ops?.awaitingApproval, icon: CheckCircle, tone: 'text-warning' },
+                { label: 'Social handoff', value: ops?.socialHandoff, icon: Share2, tone: 'text-primary' },
+                { label: 'Missing footage', value: ops?.missingRawFootage, icon: UploadCloud, tone: 'text-destructive' },
+                { label: 'Missing final link', value: ops?.missingFinalDrive, icon: Video, tone: 'text-secondary' },
+                { label: 'Overdue tasks', value: ops?.overdueTasks, icon: AlertTriangle, tone: 'text-warning' },
+                { label: 'Missing assets', value: ops?.clientsMissingAssets, icon: Users, tone: 'text-accent' },
+              ].map(item => (
+                <div key={item.label} className="rounded-lg border border-border bg-muted/20 p-3">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{item.label}</p>
+                    <item.icon size={13} className={item.tone} />
+                  </div>
+                  {loading ? <div className="h-6 w-10 rounded bg-muted animate-pulse" /> : <p className="text-xl font-bold text-foreground">{item.value ?? 0}</p>}
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
