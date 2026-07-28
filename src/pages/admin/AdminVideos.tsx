@@ -578,13 +578,28 @@ export default function AdminVideos() {
     return src ? src.slice(0, 7) : 'unknown';
   };
 
-  const monthsAvailable = Array.from(new Set(videos.map(bucketFor))).sort().reverse();
+  // Archive rule: videos that went live more than 60 days ago drop out of the
+  // month tabs and live behind the dedicated "Archive" tab.
+  const ARCHIVE_AFTER_DAYS = 60;
+  const isArchived = (v: VideoRow) => {
+    if (v.status !== 'live') return false;
+    const ref = v.date_delivered || v.date_planned || v.created_at;
+    if (!ref) return false;
+    const age = (Date.now() - new Date(ref).getTime()) / 86400000;
+    return age > ARCHIVE_AFTER_DAYS;
+  };
+
+  const archivedCount = videos.filter(isArchived).length;
+  const monthsAvailable = Array.from(new Set(videos.filter(v => !isArchived(v)).map(bucketFor))).sort().reverse();
 
   const filtered = videos.filter(v => {
     const matchSearch = v.title.toLowerCase().includes(search.toLowerCase()) || v.client_name?.toLowerCase().includes(search.toLowerCase());
     const matchStatus = !statusFilter || v.status === statusFilter;
     const matchClient = !clientFilter || v.client_id === clientFilter;
-    const matchMonth = monthKey === 'all' || bucketFor(v) === monthKey;
+    const archived = isArchived(v);
+    const matchMonth = monthKey === 'archive'
+      ? archived
+      : !archived && (monthKey === 'all' || bucketFor(v) === monthKey);
     return matchSearch && matchStatus && matchClient && matchMonth;
   }).sort((a, b) => {
     const aReq = getActionRequired(a.status, a);
@@ -592,6 +607,21 @@ export default function AdminVideos() {
     const priority = { admin: 0, team: 1, client: 2, done: 3 };
     return (priority[aReq.type] ?? 9) - (priority[bReq.type] ?? 9);
   });
+
+  const activeFilters: { label: string; clear: () => void }[] = [
+    ...(search ? [{ label: `Search: “${search}”`, clear: () => setSearch('') }] : []),
+    ...(statusFilter ? [{ label: `Status: ${VIDEO_STATUSES[statusFilter as VideoStatus]?.label ?? statusFilter}`, clear: () => setStatusFilter('') }] : []),
+    ...(clientFilter ? [{ label: `Client: ${clients.find(c => c.id === clientFilter)?.name ?? 'Selected'}`, clear: () => setClientFilter('') }] : []),
+    ...(monthKey !== 'all' ? [{ label: monthKey === 'archive' ? 'Archive' : `Month: ${monthKey}`, clear: () => setMonthKey('all') }] : []),
+  ];
+
+  const clearAllFilters = () => {
+    setSearch('');
+    setStatusFilter('');
+    setClientFilter('');
+    setMonthKey('all');
+  };
+
 
   // Group filtered by client for the grouped list view
   const groupedByClient: Record<string, VideoRow[]> = {};
