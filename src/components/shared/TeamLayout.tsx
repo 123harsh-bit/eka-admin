@@ -1,11 +1,10 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { EkaLogo } from '@/components/shared/EkaLogo';
 import { useAuth } from '@/hooks/useAuth';
 import { NotificationBell } from '@/components/shared/NotificationBell';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
 import { LogOut, Menu, X, ChevronLeft, type LucideIcon } from 'lucide-react';
 
 
@@ -40,28 +39,9 @@ export function TeamLayout({
   roleTextColor,
   showAttendance = false,
 }: TeamLayoutProps) {
-  const { signOut, profile, user } = useAuth();
+  const { signOut, profile } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const [unread, setUnread] = useState(0);
-
-  useEffect(() => {
-    if (!user) return;
-    const load = async () => {
-      const { count } = await supabase
-        .from('notifications')
-        .select('id', { count: 'exact', head: true })
-        .eq('recipient_id', user.id)
-        .eq('is_read', false);
-      setUnread(count || 0);
-    };
-    load();
-    const ch = supabase
-      .channel('nav-unread')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `recipient_id=eq.${user.id}` }, load)
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [user]);
 
   const groups: NavGroup[] = navGroups ?? (navItems ? [{ label: '', items: navItems }] : []);
 
@@ -111,16 +91,8 @@ export function TeamLayout({
                   >
                     <span className="relative flex-shrink-0">
                       <item.icon size={16} />
-                      {item.to.endsWith('/notifications') && unread > 0 && collapsed && (
-                        <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-destructive" />
-                      )}
                     </span>
                     {!collapsed && <span className="flex-1">{item.label}</span>}
-                    {!collapsed && item.to.endsWith('/notifications') && unread > 0 && (
-                      <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground flex items-center justify-center">
-                        {unread > 99 ? '99+' : unread}
-                      </span>
-                    )}
                   </NavLink>
 
                 ))}
