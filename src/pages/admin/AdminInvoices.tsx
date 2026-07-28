@@ -6,11 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, IndianRupee, Wallet, Trash2 } from 'lucide-react';
+import { Plus, IndianRupee, Wallet, Trash2, Search, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
+import { format, differenceInCalendarDays } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface Invoice {
   id: string;
@@ -36,6 +37,17 @@ interface Payment {
 
 interface Client { id: string; name: string; }
 
+type QuickFilter = 'unpaid' | 'overdue' | 'partial' | 'paid' | 'all';
+
+const STATUS_LABEL: Record<string, string> = {
+  draft: 'Draft',
+  sent: 'Sent',
+  partially_paid: 'Part-paid',
+  paid: 'Paid',
+  overdue: 'Overdue',
+  cancelled: 'Cancelled',
+};
+
 const STATUS_COLORS: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
   sent: 'bg-blue-500/20 text-blue-400',
@@ -45,15 +57,23 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: 'bg-muted text-muted-foreground line-through',
 };
 
+const QUICK_FILTERS: { key: QuickFilter; label: string }[] = [
+  { key: 'unpaid', label: 'Unpaid' },
+  { key: 'overdue', label: 'Overdue' },
+  { key: 'partial', label: 'Part-paid' },
+  { key: 'paid', label: 'Paid' },
+  { key: 'all', label: 'All' },
+];
+
 export default function AdminInvoices() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
-  const [filter, setFilter] = useState<string>('all');
-  const [view, setView] = useState<'by_client' | 'list'>('by_client');
+  const [filter, setFilter] = useState<QuickFilter>('unpaid');
+  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
-  const [payOpen, setPayOpen] = useState<Invoice | null>(null);
+  const [drawerId, setDrawerId] = useState<string | null>(null);
   const [payForm, setPayForm] = useState({ amount: '', paid_on: '', payment_method: 'Bank transfer', notes: '' });
   const [draft, setDraft] = useState({
     invoice_number: '', client_id: '', amount: '', currency: 'INR', due_date: '', notes: '',
@@ -80,24 +100,56 @@ export default function AdminInvoices() {
   useEffect(() => { load(); }, []);
 
   const paidFor = (id: string) => payments.filter(p => p.invoice_id === id).reduce((s, p) => s + Number(p.amount), 0);
+  const remainingFor = (i: Invoice) => Math.max(0, Number(i.amount) - paidFor(i.id));
+  const clientName = (id: string) => clients.find(c => c.id === id)?.name || '—';
 
-  const filtered = useMemo(
-    () => filter === 'all' ? invoices : invoices.filter(i => i.status === filter),
-    [invoices, filter]
-  );
+  const drawerInvoice = invoices.find(i => i.id === drawerId) || null;
+
+  const visible = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return invoices
+      .filter(i => i.status !== 'cancelled')
+      .filter(i => {
+        const rem = remainingFor(i);
+        if (filter === 'unpaid') return rem > 0;
+        if (filter === 'overdue') return i.status === 'overdue';
+        if (filter === 'partial') return paidFor(i.id) > 0 && rem > 0;
+        if (filter === 'paid') return rem === 0;
+        return true;
+      })
+      .filter(i => !q || i.invoice_number.toLowerCase().includes(q) || clientName(i.client_id).toLowerCase().includes(q))
+      .sort((a, b) => (a.due_date || '9999').localeCompare(b.due_date || '9999'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [invoices, payments, clients, filter, search]);
 
   const totals = useMemo(() => {
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
     let outstanding = 0, paidThisMonth = 0, overdueCount = 0;
     invoices.forEach(i => {
-      const paid = paidFor(i.id);
-      if (['sent', 'overdue', 'partially_paid'].includes(i.status)) outstanding += Math.max(0, Number(i.amount) - paid);
+      if (i.status === 'cancelled') return;
+      if (['sent', 'overdue', 'partially_paid'].includes(i.status)) outstanding += remainingFor(i);
       if (i.status === 'overdue') overdueCount += 1;
     });
     payments.forEach(p => { if (p.paid_on >= monthStart) paidThisMonth += Number(p.amount); });
     return { outstanding, paidThisMonth, overdueCount };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [invoices, payments]);
+
+  // Per-client rollup — only clients that owe something
+  const clientRollups = useMemo(() => {
+    return clients.map(c => {
+      const list = invoices.filter(i => i.client_id === c.id && i.status !== 'cancelled');
+      const billed = list.reduce((s, i) => s + Number(i.amount), 0);
+      const paid = list.reduce((s, i) => s + paidFor(i.id), 0);
+      const outstanding = list.reduce((s, i) => s + remainingFor(i), 0);
+      const nextDue = list
+        .filter(i => remainingFor(i) > 0 && i.due_date)
+        .sort((a, b) => (a.due_date || '').localeCompare(b.due_date || ''))[0];
+      return { client: c, count: list.length, billed, paid, outstanding, nextDue };
+    }).filter(r => r.outstanding > 0).sort((a, b) => b.outstanding - a.outstanding);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clients, invoices, payments]);
 
   const create = async () => {
     if (!draft.invoice_number || !draft.client_id || !draft.amount) {
@@ -127,40 +179,37 @@ export default function AdminInvoices() {
     load();
   };
 
-  const openPayDialog = (inv: Invoice) => {
-    const remaining = Number(inv.amount) - paidFor(inv.id);
+  const openDrawer = (inv: Invoice) => {
+    const remaining = remainingFor(inv);
     setPayForm({
       amount: remaining > 0 ? remaining.toString() : '',
       paid_on: new Date().toISOString().slice(0, 10),
       payment_method: 'Bank transfer',
       notes: '',
     });
-    setPayOpen(inv);
+    setDrawerId(inv.id);
   };
 
   const recordPayment = async () => {
-    if (!payOpen) return;
+    if (!drawerInvoice) return;
     const amt = parseFloat(payForm.amount);
     if (!amt || amt <= 0) return toast.error('Enter a valid amount');
     const { error } = await (supabase as any).from('invoice_payments').insert({
-      invoice_id: payOpen.id,
+      invoice_id: drawerInvoice.id,
       amount: amt,
       paid_on: payForm.paid_on || new Date().toISOString().slice(0, 10),
       payment_method: payForm.payment_method || null,
       notes: payForm.notes || null,
     });
     if (error) return toast.error(error.message);
-    // recompute & update invoice status
-    const newPaid = paidFor(payOpen.id) + amt;
-    const total = Number(payOpen.amount);
-    let newStatus: Invoice['status'] = payOpen.status;
+    const newPaid = paidFor(drawerInvoice.id) + amt;
+    const total = Number(drawerInvoice.amount);
     const patch: any = {};
-    if (newPaid >= total) { newStatus = 'paid'; patch.paid_at = new Date().toISOString(); }
-    else if (newPaid > 0) { newStatus = 'partially_paid'; patch.paid_at = null; }
-    patch.status = newStatus;
-    await supabase.from('invoices').update(patch).eq('id', payOpen.id);
+    if (newPaid >= total) { patch.status = 'paid'; patch.paid_at = new Date().toISOString(); }
+    else { patch.status = 'partially_paid'; patch.paid_at = null; }
+    await supabase.from('invoices').update(patch).eq('id', drawerInvoice.id);
     toast.success('Payment recorded');
-    setPayOpen(null);
+    setPayForm(f => ({ ...f, amount: '', notes: '' }));
     load();
   };
 
@@ -168,17 +217,12 @@ export default function AdminInvoices() {
     if (!confirm('Delete this payment?')) return;
     const { error } = await (supabase as any).from('invoice_payments').delete().eq('id', id);
     if (error) return toast.error(error.message);
-    // recalc status
     const inv = invoices.find(i => i.id === invId);
     if (inv) {
-      const remainingPays = payments.filter(p => p.invoice_id === invId && p.id !== id);
-      const newPaid = remainingPays.reduce((s, p) => s + Number(p.amount), 0);
-      const total = Number(inv.amount);
-      let newStatus: Invoice['status'] = 'sent';
-      const patch: any = { paid_at: null };
-      if (newPaid >= total) { newStatus = 'paid'; patch.paid_at = new Date().toISOString(); }
-      else if (newPaid > 0) newStatus = 'partially_paid';
-      patch.status = newStatus;
+      const newPaid = payments.filter(p => p.invoice_id === invId && p.id !== id).reduce((s, p) => s + Number(p.amount), 0);
+      const patch: any = { paid_at: null, status: 'sent' as Invoice['status'] };
+      if (newPaid >= Number(inv.amount)) { patch.status = 'paid'; patch.paid_at = new Date().toISOString(); }
+      else if (newPaid > 0) patch.status = 'partially_paid';
       await supabase.from('invoices').update(patch).eq('id', invId);
     }
     load();
@@ -186,23 +230,30 @@ export default function AdminInvoices() {
 
   const deleteInvoice = async (id: string, invoiceNumber: string) => {
     if (!confirm(`Delete invoice ${invoiceNumber}? This also removes all recorded payments for it. This cannot be undone.`)) return;
-    // Remove payments first (FK), then the invoice
     await (supabase as any).from('invoice_payments').delete().eq('invoice_id', id);
     const { error } = await supabase.from('invoices').delete().eq('id', id);
     if (error) return toast.error(error.message);
     toast.success('Invoice deleted');
+    setDrawerId(null);
     load();
   };
 
-  const clientName = (id: string) => clients.find(c => c.id === id)?.name || '—';
+  const dueLabel = (i: Invoice) => {
+    if (remainingFor(i) === 0) return 'Settled';
+    if (!i.due_date) return 'No due date';
+    const days = differenceInCalendarDays(new Date(i.due_date), new Date());
+    if (days < 0) return `${Math.abs(days)} day${Math.abs(days) === 1 ? '' : 's'} overdue`;
+    if (days === 0) return 'Due today';
+    return `Due in ${days} day${days === 1 ? '' : 's'}`;
+  };
 
   return (
     <AdminLayout>
       <div className="p-6 space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-3xl font-bold">Invoices</h1>
-            <p className="text-muted-foreground mt-1">Track billing, advances & partial payments</p>
+            <p className="text-muted-foreground mt-1">Every invoice shows Total · Paid · Remaining. Click a row to record or review payments.</p>
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button className="gap-2"><Plus className="w-4 h-4" /> New invoice</Button></DialogTrigger>
@@ -229,13 +280,14 @@ export default function AdminInvoices() {
                 </div>
                 <Input type="date" value={draft.due_date} onChange={e => setDraft(d => ({ ...d, due_date: e.target.value }))} />
                 <Input placeholder="Notes (optional)" value={draft.notes} onChange={e => setDraft(d => ({ ...d, notes: e.target.value }))} />
-                <p className="text-xs text-muted-foreground">Tip: enter the full amount here. Record the advance and remaining payments separately using the “Record payment” button.</p>
+                <p className="text-xs text-muted-foreground">Enter the full amount here. Advances and balance payments are recorded separately on the invoice.</p>
                 <Button onClick={create} className="w-full">Create</Button>
               </div>
             </DialogContent>
           </Dialog>
         </div>
 
+        {/* Top rollup */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="p-4">
             <p className="text-sm text-muted-foreground">Outstanding</p>
@@ -246,181 +298,185 @@ export default function AdminInvoices() {
             <p className="text-2xl font-bold flex items-center gap-1 text-success"><IndianRupee className="w-5 h-5" />{totals.paidThisMonth.toLocaleString()}</p>
           </Card>
           <Card className="p-4">
-            <p className="text-sm text-muted-foreground">Overdue</p>
+            <p className="text-sm text-muted-foreground">Overdue invoices</p>
             <p className="text-2xl font-bold text-destructive">{totals.overdueCount}</p>
           </Card>
         </div>
 
-        <Tabs value={view} onValueChange={v => setView(v as 'by_client' | 'list')}>
-          <TabsList>
-            <TabsTrigger value="by_client">By client</TabsTrigger>
-            <TabsTrigger value="list">All invoices</TabsTrigger>
-          </TabsList>
-        </Tabs>
-
-        {view === 'by_client' && !loading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {clients.map(c => {
-              const clientInvs = invoices.filter(i => i.client_id === c.id && i.status !== 'cancelled');
-              if (clientInvs.length === 0) return null;
-              const totalBilled = clientInvs.reduce((s, i) => s + Number(i.amount), 0);
-              const totalPaid = clientInvs.reduce((s, i) => s + paidFor(i.id), 0);
-              const remaining = totalBilled - totalPaid;
-              const oldestUnpaid = clientInvs
-                .filter(i => Number(i.amount) - paidFor(i.id) > 0)
-                .sort((a, b) => (a.due_date || '9999').localeCompare(b.due_date || '9999'))[0];
-              return (
-                <Card key={c.id} className="p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-semibold text-lg">{c.name}</h3>
-                      <p className="text-xs text-muted-foreground">{clientInvs.length} invoice{clientInvs.length !== 1 ? 's' : ''}</p>
-                    </div>
-                    {remaining > 0 ? (
-                      <Badge className="bg-warning/20 text-warning">{clientInvs[0].currency} {remaining.toLocaleString()} due</Badge>
-                    ) : (
-                      <Badge className="bg-success/20 text-success">All clear</Badge>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                    <div className="rounded bg-muted/30 p-2">
-                      <p className="text-muted-foreground">Billed</p>
-                      <p className="font-semibold text-sm">{totalBilled.toLocaleString()}</p>
-                    </div>
-                    <div className="rounded bg-success/10 p-2">
-                      <p className="text-success/80">Paid</p>
-                      <p className="font-semibold text-sm text-success">{totalPaid.toLocaleString()}</p>
-                    </div>
-                    <div className="rounded bg-warning/10 p-2">
-                      <p className="text-warning/80">Remaining</p>
-                      <p className="font-semibold text-sm text-warning">{remaining.toLocaleString()}</p>
-                    </div>
+        {/* Who owes what */}
+        {clientRollups.length > 0 && (
+          <div>
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">Who owes what</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+              {clientRollups.map(r => (
+                <Card key={r.client.id} className="p-3 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-medium truncate">{r.client.name}</span>
+                    <Badge className="bg-warning/20 text-warning shrink-0">{r.outstanding.toLocaleString()} due</Badge>
                   </div>
                   <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                    <div className="h-full bg-success transition-all" style={{ width: `${totalBilled > 0 ? (totalPaid / totalBilled) * 100 : 0}%` }} />
+                    <div className="h-full bg-success" style={{ width: `${r.billed > 0 ? (r.paid / r.billed) * 100 : 0}%` }} />
                   </div>
-                  {oldestUnpaid && (
-                    <Button size="sm" variant="outline" className="w-full gap-1.5" onClick={() => openPayDialog(oldestUnpaid)}>
-                      <Wallet size={14} /> Record payment ({oldestUnpaid.invoice_number})
-                    </Button>
-                  )}
+                  <p className="text-[11px] text-muted-foreground">
+                    {r.count} invoice{r.count === 1 ? '' : 's'} · paid {r.paid.toLocaleString()} of {r.billed.toLocaleString()}
+                    {r.nextDue?.due_date && ` · next due ${format(new Date(r.nextDue.due_date), 'd MMM')}`}
+                  </p>
                 </Card>
-              );
-            })}
-            {clients.every(c => invoices.filter(i => i.client_id === c.id && i.status !== 'cancelled').length === 0) && (
-              <p className="text-muted-foreground col-span-2 text-center py-12">No invoices yet. Create one to get started.</p>
-            )}
+              ))}
+            </div>
           </div>
         )}
 
-        {view === 'list' && (
-          <Tabs value={filter} onValueChange={setFilter}>
-            <TabsList>
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="draft">Draft</TabsTrigger>
-              <TabsTrigger value="sent">Sent</TabsTrigger>
-              <TabsTrigger value="partially_paid">Partial</TabsTrigger>
-              <TabsTrigger value="overdue">Overdue</TabsTrigger>
-              <TabsTrigger value="paid">Paid</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        )}
+        {/* Filters */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex rounded-md border border-input overflow-hidden">
+            {QUICK_FILTERS.map(f => (
+              <button
+                key={f.key}
+                onClick={() => setFilter(f.key)}
+                className={cn('h-9 px-3 text-sm transition-colors border-r border-input last:border-r-0',
+                  filter === f.key ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:text-foreground')}
+              >{f.label}</button>
+            ))}
+          </div>
+          <div className="relative flex-1 min-w-48">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search invoice number or client…" className="pl-8 h-9" />
+          </div>
+        </div>
 
-        {view === 'list' && loading && <p>Loading…</p>}
-        {view === 'list' && !loading && (
+        {/* One line per invoice */}
+        {loading ? (
+          <p className="text-muted-foreground">Loading…</p>
+        ) : visible.length === 0 ? (
+          <p className="text-muted-foreground text-center py-12">No invoices in this view.</p>
+        ) : (
           <div className="space-y-2">
-            {filtered.map(i => {
+            {visible.map(i => {
               const paid = paidFor(i.id);
-              const remaining = Math.max(0, Number(i.amount) - paid);
+              const remaining = remainingFor(i);
               const pct = Number(i.amount) > 0 ? Math.min(100, (paid / Number(i.amount)) * 100) : 0;
               return (
-                <Card key={i.id} className="p-4 space-y-3">
-                  <div className="flex items-center justify-between gap-4 flex-wrap">
-                    <div className="flex-1 min-w-[200px]">
+                <Card
+                  key={i.id}
+                  onClick={() => openDrawer(i)}
+                  className="p-4 cursor-pointer hover:border-primary/50 transition-colors space-y-2"
+                >
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <div className="flex-1 min-w-[180px]">
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-semibold">{i.invoice_number}</span>
-                        <Badge className={STATUS_COLORS[i.status]}>{i.status.replace('_', ' ')}</Badge>
+                        <Badge className={STATUS_COLORS[i.status]}>{STATUS_LABEL[i.status]}</Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {clientName(i.client_id)} · Issued {format(new Date(i.issue_date), 'd MMM yyyy')}
-                        {i.due_date && ` · Due ${format(new Date(i.due_date), 'd MMM')}`}
-                      </p>
+                      <p className="text-sm text-muted-foreground mt-0.5">{clientName(i.client_id)}</p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-lg font-semibold">{i.currency} {Number(i.amount).toLocaleString()}</p>
-                      {paid > 0 && (
-                        <p className="text-xs text-muted-foreground">
-                          Paid <span className="text-success font-medium">{paid.toLocaleString()}</span> · Remaining <span className="text-warning font-medium">{remaining.toLocaleString()}</span>
+                    <div className="flex items-center gap-5 text-sm">
+                      <div className="text-right">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Total</p>
+                        <p className="font-semibold">{i.currency} {Number(i.amount).toLocaleString()}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Paid</p>
+                        <p className="font-semibold text-success">{paid.toLocaleString()}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Remaining</p>
+                        <p className={cn('font-semibold', remaining > 0 ? 'text-warning' : 'text-muted-foreground')}>{remaining.toLocaleString()}</p>
+                      </div>
+                      <div className="text-right min-w-28">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Due</p>
+                        <p className={cn('font-medium flex items-center gap-1 justify-end',
+                          i.status === 'overdue' ? 'text-destructive' : 'text-foreground')}>
+                          {i.status === 'overdue' && <AlertTriangle size={12} />}{dueLabel(i)}
                         </p>
-                      )}
+                      </div>
                     </div>
-                    <Button size="sm" variant="outline" className="gap-1.5" onClick={() => openPayDialog(i)} disabled={remaining <= 0}>
-                      <Wallet size={14} /> Record payment
-                    </Button>
-                    <Select value={i.status} onValueChange={v => setStatus(i.id, v as Invoice['status'])}>
-                      <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="draft">Draft</SelectItem>
-                        <SelectItem value="sent">Sent</SelectItem>
-                        <SelectItem value="partially_paid">Partially paid</SelectItem>
-                        <SelectItem value="paid">Paid</SelectItem>
-                        <SelectItem value="overdue">Overdue</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-1.5" onClick={() => deleteInvoice(i.id, i.invoice_number)}>
-                      <Trash2 size={14} /> Delete
+                    <Button size="sm" variant="outline" className="gap-1.5" onClick={e => { e.stopPropagation(); openDrawer(i); }}>
+                      <Wallet size={14} /> Payments
                     </Button>
                   </div>
                   {paid > 0 && (
-                    <div className="space-y-2">
-                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                        <div className="h-full bg-success transition-all" style={{ width: `${pct}%` }} />
-                      </div>
-                      <div className="space-y-1">
-                        {payments.filter(p => p.invoice_id === i.id).map(p => (
-                          <div key={p.id} className="flex items-center justify-between text-xs text-muted-foreground bg-muted/30 rounded px-2 py-1">
-                            <span>{format(new Date(p.paid_on), 'd MMM yyyy')} · {p.payment_method || '—'} {p.notes && `· ${p.notes}`}</span>
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono font-medium text-foreground">{i.currency} {Number(p.amount).toLocaleString()}</span>
-                              <button onClick={() => deletePayment(p.id, i.id)} className="text-destructive hover:opacity-70"><Trash2 size={12} /></button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                    <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                      <div className="h-full bg-success transition-all" style={{ width: `${pct}%` }} />
                     </div>
                   )}
                 </Card>
               );
             })}
-            {filtered.length === 0 && <p className="text-muted-foreground text-center py-12">No invoices in this view.</p>}
           </div>
         )}
       </div>
 
+      {/* Payment drawer */}
+      <Sheet open={!!drawerInvoice} onOpenChange={o => !o && setDrawerId(null)}>
+        <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+          {drawerInvoice && (
+            <>
+              <SheetHeader>
+                <SheetTitle className="font-mono">{drawerInvoice.invoice_number}</SheetTitle>
+              </SheetHeader>
+              <div className="mt-4 space-y-5">
+                <div className="rounded-lg bg-muted/30 p-3 text-sm space-y-1">
+                  <p><span className="text-muted-foreground">Client:</span> {clientName(drawerInvoice.client_id)}</p>
+                  <p><span className="text-muted-foreground">Total:</span> {drawerInvoice.currency} {Number(drawerInvoice.amount).toLocaleString()}</p>
+                  <p><span className="text-muted-foreground">Paid:</span> <span className="text-success">{paidFor(drawerInvoice.id).toLocaleString()}</span></p>
+                  <p className="font-medium"><span className="text-muted-foreground">Remaining:</span> <span className="text-warning">{remainingFor(drawerInvoice).toLocaleString()}</span></p>
+                  <p><span className="text-muted-foreground">Issued:</span> {format(new Date(drawerInvoice.issue_date), 'd MMM yyyy')}
+                    {drawerInvoice.due_date && ` · ${dueLabel(drawerInvoice)}`}</p>
+                </div>
 
-      <Dialog open={!!payOpen} onOpenChange={o => !o && setPayOpen(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Record payment</DialogTitle>
-          </DialogHeader>
-          {payOpen && (
-            <div className="space-y-3">
-              <div className="bg-muted/30 rounded p-3 text-sm space-y-1">
-                <p><span className="text-muted-foreground">Invoice:</span> <span className="font-mono">{payOpen.invoice_number}</span></p>
-                <p><span className="text-muted-foreground">Total:</span> {payOpen.currency} {Number(payOpen.amount).toLocaleString()}</p>
-                <p><span className="text-muted-foreground">Already paid:</span> {payOpen.currency} {paidFor(payOpen.id).toLocaleString()}</p>
-                <p className="font-medium"><span className="text-muted-foreground">Remaining:</span> {payOpen.currency} {(Number(payOpen.amount) - paidFor(payOpen.id)).toLocaleString()}</p>
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Payment history</p>
+                  {payments.filter(p => p.invoice_id === drawerInvoice.id).length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No payments recorded yet.</p>
+                  ) : payments.filter(p => p.invoice_id === drawerInvoice.id).map(p => (
+                    <div key={p.id} className="flex items-center justify-between text-xs bg-muted/30 rounded px-2 py-1.5">
+                      <span className="text-muted-foreground">
+                        {format(new Date(p.paid_on), 'd MMM yyyy')} · {p.payment_method || '—'}{p.notes && ` · ${p.notes}`}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-medium text-foreground">{drawerInvoice.currency} {Number(p.amount).toLocaleString()}</span>
+                        <button onClick={() => deletePayment(p.id, drawerInvoice.id)} className="text-destructive hover:opacity-70"><Trash2 size={12} /></button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Record a payment</p>
+                  <Input type="number" placeholder="Amount received" value={payForm.amount} onChange={e => setPayForm(f => ({ ...f, amount: e.target.value }))} />
+                  <Input type="date" value={payForm.paid_on} onChange={e => setPayForm(f => ({ ...f, paid_on: e.target.value }))} />
+                  <Input placeholder="Payment method (Bank / UPI / Cash)" value={payForm.payment_method} onChange={e => setPayForm(f => ({ ...f, payment_method: e.target.value }))} />
+                  <Input placeholder="Notes (e.g. Advance, Final settlement)" value={payForm.notes} onChange={e => setPayForm(f => ({ ...f, notes: e.target.value }))} />
+                  <Button onClick={recordPayment} className="w-full">Save payment</Button>
+                </div>
+
+                <div className="space-y-2 pt-2 border-t border-border">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Invoice status</p>
+                  <Select value={drawerInvoice.status} onValueChange={v => setStatus(drawerInvoice.id, v as Invoice['status'])}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="sent">Sent</SelectItem>
+                      <SelectItem value="partially_paid">Partially paid</SelectItem>
+                      <SelectItem value="paid">Paid</SelectItem>
+                      <SelectItem value="overdue">Overdue</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="ghost"
+                    className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 gap-1.5"
+                    onClick={() => deleteInvoice(drawerInvoice.id, drawerInvoice.invoice_number)}
+                  >
+                    <Trash2 size={14} /> Delete invoice
+                  </Button>
+                </div>
               </div>
-              <Input type="number" placeholder="Amount received" value={payForm.amount} onChange={e => setPayForm(f => ({ ...f, amount: e.target.value }))} />
-              <Input type="date" value={payForm.paid_on} onChange={e => setPayForm(f => ({ ...f, paid_on: e.target.value }))} />
-              <Input placeholder="Payment method (Bank / UPI / Cash)" value={payForm.payment_method} onChange={e => setPayForm(f => ({ ...f, payment_method: e.target.value }))} />
-              <Input placeholder="Notes (e.g. Advance, Final settlement)" value={payForm.notes} onChange={e => setPayForm(f => ({ ...f, notes: e.target.value }))} />
-              <Button onClick={recordPayment} className="w-full">Save payment</Button>
-            </div>
+            </>
           )}
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     </AdminLayout>
   );
 }
