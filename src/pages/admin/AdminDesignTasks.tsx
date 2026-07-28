@@ -139,9 +139,16 @@ export default function AdminDesignTasks() {
   };
 
   const handleStatusChange = async (id: string, status: string) => {
+    const prev = tasks;
+    setTasks((ts: any[]) => ts.map(t => (t.id === id ? { ...t, status } : t)));
     const { error } = await supabase.from('design_tasks').update({ status }).eq('id', id);
-    if (error) toast({ title: 'Update failed', description: error.message, variant: 'destructive' });
-    else { toast({ title: 'Status updated' }); fetchTasks(); }
+    if (error) {
+      setTasks(prev);
+      toast({ title: 'Update failed', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Status updated' });
+      fetchTasks();
+    }
   };
 
   const filtered = tasks.filter(t => {

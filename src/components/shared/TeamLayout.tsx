@@ -3,10 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { EkaLogo } from '@/components/shared/EkaLogo';
 import { useAuth } from '@/hooks/useAuth';
-import { useAttendance } from '@/hooks/useAttendance';
 import { NotificationBell } from '@/components/shared/NotificationBell';
-import { StartWorkday } from '@/components/auth/StartWorkday';
-import { AttendanceBar } from '@/components/shared/AttendanceBar';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { LogOut, Menu, X, ChevronLeft, type LucideIcon } from 'lucide-react';
@@ -31,7 +28,7 @@ interface TeamLayoutProps {
   roleLabel: string;
   roleColor: string;
   roleTextColor: string;
-  showAttendance?: boolean;      // default true; admin sets false
+  showAttendance?: boolean;      // deprecated: attendance tracking removed
 }
 
 export function TeamLayout({
@@ -41,11 +38,9 @@ export function TeamLayout({
   roleLabel,
   roleColor,
   roleTextColor,
-  showAttendance = true,
+  showAttendance = false,
 }: TeamLayoutProps) {
   const { signOut, profile, user } = useAuth();
-  // Hooks must be called unconditionally; the hook itself no-ops if user has no attendance row.
-  useAttendance();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [unread, setUnread] = useState(0);
@@ -159,7 +154,6 @@ export function TeamLayout({
       </aside>
 
       <main className="flex-1 min-w-0 flex flex-col">
-        {showAttendance && <AttendanceBar />}
         <div className="lg:hidden flex items-center justify-between p-3 border-b border-border">
           <button onClick={() => setSidebarOpen(true)} className="text-foreground p-1">
             <Menu size={20} />
@@ -177,6 +171,5 @@ export function TeamLayout({
     </div>
   );
 
-  // StartWorkday gates team roles into starting attendance; admin skips it.
-  return showAttendance ? <StartWorkday>{layout}</StartWorkday> : layout;
+  return layout;
 }

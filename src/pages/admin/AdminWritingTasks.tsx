@@ -160,8 +160,10 @@ export default function AdminWritingTasks() {
   };
 
   const handleStatusChange = async (task: { id: string; video_id?: string | null; status: string }, newStatus: string) => {
+    const prev = tasks;
+    setTasks((ts: any[]) => ts.map(t => (t.id === task.id ? { ...t, status: newStatus } : t)));
     const { error } = await supabase.from('writing_tasks').update({ status: newStatus }).eq('id', task.id);
-    if (error) { toast({ title: 'Update failed', description: error.message, variant: 'destructive' }); return; }
+    if (error) { setTasks(prev); toast({ title: 'Update failed', description: error.message, variant: 'destructive' }); return; }
     if (task.video_id && task.status !== newStatus) await syncWritingTaskToVideo(task.video_id, newStatus);
     toast({ title: 'Status updated' });
     fetchTasks();

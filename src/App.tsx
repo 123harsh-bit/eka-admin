@@ -24,7 +24,7 @@ const CameraLayout = lazy(() => import("@/components/camera/CameraLayout").then(
 const SocialLayout = lazy(() => import("@/components/social/SocialLayout").then((m) => ({ default: m.SocialLayout })));
 
 // Shared pages (rendered inside any role layout)
-const MyAttendancePage = lazy(() => import("@/pages/shared/MyAttendancePage"));
+const ClientsHub = lazy(() => import("@/pages/shared/ClientsHub"));
 const ScriptsLibrary = lazy(() => import("@/pages/shared/ScriptsLibrary"));
 const ScriptEditor = lazy(() => import("@/pages/shared/ScriptEditor"));
 
@@ -38,16 +38,12 @@ const AdminTeam = lazy(() => import("@/pages/admin/AdminTeam"));
 const AdminNotifications = lazy(() => import("@/pages/admin/AdminNotifications"));
 const AdminSettings = lazy(() => import("@/pages/admin/AdminSettings"));
 const AdminDailyTasks = lazy(() => import("@/pages/admin/AdminDailyTasks"));
-const AdminAttendance = lazy(() => import("@/pages/admin/AdminAttendance"));
 const AdminEditorTasks = lazy(() => import("@/pages/admin/AdminEditorTasks"));
 const AdminCameraShoots = lazy(() => import("@/pages/admin/AdminCameraShoots"));
 const AdminClientIdeas = lazy(() => import("@/pages/admin/AdminClientIdeas"));
 const AdminWeeklyReport = lazy(() => import("@/pages/admin/AdminWeeklyReport"));
 const AdminContentPlanner = lazy(() => import("@/pages/admin/AdminContentPlanner"));
 const AdminSocialPosts = lazy(() => import("@/pages/admin/AdminSocialPosts"));
-const AdminInvoices = lazy(() => import("@/pages/admin/AdminInvoices"));
-const AdminCapacity = lazy(() => import("@/pages/admin/AdminCapacity"));
-const AdminWhatsAppTemplates = lazy(() => import("@/pages/admin/AdminWhatsAppTemplates"));
 const AdminSalaries = lazy(() => import("@/pages/admin/AdminSalaries"));
 
 // Role-specific dashboards/sub-pages
@@ -61,9 +57,6 @@ const CameraFootage = lazy(() => import("@/pages/camera/CameraFootage"));
 const SocialDashboard = lazy(() => import("@/pages/social/SocialDashboard"));
 const SocialCompose = lazy(() => import("@/pages/social/SocialCompose"));
 const SocialCalendar = lazy(() => import("@/pages/social/SocialCalendar"));
-const SocialAnalytics = lazy(() => import("@/pages/social/SocialAnalytics"));
-const SocialLibrary = lazy(() => import("@/pages/social/SocialLibrary"));
-const SocialAnalyticsImport = lazy(() => import("@/pages/social/SocialAnalyticsImport"));
 
 const PublicPostPreview = lazy(() => import("@/pages/PublicPostPreview"));
 
@@ -110,15 +103,11 @@ const App = () => (
               <Route path="/admin/writing-tasks" element={<ProtectedRoute allowedRoles={['admin']}><AdminWritingTasks /></ProtectedRoute>} />
               <Route path="/admin/editor-tasks" element={<ProtectedRoute allowedRoles={['admin']}><AdminEditorTasks /></ProtectedRoute>} />
               <Route path="/admin/camera-shoots" element={<ProtectedRoute allowedRoles={['admin']}><AdminCameraShoots /></ProtectedRoute>} />
-              <Route path="/admin/attendance" element={<ProtectedRoute allowedRoles={['admin']}><AdminAttendance /></ProtectedRoute>} />
               <Route path="/admin/team" element={<ProtectedRoute allowedRoles={['admin']}><AdminTeam /></ProtectedRoute>} />
               <Route path="/admin/notifications" element={<ProtectedRoute allowedRoles={['admin']}><AdminNotifications /></ProtectedRoute>} />
               <Route path="/admin/weekly-report" element={<ProtectedRoute allowedRoles={['admin']}><AdminWeeklyReport /></ProtectedRoute>} />
               <Route path="/admin/content-planner" element={<ProtectedRoute allowedRoles={['admin']}><AdminContentPlanner /></ProtectedRoute>} />
               <Route path="/admin/social-posts" element={<ProtectedRoute allowedRoles={['admin']}><AdminSocialPosts /></ProtectedRoute>} />
-              <Route path="/admin/invoices" element={<ProtectedRoute allowedRoles={['admin']}><AdminInvoices /></ProtectedRoute>} />
-              <Route path="/admin/capacity" element={<ProtectedRoute allowedRoles={['admin']}><AdminCapacity /></ProtectedRoute>} />
-              <Route path="/admin/whatsapp-templates" element={<ProtectedRoute allowedRoles={['admin']}><AdminWhatsAppTemplates /></ProtectedRoute>} />
               <Route path="/admin/salaries" element={<ProtectedRoute allowedRoles={['admin']}><AdminSalaries /></ProtectedRoute>} />
               <Route path="/admin/scripts" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><ScriptsLibrary routeBase="/admin/scripts" /></AdminLayout></ProtectedRoute>} />
               <Route path="/admin/scripts/:id" element={<ProtectedRoute allowedRoles={['admin']}><ScriptEditor routeBase="/admin/scripts" /></ProtectedRoute>} />
@@ -126,33 +115,35 @@ const App = () => (
 
               {/* Editor */}
               <Route path="/editor" element={<ProtectedRoute allowedRoles={['editor']}><EditorDashboard /></ProtectedRoute>} />
-              <Route path="/editor/attendance" element={<ProtectedRoute allowedRoles={['editor']}><EditorLayout><MyAttendancePage /></EditorLayout></ProtectedRoute>} />
+
+              <Route path="/editor/clients" element={<ProtectedRoute allowedRoles={['editor']}><EditorLayout><ClientsHub /></EditorLayout></ProtectedRoute>} />
 
               {/* Designer */}
               <Route path="/designer" element={<ProtectedRoute allowedRoles={['designer']}><DesignerDashboard /></ProtectedRoute>} />
               <Route path="/designer/brand-kits" element={<ProtectedRoute allowedRoles={['designer']}><DesignerBrandKits /></ProtectedRoute>} />
-              <Route path="/designer/attendance" element={<ProtectedRoute allowedRoles={['designer']}><DesignerLayout><MyAttendancePage /></DesignerLayout></ProtectedRoute>} />
+
+              <Route path="/designer/clients" element={<ProtectedRoute allowedRoles={['designer']}><DesignerLayout><ClientsHub /></DesignerLayout></ProtectedRoute>} />
 
               {/* Writer */}
               <Route path="/writer" element={<ProtectedRoute allowedRoles={['writer']}><WriterDashboard /></ProtectedRoute>} />
               <Route path="/writer/scripts" element={<ProtectedRoute allowedRoles={['writer']}><WriterLayout><ScriptsLibrary routeBase="/writer/scripts" /></WriterLayout></ProtectedRoute>} />
               <Route path="/writer/scripts/:id" element={<ProtectedRoute allowedRoles={['writer']}><ScriptEditor routeBase="/writer/scripts" /></ProtectedRoute>} />
               <Route path="/writer/briefs" element={<ProtectedRoute allowedRoles={['writer']}><WriterClientBriefs /></ProtectedRoute>} />
-              <Route path="/writer/attendance" element={<ProtectedRoute allowedRoles={['writer']}><WriterLayout><MyAttendancePage /></WriterLayout></ProtectedRoute>} />
+
+              <Route path="/writer/clients" element={<ProtectedRoute allowedRoles={['writer']}><WriterLayout><ClientsHub /></WriterLayout></ProtectedRoute>} />
 
               {/* Camera */}
               <Route path="/camera" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraShoots /></ProtectedRoute>} />
               <Route path="/camera/footage" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraFootage /></ProtectedRoute>} />
-              <Route path="/camera/attendance" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraLayout><MyAttendancePage /></CameraLayout></ProtectedRoute>} />
+
+              <Route path="/camera/clients" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraLayout><ClientsHub /></CameraLayout></ProtectedRoute>} />
 
               {/* Social executive */}
               <Route path="/social" element={<ProtectedRoute allowedRoles={['social_executive']}><SocialDashboard /></ProtectedRoute>} />
               <Route path="/social/compose" element={<ProtectedRoute allowedRoles={['social_executive']}><SocialCompose /></ProtectedRoute>} />
               <Route path="/social/calendar" element={<ProtectedRoute allowedRoles={['social_executive']}><SocialCalendar /></ProtectedRoute>} />
-              <Route path="/social/analytics" element={<ProtectedRoute allowedRoles={['social_executive']}><SocialAnalytics /></ProtectedRoute>} />
-              <Route path="/social/library" element={<ProtectedRoute allowedRoles={['social_executive']}><SocialLibrary /></ProtectedRoute>} />
-              <Route path="/social/import" element={<ProtectedRoute allowedRoles={['social_executive', 'admin']}><SocialAnalyticsImport /></ProtectedRoute>} />
-              <Route path="/social/attendance" element={<ProtectedRoute allowedRoles={['social_executive']}><SocialLayout><MyAttendancePage /></SocialLayout></ProtectedRoute>} />
+
+              <Route path="/social/clients" element={<ProtectedRoute allowedRoles={['social_executive']}><SocialLayout><ClientsHub /></SocialLayout></ProtectedRoute>} />
 
               {/* Client portal */}
               <Route path="/client" element={<ProtectedRoute allowedRoles={['client']}><ClientDashboard /></ProtectedRoute>} />

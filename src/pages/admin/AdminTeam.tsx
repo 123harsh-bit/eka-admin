@@ -136,11 +136,23 @@ export default function AdminTeam() {
         }).eq('id', editingMember.id);
         if (profileError) throw profileError;
 
+        if (form.email.trim().toLowerCase() !== editingMember.email.toLowerCase()) {
+          const { data: { session } } = await supabase.auth.getSession();
+          const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-admin-user`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+            body: JSON.stringify({ action: 'update_email', user_id: editingMember.id, new_email: form.email.trim() }),
+          });
+          const result = await res.json();
+          if (!res.ok) throw new Error(result.error || 'Failed to update email');
+        }
+
         if (editingMember.role !== form.role) {
           await (supabase.from('user_roles') as any).update({ role: form.role }).eq('user_id', editingMember.id);
         }
 
         toast({ title: 'Team member updated' });
+
       } else {
         if (!form.password || form.password.length < 8) {
           toast({ title: 'Password must be at least 8 characters', variant: 'destructive' });
@@ -339,9 +351,12 @@ export default function AdminTeam() {
             </div>
             <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-6 space-y-4">
               <div className="space-y-1.5"><Label>Full Name *</Label><Input value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} placeholder="Jane Doe" required /></div>
-              {!editingMember && (
-                <div className="space-y-1.5"><Label>Email *</Label><Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="jane@example.com" required /></div>
-              )}
+              <div className="space-y-1.5">
+                <Label>Email *</Label>
+                <Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="jane@example.com" required />
+                {editingMember && <p className="text-xs text-muted-foreground">Changing the email updates their login address. All of their data stays linked.</p>}
+              </div>
+
               <div className="space-y-1.5"><Label>Phone</Label><Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="+91 98765 43210" /></div>
               <div className="space-y-1.5">
                 <Label>Role</Label>

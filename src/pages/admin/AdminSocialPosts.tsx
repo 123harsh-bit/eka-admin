@@ -45,8 +45,32 @@ const STATUS_COLORS: Record<string, string> = {
   failed: 'bg-destructive/20 text-destructive',
 };
 
+interface HandoffVideo {
+  id: string;
+  title: string;
+  status: string;
+  drive_link: string | null;
+  live_url: string | null;
+  social_stage: string | null;
+  social_scheduled_at: string | null;
+  social_posted_at: string | null;
+  assigned_social_id: string | null;
+  clients?: { name: string } | null;
+  assignee_name?: string;
+}
+
+const SOCIAL_STAGES = ['queued', 'downloaded', 'scheduled', 'posted'] as const;
+
+const STAGE_COLORS: Record<string, string> = {
+  queued: 'bg-muted text-muted-foreground',
+  downloaded: 'bg-blue-500/20 text-blue-400',
+  scheduled: 'bg-amber-500/20 text-amber-400',
+  posted: 'bg-success/20 text-success',
+};
+
 export default function AdminSocialPosts() {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [handoffs, setHandoffs] = useState<HandoffVideo[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -64,7 +88,32 @@ export default function AdminSocialPosts() {
       });
   };
 
-  useEffect(() => { refresh(); }, []);
+  const refreshHandoffs = async () => {
+    const { data } = await supabase
+      .from('videos')
+      .select('id, title, status, drive_link, live_url, social_stage, social_scheduled_at, social_posted_at, assigned_social_id, clients(name)')
+      .not('assigned_social_id', 'is', null)
+      .order('social_scheduled_at', { ascending: true, nullsFirst: false });
+    const rows = (data as any[]) || [];
+    const ids = [...new Set(rows.map(r => r.assigned_social_id).filter(Boolean))];
+    const nameMap: Record<string, string> = {};
+    if (ids.length) {
+      const { data: profs } = await supabase.from('profiles').select('id, full_name').in('id', ids);
+      profs?.forEach(p => { nameMap[p.id] = p.full_name; });
+    }
+    setHandoffs(rows.map(r => ({ ...r, assignee_name: nameMap[r.assigned_social_id] || 'Unassigned' })));
+  };
+
+  useEffect(() => { refresh(); refreshHandoffs(); }, []);
+
+  const setStage = async (id: string, stage: string) => {
+    const prev = handoffs;
+    setHandoffs(hs => hs.map(h => (h.id === id ? { ...h, social_stage: stage } : h)));
+    const { error } = await supabase.from('videos').update({ social_stage: stage }).eq('id', id);
+    if (error) setHandoffs(prev);
+    else refreshHandoffs();
+  };
+
 
   const filtered = posts.filter(p => {
     const matchSearch = p.title.toLowerCase().includes(search.toLowerCase()) || p.clients?.name.toLowerCase().includes(search.toLowerCase());

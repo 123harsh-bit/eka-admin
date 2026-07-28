@@ -1,12 +1,12 @@
 import { ReactNode } from 'react';
 import { TeamLayout } from '@/components/shared/TeamLayout';
-import { PenTool, BookOpen, Calendar, FileText } from 'lucide-react';
+import { PenTool, BookOpen, Building2, FileText } from 'lucide-react';
 
 const navItems = [
   { to: '/writer', icon: PenTool, label: 'My Tasks', end: true },
   { to: '/writer/scripts', icon: FileText, label: 'Scripts' },
   { to: '/writer/briefs', icon: BookOpen, label: 'Client Briefs' },
-  { to: '/writer/attendance', icon: Calendar, label: 'Attendance' },
+  { to: '/writer/clients', icon: Building2, label: 'Clients Hub' },
 ];
 
 export function WriterLayout({ children }: { children: ReactNode }) {

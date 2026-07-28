@@ -60,7 +60,32 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === 'update_email') {
+      const { user_id, new_email } = body;
+      if (!user_id || !new_email) {
+        return new Response(JSON.stringify({ error: 'Missing user_id or new_email' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      // Update the auth identity (keeps the same user id, so all data stays linked)
+      const { error } = await serviceClient.auth.admin.updateUserById(user_id, {
+        email: new_email,
+        email_confirm: true,
+      });
+      if (error) {
+        return new Response(JSON.stringify({ error: error.message }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      // Keep the profile mirror in sync
+      await serviceClient.from('profiles').update({ email: new_email }).eq('id', user_id);
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     if (action === 'delete_user') {
+
       const { user_id } = body;
       if (!user_id) {
         return new Response(JSON.stringify({ error: 'Missing user_id' }), {

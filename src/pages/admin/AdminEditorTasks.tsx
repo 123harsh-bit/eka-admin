@@ -45,9 +45,17 @@ export default function AdminEditorTasks() {
   };
 
   const handleStatusChange = async (id: string, status: string) => {
+    // Optimistic: reflect the new stage immediately, roll back if the server rejects it.
+    const prev = videos;
+    setVideos(vs => vs.map(v => (v.id === id ? { ...v, status } : v)));
     const { error } = await supabase.from('videos').update({ status }).eq('id', id);
-    if (error) toast({ title: 'Update failed', description: error.message, variant: 'destructive' });
-    else { toast({ title: 'Status updated' }); fetchVideos(); }
+    if (error) {
+      setVideos(prev);
+      toast({ title: 'Update failed', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Status updated' });
+      fetchVideos();
+    }
   };
 
   const fetchVideos = async () => {

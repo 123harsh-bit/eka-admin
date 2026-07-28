@@ -1,11 +1,11 @@
 import { ReactNode } from 'react';
 import { TeamLayout } from '@/components/shared/TeamLayout';
-import { Camera, FolderOpen, Calendar } from 'lucide-react';
+import { Camera, FolderOpen, Building2 } from 'lucide-react';
 
 const navItems = [
   { to: '/camera', icon: Camera, label: 'My Shoots', end: true },
   { to: '/camera/footage', icon: FolderOpen, label: 'Footage' },
-  { to: '/camera/attendance', icon: Calendar, label: 'Attendance' },
+  { to: '/camera/clients', icon: Building2, label: 'Clients Hub' },
 ];
 
 export function CameraLayout({ children }: { children: ReactNode }) {
