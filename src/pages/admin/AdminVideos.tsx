@@ -862,8 +862,10 @@ export default function AdminVideos() {
                             <div
                               key={video.id}
                               onClick={() => openDetail(video)}
-                              className={cn('flex items-center gap-3 px-4 py-2.5 hover:bg-muted/20 cursor-pointer transition-colors',
+                              className={cn('flex items-center gap-3 px-4 hover:bg-muted/20 cursor-pointer transition-colors',
+                                density === 'compact' ? 'py-1' : 'py-2.5',
                                 detailVideo?.id === video.id && 'bg-primary/10')}
+
                             >
                               <StatusBadge status={video.status as VideoStatus} type="video" />
                               <span className="flex-1 text-sm text-foreground truncate">{video.title}</span>
