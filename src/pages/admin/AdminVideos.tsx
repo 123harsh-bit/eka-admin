@@ -20,6 +20,8 @@ import { cn } from '@/lib/utils';
 import { VideoComments } from '@/components/shared/VideoComments';
 import { ShootChecklist } from '@/components/shared/ShootChecklist';
 import { DeadlineBadge } from '@/components/shared/DeadlineBadge';
+import { usePersistedState } from '@/hooks/usePersistedState';
+
 
 interface VideoRow {
   id: string; title: string; description: string | null; status: string;
