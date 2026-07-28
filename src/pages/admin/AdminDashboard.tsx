@@ -71,7 +71,7 @@ export default function AdminDashboard() {
       { count: videosLiveThisMonth }, { count: designDue }, { count: writingDue },
     ] = await Promise.all([
       supabase.from('clients').select('*', { count: 'exact', head: true }).eq('is_active', true),
-      supabase.from('videos').select('*', { count: 'exact', head: true }).not('status', 'in', '("idea","live")'),
+      supabase.from('videos').select('*', { count: 'exact', head: true }).not('status', 'in', '(idea,live)'),
       supabase.from('videos').select('*', { count: 'exact', head: true }).eq('status', 'client_review'),
       supabase.from('videos').select('*', { count: 'exact', head: true }).eq('status', 'live').gte('date_delivered', startOfMonth),
       supabase.from('design_tasks').select('*', { count: 'exact', head: true }).lte('due_date', weekFromNow).gte('due_date', today).not('status', 'eq', 'delivered'),
@@ -141,11 +141,11 @@ export default function AdminDashboard() {
       assetClients,
     ] = await Promise.all([
       supabase.from('videos').select('id', { count: 'exact', head: true }).eq('status', 'internal_review'),
-      supabase.from('videos').select('id', { count: 'exact', head: true }).in('status', ['approved', 'ready_to_upload']).neq('social_stage', 'posted'),
-      supabase.from('videos').select('id', { count: 'exact', head: true }).is('raw_footage_link', null).not('status', 'in', '("idea","live")'),
+      supabase.from('videos').select('id', { count: 'exact', head: true }).in('status', ['approved', 'ready_to_upload']).or('social_stage.is.null,social_stage.neq.posted'),
+      supabase.from('videos').select('id', { count: 'exact', head: true }).is('raw_footage_link', null).not('status', 'in', '(idea,live)'),
       supabase.from('videos').select('id', { count: 'exact', head: true }).is('drive_link', null).in('status', ['editing', 'internal_review', 'client_review', 'approved']),
-      supabase.from('design_tasks').select('id', { count: 'exact', head: true }).lt('due_date', today).not('status', 'in', '("delivered","approved")'),
-      supabase.from('writing_tasks').select('id', { count: 'exact', head: true }).lt('due_date', today).not('status', 'in', '("delivered","approved")'),
+      supabase.from('design_tasks').select('id', { count: 'exact', head: true }).lt('due_date', today).not('status', 'in', '(delivered,approved)'),
+      supabase.from('writing_tasks').select('id', { count: 'exact', head: true }).lt('due_date', today).not('status', 'in', '(delivered,approved)'),
       supabase.from('clients').select('id, logo_url').eq('is_active', true),
       supabase.from('client_assets').select('client_id'),
     ]);
