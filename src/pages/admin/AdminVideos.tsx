@@ -64,8 +64,8 @@ export default function AdminVideos() {
   const [socialExecs, setSocialExecs] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [clientFilter, setClientFilter] = useState('');
+  const [statusFilter, setStatusFilter] = usePersistedState<string>('videos.status', '');
+  const [clientFilter, setClientFilter] = usePersistedState<string>('videos.client', '');
   const [panelOpen, setPanelOpen] = useState(false);
   const [detailVideo, setDetailVideo] = useState<VideoRow | null>(null);
   const [editingVideo, setEditingVideo] = useState<VideoRow | null>(null);
@@ -77,12 +77,14 @@ export default function AdminVideos() {
   const [bulkStatus, setBulkStatus] = useState('');
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [workflowLoading, setWorkflowLoading] = useState(false);
-  // Organization controls
-  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
-  const [groupByClient, setGroupByClient] = useState(false);
+  // Organization controls (persisted per user as a "saved view")
+  const [viewMode, setViewMode] = usePersistedState<'list' | 'kanban'>('videos.mode', 'list');
+  const [groupByClient, setGroupByClient] = usePersistedState<boolean>('videos.group', false);
+  const [density, setDensity] = usePersistedState<'comfortable' | 'compact'>('videos.density', 'comfortable');
   const currentMonthKey = new Date().toISOString().slice(0, 7);
-  const [monthKey, setMonthKey] = useState<string>(currentMonthKey);
+  const [monthKey, setMonthKey] = usePersistedState<string>('videos.month', currentMonthKey);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+
   const { user } = useAuth();
   const { toast } = useToast();
 
