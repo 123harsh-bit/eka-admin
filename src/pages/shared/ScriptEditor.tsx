@@ -23,8 +23,6 @@ import { CommentsPanel } from '@/components/scripts/CommentsPanel';
 import { ShareScriptDialog } from '@/components/scripts/ShareScriptDialog';
 import { CommentMark } from '@/lib/scripts/commentMark';
 import { useYSupabaseProvider, encodeSnapshotBase64 } from '@/lib/scripts/useYSupabaseProvider';
-import { exportEditorToPdf } from '@/lib/scripts/exportPdf';
-import { exportEditorToDocx } from '@/lib/scripts/exportDocx';
 import { ArrowLeft, Users, Circle, MessageSquare, Loader2, Share2, Video as VideoIcon, PenTool, CalendarRange, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
