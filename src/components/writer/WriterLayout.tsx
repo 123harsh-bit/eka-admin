@@ -6,7 +6,7 @@ const navItems = [
   { to: '/writer', icon: PenTool, label: 'My Tasks', end: true },
   { to: '/writer/scripts', icon: FileText, label: 'Scripts' },
   { to: '/writer/briefs', icon: BookOpen, label: 'Client Briefs' },
-  { to: '/writer/clients', icon: Building2, label: 'Clients Hub' },
+  { to: '/writer/clients', icon: Building2, label: 'Client Assets' },
 ];
 
 export function WriterLayout({ children }: { children: ReactNode }) {
