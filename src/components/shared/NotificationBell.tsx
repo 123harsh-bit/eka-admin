@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Bell, X, Check, CheckCheck } from 'lucide-react';
+import { Bell, X, Check, CheckCheck, Settings2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, isToday, isYesterday, format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { NotificationPreferences } from '@/components/shared/NotificationPreferences';
+
 
 interface Notification {
   id: string;
