@@ -889,7 +889,7 @@ export default function AdminVideos() {
               })}
             </div>
           ) : (
-          <div className="glass-card flex-1 overflow-auto">
+          <div className={cn('glass-card flex-1 overflow-auto', density === 'compact' && '[&_td]:!py-1 [&_th]:!py-2 text-[13px]')}>
             {/* Desktop table — hidden on mobile */}
             <table className="w-full text-sm hidden md:table">
               <thead className="sticky top-0 bg-card/90 backdrop-blur border-b border-glass-border">
