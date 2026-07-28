@@ -74,9 +74,16 @@ export default function AdminCameraShoots() {
   };
 
   const handleStatusChange = async (id: string, status: string) => {
+    const prev = videos;
+    setVideos((vs: any[]) => vs.map(v => (v.id === id ? { ...v, status } : v)));
     const { error } = await supabase.from('videos').update({ status }).eq('id', id);
-    if (error) toast({ title: 'Update failed', description: error.message, variant: 'destructive' });
-    else { toast({ title: 'Status updated' }); fetchVideos(); }
+    if (error) {
+      setVideos(prev);
+      toast({ title: 'Update failed', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Status updated' });
+      fetchVideos();
+    }
   };
 
   const filtered = videos.filter(v => {

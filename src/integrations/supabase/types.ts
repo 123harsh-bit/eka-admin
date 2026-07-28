@@ -2079,6 +2079,25 @@ export type Database = {
           read_ct: number
         }[]
       }
+      team_list_clients: {
+        Args: never
+        Returns: {
+          brand_colors: Json
+          brand_fonts: Json
+          contact_person: string
+          deliverables: Json
+          email: string
+          id: string
+          industry: string
+          is_active: boolean
+          logo_url: string
+          name: string
+          notes: string
+          phone: string
+          project_title: string
+          service_type: string
+        }[]
+      }
     }
     Enums: {
       app_role:

@@ -1,11 +1,11 @@
 import { ReactNode } from 'react';
 import { TeamLayout } from '@/components/shared/TeamLayout';
-import { Palette, BookOpen, Calendar } from 'lucide-react';
+import { Palette, BookOpen, Building2 } from 'lucide-react';
 
 const navItems = [
   { to: '/designer', icon: Palette, label: 'My Tasks', end: true },
   { to: '/designer/brand-kits', icon: BookOpen, label: 'Brand Kits' },
-  { to: '/designer/attendance', icon: Calendar, label: 'Attendance' },
+  { to: '/designer/clients', icon: Building2, label: 'Clients Hub' },
 ];
 
 export function DesignerLayout({ children }: { children: ReactNode }) {

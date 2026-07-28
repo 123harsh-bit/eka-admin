@@ -9,6 +9,7 @@ team_messages table DROPPED. Real-time team messaging is permanently disabled.
 Writing tasks track duration in sec/min; NEVER use word count. "blog" is explicitly excluded from task types.
 Strict workflow gates: Fields for assigning Writers, Camera, Editors are hidden/blocked until specific pipeline stages are reached.
 Roles: admin, coo, editor, designer, writer, camera_operator, social_executive, client. COO = full admin-equivalent access. Social Executive route prefix: /social.
+Attendance, Invoices, Capacity planner and WhatsApp templates are REMOVED — never re-add. Clients Hub (/<role>/clients) is the team-facing client directory.
 Social posts table: scheduled_posts. Phase B.1 LIVE = PublishHelper modal. B.2 pending native OAuth approval. Storage bucket: social-media (private).
 Pipeline workflow logic lives in `src/lib/pipeline/`. Status constants in `src/lib/statusConfig.ts`.
 TeamLayout is the single layout (supports navItems OR navGroups + showAttendance). Per-role Attendance/DailyTasks pages do NOT exist. Daily Tasks nav is ADMIN-ONLY (removed from editor/designer/writer/camera/social per request 2026-06-14). Editor "All Videos" page removed — editors only see their own assigned videos.
@@ -41,3 +42,4 @@ clients.deliverables JSONB stores {reels, long_videos, thumbnails, posters, caro
 - [Writing task types](mem://logic/writing-task-types) — Permitted categorizations
 - [Social phase B](mem://features/social-phase-b) — Manual PublishHelper live; native pending OAuth
 - [Phase 3 features](mem://features/phase-3-features) — WhatsApp templates, Invoices, Capacity, AI brief
+- [Removed modules](mem://features/removed-modules) — Attendance/Invoices/Capacity/WhatsApp removed; Clients Hub + admin email change added

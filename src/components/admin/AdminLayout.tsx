@@ -3,8 +3,8 @@ import { TeamLayout } from '@/components/shared/TeamLayout';
 import {
   LayoutDashboard, Users, Video, Palette, PenTool, Camera,
   UserCircle, Bell, Settings, ListTodo,
-  Calendar, Scissors, Lightbulb, BarChart3, CalendarRange, Share2,
-  MessageCircle, Receipt, Activity, Wallet, FileText,
+  Scissors, Lightbulb, BarChart3, CalendarRange, Share2,
+  Wallet, FileText,
 } from 'lucide-react';
 
 const navGroups = [
@@ -33,18 +33,14 @@ const navGroups = [
     items: [
       { to: '/admin/clients', icon: Users, label: 'Clients' },
       { to: '/admin/client-ideas', icon: Lightbulb, label: 'Client Ideas' },
-      { to: '/admin/invoices', icon: Receipt, label: 'Invoices' },
       { to: '/admin/team', icon: UserCircle, label: 'Team' },
       { to: '/admin/salaries', icon: Wallet, label: 'Salaries' },
-      { to: '/admin/capacity', icon: Activity, label: 'Capacity' },
-      { to: '/admin/attendance', icon: Calendar, label: 'Attendance' },
       { to: '/admin/weekly-report', icon: BarChart3, label: 'Weekly Report' },
     ],
   },
   {
     label: 'System',
     items: [
-      { to: '/admin/whatsapp-templates', icon: MessageCircle, label: 'WhatsApp Templates' },
       { to: '/admin/notifications', icon: Bell, label: 'Notifications' },
       { to: '/admin/settings', icon: Settings, label: 'Settings' },
     ],
