@@ -18,8 +18,17 @@ interface Notification {
 export function NotificationBell() {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
+  const [showPrefs, setShowPrefs] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const unreadCount = notifications.filter(n => !n.is_read).length;
+
+  const dayLabel = (iso: string) => {
+    const d = new Date(iso);
+    if (isToday(d)) return 'Today';
+    if (isYesterday(d)) return 'Yesterday';
+    return format(d, 'd MMM yyyy');
+  };
+
 
   useEffect(() => {
     if (!user) return;
