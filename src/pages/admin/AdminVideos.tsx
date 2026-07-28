@@ -755,9 +755,27 @@ export default function AdminVideos() {
                     <LayoutGrid size={13} /> Kanban
                   </button>
                 </div>
-
+              </div>
             </div>
+
+            {activeFilters.length > 0 && (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {activeFilters.map(f => (
+                  <button
+                    key={f.label}
+                    onClick={f.clear}
+                    className="h-6 pl-2 pr-1.5 rounded-full bg-primary/10 text-primary text-[11px] flex items-center gap-1 hover:bg-primary/20 transition-colors"
+                  >
+                    {f.label} <X size={11} />
+                  </button>
+                ))}
+                <button onClick={clearAllFilters} className="h-6 px-2 rounded-full text-[11px] text-muted-foreground hover:text-foreground underline">
+                  Clear all
+                </button>
+              </div>
+            )}
           </div>
+
 
           {selected.size > 0 && (
             <div className="glass-card p-3 flex items-center gap-3 flex-wrap flex-shrink-0 border border-primary/40 bg-primary/5">
