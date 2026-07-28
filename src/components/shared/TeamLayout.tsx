@@ -114,9 +114,20 @@ export function TeamLayout({
                         : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                     )}
                   >
-                    <item.icon size={16} className="flex-shrink-0" />
-                    {!collapsed && <span>{item.label}</span>}
+                    <span className="relative flex-shrink-0">
+                      <item.icon size={16} />
+                      {item.to.endsWith('/notifications') && unread > 0 && collapsed && (
+                        <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-destructive" />
+                      )}
+                    </span>
+                    {!collapsed && <span className="flex-1">{item.label}</span>}
+                    {!collapsed && item.to.endsWith('/notifications') && unread > 0 && (
+                      <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground flex items-center justify-center">
+                        {unread > 99 ? '99+' : unread}
+                      </span>
+                    )}
                   </NavLink>
+
                 ))}
               </div>
             </div>
