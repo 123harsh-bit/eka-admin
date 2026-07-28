@@ -673,67 +673,89 @@ export default function AdminVideos() {
             <Button onClick={openAdd} className="gap-2"><Plus size={16} /> Add Video</Button>
           </div>
 
-          <div className="flex gap-2 flex-wrap flex-shrink-0">
-            <div className="relative flex-1 min-w-40">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search…" className="pl-8 h-9 text-sm" />
-            </div>
-            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground">
-              <option value="">All statuses</option>
-              {VIDEO_STATUS_ORDER.map(s => <option key={s} value={s}>{VIDEO_STATUSES[s].label}</option>)}
-            </select>
-            <select value={clientFilter} onChange={e => setClientFilter(e.target.value)} className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground">
-              <option value="">All clients</option>
-              {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </div>
-
-          {/* Organizer bar: month tabs + view mode */}
-          <div className="flex items-center gap-2 flex-wrap flex-shrink-0 border-b border-glass-border/40 pb-2">
-            <div className="flex items-center gap-1 flex-wrap flex-1 min-w-0">
-              <button
-                onClick={() => setMonthKey('all')}
-                className={cn('h-7 px-2.5 rounded-md text-xs font-medium transition-colors',
-                  monthKey === 'all' ? 'bg-primary text-primary-foreground' : 'bg-muted/30 text-muted-foreground hover:bg-muted/50')}
-              >All</button>
-              {monthsAvailable.slice(0, 8).map(k => (
-                <button
-                  key={k}
-                  onClick={() => setMonthKey(k)}
-                  className={cn('h-7 px-2.5 rounded-md text-xs font-medium transition-colors',
-                    monthKey === k ? 'bg-primary text-primary-foreground' : 'bg-muted/30 text-muted-foreground hover:bg-muted/50',
-                    k === currentMonthKey && monthKey !== k && 'ring-1 ring-primary/40')}
-                  title={k === currentMonthKey ? 'This month' : undefined}
-                >{monthLabel(k)}{k === currentMonthKey && ' •'}</button>
-              ))}
-            </div>
-            <div className="flex items-center gap-1 shrink-0">
-              {viewMode === 'list' && (
-                <button
-                  onClick={() => setGroupByClient(g => !g)}
-                  className={cn('h-8 px-2 rounded-md text-xs flex items-center gap-1.5 border transition-colors',
-                    groupByClient ? 'border-primary/50 bg-primary/10 text-primary' : 'border-input bg-background text-muted-foreground hover:text-foreground')}
-                  title="Group by client"
-                >
-                  <Layers size={13} /> By client
-                </button>
-              )}
-              <div className="flex rounded-md border border-input overflow-hidden">
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={cn('h-8 px-2.5 text-xs flex items-center gap-1.5 transition-colors',
-                    viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:text-foreground')}
-                >
-                  <LayoutList size={13} /> List
-                </button>
-                <button
-                  onClick={() => setViewMode('kanban')}
-                  className={cn('h-8 px-2.5 text-xs flex items-center gap-1.5 border-l border-input transition-colors',
-                    viewMode === 'kanban' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:text-foreground')}
-                >
-                  <LayoutGrid size={13} /> Kanban
-                </button>
+          <div className="sticky top-0 z-20 -mx-1 px-1 pt-1 pb-2 bg-background/85 backdrop-blur space-y-2 flex-shrink-0">
+            <div className="flex gap-2 flex-wrap">
+              <div className="relative flex-1 min-w-40">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search…" className="pl-8 h-9 text-sm" />
               </div>
+              <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground">
+                <option value="">All statuses</option>
+                {VIDEO_STATUS_ORDER.map(s => <option key={s} value={s}>{VIDEO_STATUSES[s].label}</option>)}
+              </select>
+              <select value={clientFilter} onChange={e => setClientFilter(e.target.value)} className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground">
+                <option value="">All clients</option>
+                {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+
+            {/* Organizer bar: month tabs + archive + view mode + density */}
+            <div className="flex items-center gap-2 flex-wrap border-b border-glass-border/40 pb-2">
+              <div className="flex items-center gap-1 flex-wrap flex-1 min-w-0">
+                <button
+                  onClick={() => setMonthKey('all')}
+                  className={cn('h-7 px-2.5 rounded-md text-xs font-medium transition-colors',
+                    monthKey === 'all' ? 'bg-primary text-primary-foreground' : 'bg-muted/30 text-muted-foreground hover:bg-muted/50')}
+                >All</button>
+                {monthsAvailable.slice(0, 8).map(k => (
+                  <button
+                    key={k}
+                    onClick={() => setMonthKey(k)}
+                    className={cn('h-7 px-2.5 rounded-md text-xs font-medium transition-colors',
+                      monthKey === k ? 'bg-primary text-primary-foreground' : 'bg-muted/30 text-muted-foreground hover:bg-muted/50',
+                      k === currentMonthKey && monthKey !== k && 'ring-1 ring-primary/40')}
+                    title={k === currentMonthKey ? 'This month' : undefined}
+                  >{monthLabel(k)}{k === currentMonthKey && ' •'}</button>
+                ))}
+                {archivedCount > 0 && (
+                  <button
+                    onClick={() => setMonthKey('archive')}
+                    className={cn('h-7 px-2.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1',
+                      monthKey === 'archive' ? 'bg-primary text-primary-foreground' : 'bg-muted/30 text-muted-foreground hover:bg-muted/50')}
+                    title={`Live videos older than ${ARCHIVE_AFTER_DAYS} days`}
+                  >
+                    <Archive size={12} /> Archive ({archivedCount})
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                {viewMode === 'list' && (
+                  <>
+                    <button
+                      onClick={() => setGroupByClient(g => !g)}
+                      className={cn('h-8 px-2 rounded-md text-xs flex items-center gap-1.5 border transition-colors',
+                        groupByClient ? 'border-primary/50 bg-primary/10 text-primary' : 'border-input bg-background text-muted-foreground hover:text-foreground')}
+                      title="Group by client"
+                    >
+                      <Layers size={13} /> By client
+                    </button>
+                    <button
+                      onClick={() => setDensity(d => (d === 'compact' ? 'comfortable' : 'compact'))}
+                      className={cn('h-8 px-2 rounded-md text-xs flex items-center gap-1.5 border transition-colors',
+                        density === 'compact' ? 'border-primary/50 bg-primary/10 text-primary' : 'border-input bg-background text-muted-foreground hover:text-foreground')}
+                      title="Toggle row density"
+                    >
+                      <Rows3 size={13} /> {density === 'compact' ? 'Compact' : 'Comfy'}
+                    </button>
+                  </>
+                )}
+                <div className="flex rounded-md border border-input overflow-hidden">
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={cn('h-8 px-2.5 text-xs flex items-center gap-1.5 transition-colors',
+                      viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:text-foreground')}
+                  >
+                    <LayoutList size={13} /> List
+                  </button>
+                  <button
+                    onClick={() => setViewMode('kanban')}
+                    className={cn('h-8 px-2.5 text-xs flex items-center gap-1.5 border-l border-input transition-colors',
+                      viewMode === 'kanban' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:text-foreground')}
+                  >
+                    <LayoutGrid size={13} /> Kanban
+                  </button>
+                </div>
+
             </div>
           </div>
 
