@@ -31,7 +31,7 @@ const navGroups = [
   {
     label: 'Manage',
     items: [
-      { to: '/admin/clients', icon: Users, label: 'Clients' },
+      { to: '/admin/clients', icon: Users, label: 'Clients & Assets' },
       { to: '/admin/client-ideas', icon: Lightbulb, label: 'Client Ideas' },
       { to: '/admin/team', icon: UserCircle, label: 'Team' },
       { to: '/admin/salaries', icon: Wallet, label: 'Salaries' },
