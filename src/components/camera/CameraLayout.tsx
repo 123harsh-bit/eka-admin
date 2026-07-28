@@ -5,7 +5,7 @@ import { Camera, FolderOpen, Building2 } from 'lucide-react';
 const navItems = [
   { to: '/camera', icon: Camera, label: 'My Shoots', end: true },
   { to: '/camera/footage', icon: FolderOpen, label: 'Footage' },
-  { to: '/camera/clients', icon: Building2, label: 'Clients Hub' },
+  { to: '/camera/clients', icon: Building2, label: 'Client Assets' },
 ];
 
 export function CameraLayout({ children }: { children: ReactNode }) {

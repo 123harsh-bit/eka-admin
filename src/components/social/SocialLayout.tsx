@@ -6,7 +6,7 @@ const navItems = [
   { to: '/social', icon: LayoutDashboard, label: 'Dashboard', end: true },
   { to: '/social/compose', icon: Plus, label: 'New Post' },
   { to: '/social/calendar', icon: CalendarRange, label: 'Calendar' },
-  { to: '/social/clients', icon: Building2, label: 'Clients Hub' },
+  { to: '/social/clients', icon: Building2, label: 'Client Assets' },
 ];
 
 export function SocialLayout({ children }: { children: ReactNode }) {

@@ -9,7 +9,8 @@ import { ConfirmDeleteModal } from '@/components/shared/ConfirmDeleteModal';
 import { useToast } from '@/hooks/use-toast';
 import {
   Plus, Search, X, Users, Building2, Phone, Mail,
-  Calendar, Edit2, Trash2, ToggleLeft, ToggleRight, Upload, Loader2, KeyRound, Scissors, Film
+  Calendar, Edit2, Trash2, ToggleLeft, ToggleRight, Upload, Loader2, Scissors, Film,
+  Download, FileText, FolderOpen
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -35,6 +36,20 @@ interface Client {
   deliverables?: Record<string, number> | null;
 }
 
+interface ClientAsset {
+  id: string;
+  client_id: string;
+  name: string;
+  asset_type: string;
+  file_path: string;
+  file_name: string;
+  mime_type: string | null;
+  file_size: number | null;
+  notes: string | null;
+  created_at: string;
+  signed_url?: string;
+}
+
 const INDUSTRIES = ['Technology', 'E-commerce', 'Health & Fitness', 'Real Estate', 'Education', 'Food & Beverage', 'Fashion', 'Finance', 'Travel', 'Entertainment', 'Other'];
 const CURRENCIES = ['INR', 'USD', 'EUR', 'GBP', 'AED', 'AUD', 'CAD', 'SGD'];
 
@@ -47,6 +62,17 @@ const DELIVERABLE_TYPES: { key: string; label: string; emoji: string }[] = [
   { key: 'carousels', label: 'Carousels', emoji: '🎴' },
 ];
 
+const ASSET_TYPES = [
+  { value: 'logo', label: 'Logo' },
+  { value: 'guideline', label: 'Brand guideline' },
+  { value: 'brief', label: 'Creative brief' },
+  { value: 'reference', label: 'Reference' },
+  { value: 'photo', label: 'Photo' },
+  { value: 'document', label: 'Document' },
+  { value: 'archive', label: 'Archive' },
+  { value: 'file', label: 'Other file' },
+];
+
 const emptyForm = {
   name: '', email: '', phone: '', industry: '', contact_person: '',
   project_title: '', notes: '', monthly_deliverables: '', contract_start: '', contract_end: '',
@@ -57,6 +83,7 @@ const emptyForm = {
 
 export default function AdminClients() {
   const [clients, setClients] = useState<Client[]>([]);
+  const [assets, setAssets] = useState<Record<string, ClientAsset[]>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [panelOpen, setPanelOpen] = useState(false);
@@ -65,8 +92,14 @@ export default function AdminClients() {
   const [saving, setSaving] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [assetFile, setAssetFile] = useState<File | null>(null);
+  const [assetName, setAssetName] = useState('');
+  const [assetType, setAssetType] = useState('file');
+  const [assetNotes, setAssetNotes] = useState('');
+  const [assetSaving, setAssetSaving] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; client: Client | null }>({ open: false, client: null });
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const assetInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => { fetchClients(); }, []);
@@ -81,7 +114,20 @@ export default function AdminClients() {
       const { data } = await supabase.from('clients').select('*').order('created_at', { ascending: false });
       if (data) setClients(data as Client[]);
     }
+    await fetchAssets();
     setLoading(false);
+  };
+
+  const fetchAssets = async () => {
+    const { data } = await supabase.from('client_assets').select('*').order('created_at', { ascending: false });
+    const withUrls = await Promise.all(((data as ClientAsset[]) || []).map(async asset => {
+      const { data: signed } = await supabase.storage.from('brand-assets').createSignedUrl(asset.file_path, 60 * 10);
+      return { ...asset, signed_url: signed?.signedUrl };
+    }));
+    setAssets(withUrls.reduce<Record<string, ClientAsset[]>>((acc, asset) => {
+      (acc[asset.client_id] ||= []).push(asset);
+      return acc;
+    }, {}));
   };
 
   const openAdd = () => {
@@ -108,6 +154,10 @@ export default function AdminClients() {
     });
     setLogoPreview(client.logo_url);
     setLogoFile(null);
+    setAssetFile(null);
+    setAssetName('');
+    setAssetType('file');
+    setAssetNotes('');
     setPanelOpen(true);
   };
 
@@ -135,8 +185,8 @@ export default function AdminClients() {
     return 'Something went wrong. Please try again.';
   };
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = async (e?: React.FormEvent | React.MouseEvent) => {
+    e?.preventDefault();
     if (!form.name.trim()) return;
     setSaving(true);
 
@@ -182,6 +232,65 @@ export default function AdminClients() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const resetAssetForm = () => {
+    setAssetFile(null);
+    setAssetName('');
+    setAssetType('file');
+    setAssetNotes('');
+    if (assetInputRef.current) assetInputRef.current.value = '';
+  };
+
+  const handleAssetUpload = async () => {
+    if (!editingClient || !assetFile) return;
+    setAssetSaving(true);
+    const safeName = assetFile.name.replace(/[^a-zA-Z0-9._-]/g, '-');
+    const path = `${editingClient.id}/${Date.now()}-${safeName}`;
+    const { error: uploadError } = await supabase.storage.from('brand-assets').upload(path, assetFile, { upsert: false });
+
+    if (uploadError) {
+      toast({ title: 'Could not upload asset', description: uploadError.message, variant: 'destructive' });
+      setAssetSaving(false);
+      return;
+    }
+
+    const { error } = await supabase.from('client_assets').insert({
+      client_id: editingClient.id,
+      name: assetName.trim() || assetFile.name,
+      asset_type: assetType,
+      file_path: path,
+      file_name: assetFile.name,
+      mime_type: assetFile.type || null,
+      file_size: assetFile.size,
+      notes: assetNotes.trim() || null,
+    });
+
+    if (error) {
+      toast({ title: 'Could not save asset', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Asset uploaded', description: `${assetName.trim() || assetFile.name} is available in Client Assets.` });
+      resetAssetForm();
+      await fetchAssets();
+    }
+    setAssetSaving(false);
+  };
+
+  const handleAssetDelete = async (asset: ClientAsset) => {
+    const { error } = await supabase.from('client_assets').delete().eq('id', asset.id);
+    if (error) {
+      toast({ title: 'Could not delete asset', description: error.message, variant: 'destructive' });
+      return;
+    }
+    await supabase.storage.from('brand-assets').remove([asset.file_path]);
+    toast({ title: 'Asset deleted' });
+    await fetchAssets();
+  };
+
+  const formatSize = (bytes?: number | null) => {
+    if (!bytes) return '';
+    if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
   const handleToggleActive = async (client: Client) => {
@@ -516,7 +625,71 @@ export default function AdminClients() {
 
               {/* Client Portal Access - outside form to prevent submit conflicts */}
               {editingClient && (
-                <div className="px-6 pb-4 border-t border-glass-border pt-4">
+                <div className="px-6 pb-4 border-t border-glass-border pt-4 space-y-4 overflow-y-auto max-h-[42vh]">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">Client belongings</p>
+                        <p className="text-xs text-muted-foreground">Files uploaded here are downloadable by team members.</p>
+                      </div>
+                      <FolderOpen size={18} className="text-primary" />
+                    </div>
+
+                    <div className="rounded-lg border border-glass-border bg-muted/20 p-3 space-y-3">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="asset-name">File label</Label>
+                          <Input id="asset-name" value={assetName} onChange={e => setAssetName(e.target.value)} placeholder="Brand guideline" className="h-9" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="asset-type">Type</Label>
+                          <select id="asset-type" value={assetType} onChange={e => setAssetType(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-2 text-sm text-foreground">
+                            {ASSET_TYPES.map(type => <option key={type.value} value={type.value}>{type.label}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="asset-notes">Notes</Label>
+                        <Input id="asset-notes" value={assetNotes} onChange={e => setAssetNotes(e.target.value)} placeholder="Usage notes for the team" className="h-9" />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button type="button" variant="outline" onClick={() => assetInputRef.current?.click()} className="gap-2">
+                          <Upload size={14} /> {assetFile ? 'Change file' : 'Choose file'}
+                        </Button>
+                        <input ref={assetInputRef} type="file" className="hidden" onChange={e => setAssetFile(e.target.files?.[0] || null)} />
+                        <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{assetFile ? assetFile.name : 'No file selected'}</p>
+                        <Button type="button" onClick={handleAssetUpload} disabled={!assetFile || assetSaving} className="gap-2">
+                          {assetSaving ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                          Upload
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      {(assets[editingClient.id] || []).length === 0 ? (
+                        <p className="rounded-lg border border-dashed border-glass-border p-3 text-center text-xs text-muted-foreground">No belongings uploaded yet.</p>
+                      ) : (
+                        (assets[editingClient.id] || []).map(asset => (
+                          <div key={asset.id} className="flex items-center gap-2 rounded-lg border border-border bg-muted/20 p-2">
+                            <FileText size={14} className="flex-shrink-0 text-primary" />
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-xs font-medium text-foreground">{asset.name}</p>
+                              <p className="truncate text-[11px] text-muted-foreground">{asset.asset_type} · {formatSize(asset.file_size)}</p>
+                            </div>
+                            {asset.signed_url && (
+                              <Button type="button" size="sm" variant="ghost" asChild className="px-2">
+                                <a href={asset.signed_url} target="_blank" rel="noopener noreferrer" aria-label="Download asset"><Download size={14} /></a>
+                              </Button>
+                            )}
+                            <Button type="button" size="sm" variant="ghost" onClick={() => handleAssetDelete(asset)} className="px-2 hover:text-destructive" aria-label="Delete asset">
+                              <Trash2 size={14} />
+                            </Button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
                   <ClientPortalAccess
                     clientId={editingClient.id}
                     clientEmail={editingClient.email}

@@ -11,21 +11,14 @@ interface TeamMemberStatus {
 export function TeamLiveStatus() {
   const [team, setTeam] = useState<TeamMemberStatus[]>([]);
   const [loading, setLoading] = useState(true);
-  const [, setTick] = useState(0);
 
   useEffect(() => {
     fetchTeamStatus();
-    
-    // Refresh presence every 60 seconds
-    const interval = setInterval(() => setTick(t => t + 1), 60000);
-    
-    // Realtime subscription on profiles for presence changes
-    const channel = supabase
-      .channel('team-presence')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, fetchTeamStatus)
-      .subscribe();
-    
-    return () => { clearInterval(interval); supabase.removeChannel(channel); };
+
+    // Lightweight refresh instead of refetching the whole team on every profile update.
+    const interval = setInterval(fetchTeamStatus, 120000);
+
+    return () => { clearInterval(interval); };
   }, []);
 
   const fetchTeamStatus = async () => {

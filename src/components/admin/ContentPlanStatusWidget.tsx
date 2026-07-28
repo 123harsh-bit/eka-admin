@@ -35,26 +35,33 @@ export function ContentPlanStatusWidget() {
 
     if (!activePlans || activePlans.length === 0) return;
 
-    const planStatuses: PlanStatus[] = [];
+    const planIds = activePlans.map(plan => plan.id);
+    const { data: items } = await supabase
+      .from('content_items')
+      .select('plan_id, status')
+      .in('plan_id', planIds);
 
-    for (const plan of activePlans) {
-      const { count: total } = await supabase.from('content_items')
-        .select('*', { count: 'exact', head: true }).eq('plan_id', plan.id);
-      const { count: published } = await supabase.from('content_items')
-        .select('*', { count: 'exact', head: true }).eq('plan_id', plan.id).eq('status', 'published');
+    const counts = (items || []).reduce<Record<string, { total: number; published: number }>>((acc, item) => {
+      const bucket = (acc[item.plan_id] ||= { total: 0, published: 0 });
+      bucket.total += 1;
+      if (item.status === 'published') bucket.published += 1;
+      return acc;
+    }, {});
 
+    const planStatuses: PlanStatus[] = activePlans.map(plan => {
       const client = plan.clients as { name: string; logo_url: string | null } | null;
-      planStatuses.push({
+      const count = counts[plan.id] || { total: 0, published: 0 };
+      return {
         client_id: plan.client_id,
         client_name: client?.name || 'Unknown',
         client_logo: client?.logo_url || null,
         plan_status: plan.status,
-        total_items: total || 0,
-        published_items: published || 0,
+        total_items: count.total,
+        published_items: count.published,
         month: plan.month,
         year: plan.year,
-      });
-    }
+      };
+    });
 
     setPlans(planStatuses);
   };

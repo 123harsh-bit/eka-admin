@@ -4,7 +4,7 @@ import { Video, Building2 } from 'lucide-react';
 
 const navItems = [
   { to: '/editor', icon: Video, label: 'My Tasks', end: true },
-  { to: '/editor/clients', icon: Building2, label: 'Clients Hub' },
+  { to: '/editor/clients', icon: Building2, label: 'Client Assets' },
 ];
 
 export function EditorLayout({ children }: { children: ReactNode }) {

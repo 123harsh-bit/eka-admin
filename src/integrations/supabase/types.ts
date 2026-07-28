@@ -201,6 +201,59 @@ export type Database = {
         }
         Relationships: []
       }
+      client_assets: {
+        Row: {
+          asset_type: string
+          client_id: string
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          name: string
+          notes: string | null
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          asset_type?: string
+          client_id: string
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          name: string
+          notes?: string | null
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          asset_type?: string
+          client_id?: string
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          name?: string
+          notes?: string | null
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_assets_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_ideas: {
         Row: {
           admin_response: string | null
