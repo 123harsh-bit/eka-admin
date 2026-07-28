@@ -43,13 +43,33 @@ export function TeamLayout({
   roleTextColor,
   showAttendance = true,
 }: TeamLayoutProps) {
-  const { signOut, profile } = useAuth();
+  const { signOut, profile, user } = useAuth();
   // Hooks must be called unconditionally; the hook itself no-ops if user has no attendance row.
   useAttendance();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [unread, setUnread] = useState(0);
+
+  useEffect(() => {
+    if (!user) return;
+    const load = async () => {
+      const { count } = await supabase
+        .from('notifications')
+        .select('id', { count: 'exact', head: true })
+        .eq('recipient_id', user.id)
+        .eq('is_read', false);
+      setUnread(count || 0);
+    };
+    load();
+    const ch = supabase
+      .channel('nav-unread')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `recipient_id=eq.${user.id}` }, load)
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user]);
 
   const groups: NavGroup[] = navGroups ?? (navItems ? [{ label: '', items: navItems }] : []);
+
 
   const layout = (
     <div className="flex min-h-screen bg-background">
