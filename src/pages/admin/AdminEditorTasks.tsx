@@ -14,11 +14,51 @@ interface EditorVideo {
   assigned_editor: string | null; drive_link: string | null;
   raw_footage_link: string | null; date_planned: string | null;
   date_delivered: string | null; client_name?: string; editor_name?: string;
+  priority?: number | null;
 }
 
 interface TeamMember { id: string; full_name: string; }
 
 const EDITOR_RELEVANT_STATUSES: VideoStatus[] = ['footage_delivered', 'editing', 'internal_review', 'client_review', 'revisions', 'approved', 'ready_to_upload', 'live'];
+
+const DONE_STATUSES = ['approved', 'ready_to_upload', 'live'];
+const STARTED_STATUSES = ['editing', 'internal_review', 'client_review', 'revisions'];
+
+type WorkState = { label: string; className: string; dot: string };
+
+function getWorkState(status: string): WorkState {
+  if (DONE_STATUSES.includes(status)) return { label: 'Completed', className: 'bg-success/20 text-success border-success/40', dot: 'bg-success' };
+  if (status === 'editing') return { label: 'Started · Editing', className: 'bg-warning/20 text-warning border-warning/40', dot: 'bg-warning animate-pulse' };
+  if (STARTED_STATUSES.includes(status)) return { label: 'In Progress', className: 'bg-info/20 text-info border-info/40', dot: 'bg-info' };
+  return { label: 'Not Started', className: 'bg-muted text-muted-foreground border-border', dot: 'bg-muted-foreground/50' };
+}
+
+const PRIORITY_STYLES: Record<number, string> = {
+  1: 'bg-destructive text-destructive-foreground',
+  2: 'bg-warning text-warning-foreground',
+  3: 'bg-info text-primary-foreground',
+};
+
+function PriorityChip({ priority }: { priority?: number | null }) {
+  if (priority == null || priority >= 100) return <span className="text-xs text-muted-foreground">—</span>;
+  return (
+    <span className={cn('inline-flex h-6 min-w-6 px-2 items-center justify-center rounded-full text-[11px] font-bold',
+      PRIORITY_STYLES[priority] || 'bg-muted text-foreground')}>
+      P{priority}
+    </span>
+  );
+}
+
+function WorkStateChip({ status }: { status: string }) {
+  const s = getWorkState(status);
+  return (
+    <span className={cn('inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-semibold', s.className)}>
+      <span className={cn('h-1.5 w-1.5 rounded-full', s.dot)} />
+      {s.label}
+    </span>
+  );
+}
+
 
 export default function AdminEditorTasks() {
   const [videos, setVideos] = useState<EditorVideo[]>([]);
