@@ -220,34 +220,36 @@ export default function AdminEditorTasks() {
           <table className="w-full text-sm hidden md:table">
             <thead className="bg-card/80 border-b border-glass-border">
               <tr>
-                {['Video', 'Client', 'Stage', 'Editor', 'Due Date', 'Links'].map(h => (
+                {['Priority', 'Video', 'Client', 'Work', 'Stage', 'Editor', 'Due Date', 'Links'].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {loading ? [...Array(5)].map((_, i) => (
-                <tr key={i}><td colSpan={6} className="px-4 py-3"><div className="h-7 bg-muted/50 rounded animate-pulse" /></td></tr>
+                <tr key={i}><td colSpan={8} className="px-4 py-3"><div className="h-7 bg-muted/50 rounded animate-pulse" /></td></tr>
               )) : filtered.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
+                <tr><td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
                   <Video size={32} className="mx-auto mb-2 opacity-40" />
                   No editor tasks found.
                 </td></tr>
               ) : filtered.map(video => {
-                const isOverdue = video.date_planned && video.date_planned < today && !['live', 'approved', 'ready_to_upload'].includes(video.status);
-                const stageIdx = VIDEO_STATUS_ORDER.indexOf(video.status as VideoStatus) + 1;
+                const isOverdue = video.date_planned && video.date_planned < today && !DONE_STATUSES.includes(video.status);
                 return (
                   <tr key={video.id} className="border-b border-glass-border/50 hover:bg-muted/20 transition-colors">
+                    <td className="px-4 py-3"><PriorityChip priority={video.priority} /></td>
                     <td className="px-4 py-3 font-medium text-foreground max-w-52 truncate">{video.title}</td>
                     <td className="px-4 py-3 text-muted-foreground">{video.client_name}</td>
+                    <td className="px-4 py-3"><WorkStateChip status={video.status} /></td>
                     <td className="px-4 py-3">
                       <select value={video.status} onChange={e => handleStatusChange(video.id, e.target.value)}
-                        className="h-7 rounded border border-input bg-background px-2 text-xs text-foreground max-w-[180px]">
+                        className="h-8 rounded border border-input bg-background px-2 text-xs text-foreground max-w-[180px]">
                         {VIDEO_STATUS_ORDER.map(s => <option key={s} value={s}>{VIDEO_STATUSES[s].emoji} {VIDEO_STATUSES[s].label}</option>)}
                       </select>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{video.editor_name || '—'}</td>
                     <td className="px-4 py-3">
+
                       {video.date_planned ? (
                         <span className={cn('text-xs flex items-center gap-1', isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground')}>
                           <Calendar size={10} />
