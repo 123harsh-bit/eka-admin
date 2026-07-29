@@ -200,7 +200,7 @@ export function ClientContentPlan({ clientId }: Props) {
                 value={changeFeedback}
                 onChange={e => setChangeFeedback(e.target.value)}
                 placeholder="Describe the changes you'd like..."
-                className="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
                 rows={3}
               />
               <div className="flex gap-2">

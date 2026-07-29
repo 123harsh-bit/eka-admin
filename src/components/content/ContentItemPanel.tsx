@@ -79,7 +79,7 @@ export function ContentItemPanel({ clientId, planId, defaultDate, onSave, onClos
               value={title}
               onChange={e => setTitle(e.target.value)}
               placeholder="e.g. 5 Tips for Better Sleep"
-              className="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
 
@@ -149,7 +149,7 @@ export function ContentItemPanel({ clientId, planId, defaultDate, onSave, onClos
               type="date"
               value={plannedDate}
               onChange={e => setPlannedDate(e.target.value)}
-              className="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
 
@@ -161,7 +161,7 @@ export function ContentItemPanel({ clientId, planId, defaultDate, onSave, onClos
               onChange={e => setCaptionBrief(e.target.value)}
               placeholder="What should the writer know?"
               rows={2}
-              className="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+              className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
             />
           </div>
 
@@ -172,7 +172,7 @@ export function ContentItemPanel({ clientId, planId, defaultDate, onSave, onClos
               onChange={e => setVisualBrief(e.target.value)}
               placeholder="What should the designer know?"
               rows={2}
-              className="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+              className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
             />
           </div>
 
@@ -182,7 +182,7 @@ export function ContentItemPanel({ clientId, planId, defaultDate, onSave, onClos
               value={referenceUrl}
               onChange={e => setReferenceUrl(e.target.value)}
               placeholder="https://..."
-              className="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
 
@@ -192,7 +192,7 @@ export function ContentItemPanel({ clientId, planId, defaultDate, onSave, onClos
               value={hashtags}
               onChange={e => setHashtags(e.target.value)}
               placeholder="#health #wellness #doctor"
-              className="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
 

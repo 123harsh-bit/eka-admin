@@ -315,7 +315,7 @@ export function ContentItemDetail({ item, onUpdate, onClose, onDelete }: Props) 
   );
 }
 
-const inputCls = 'w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring';
+const inputCls = 'w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring';
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
