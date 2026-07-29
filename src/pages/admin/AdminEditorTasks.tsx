@@ -14,11 +14,51 @@ interface EditorVideo {
   assigned_editor: string | null; drive_link: string | null;
   raw_footage_link: string | null; date_planned: string | null;
   date_delivered: string | null; client_name?: string; editor_name?: string;
+  priority?: number | null;
 }
 
 interface TeamMember { id: string; full_name: string; }
 
 const EDITOR_RELEVANT_STATUSES: VideoStatus[] = ['footage_delivered', 'editing', 'internal_review', 'client_review', 'revisions', 'approved', 'ready_to_upload', 'live'];
+
+const DONE_STATUSES = ['approved', 'ready_to_upload', 'live'];
+const STARTED_STATUSES = ['editing', 'internal_review', 'client_review', 'revisions'];
+
+type WorkState = { label: string; className: string; dot: string };
+
+function getWorkState(status: string): WorkState {
+  if (DONE_STATUSES.includes(status)) return { label: 'Completed', className: 'bg-success/20 text-success border-success/40', dot: 'bg-success' };
+  if (status === 'editing') return { label: 'Started · Editing', className: 'bg-warning/20 text-warning border-warning/40', dot: 'bg-warning animate-pulse' };
+  if (STARTED_STATUSES.includes(status)) return { label: 'In Progress', className: 'bg-info/20 text-info border-info/40', dot: 'bg-info' };
+  return { label: 'Not Started', className: 'bg-muted text-muted-foreground border-border', dot: 'bg-muted-foreground/50' };
+}
+
+const PRIORITY_STYLES: Record<number, string> = {
+  1: 'bg-destructive text-destructive-foreground',
+  2: 'bg-warning text-warning-foreground',
+  3: 'bg-info text-primary-foreground',
+};
+
+function PriorityChip({ priority }: { priority?: number | null }) {
+  if (priority == null || priority >= 100) return <span className="text-xs text-muted-foreground">—</span>;
+  return (
+    <span className={cn('inline-flex h-6 min-w-6 px-2 items-center justify-center rounded-full text-[11px] font-bold',
+      PRIORITY_STYLES[priority] || 'bg-muted text-foreground')}>
+      P{priority}
+    </span>
+  );
+}
+
+function WorkStateChip({ status }: { status: string }) {
+  const s = getWorkState(status);
+  return (
+    <span className={cn('inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-semibold', s.className)}>
+      <span className={cn('h-1.5 w-1.5 rounded-full', s.dot)} />
+      {s.label}
+    </span>
+  );
+}
+
 
 export default function AdminEditorTasks() {
   const [videos, setVideos] = useState<EditorVideo[]>([]);
@@ -61,9 +101,11 @@ export default function AdminEditorTasks() {
   const fetchVideos = async () => {
     const { data } = await supabase
       .from('videos')
-      .select('id, title, status, client_id, assigned_editor, drive_link, raw_footage_link, date_planned, date_delivered, clients(name)')
+      .select('id, title, status, client_id, assigned_editor, drive_link, raw_footage_link, date_planned, date_delivered, priority, clients(name)')
       .not('assigned_editor', 'is', null)
+      .order('priority', { ascending: true })
       .order('date_planned', { ascending: true, nullsFirst: false });
+
     if (data) {
       const editorIds = [...new Set((data as any[]).map(v => v.assigned_editor).filter(Boolean))];
       let profileMap: Record<string, string> = {};
@@ -133,26 +175,44 @@ export default function AdminEditorTasks() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {editors.map(editor => {
             const editorVids = videos.filter(v => v.assigned_editor === editor.id);
-            const active = editorVids.filter(v => !['live', 'approved', 'ready_to_upload'].includes(v.status)).length;
-            const overdue = editorVids.filter(v => v.date_planned && v.date_planned < today && !['live', 'approved', 'ready_to_upload'].includes(v.status)).length;
+            const active = editorVids.filter(v => !DONE_STATUSES.includes(v.status)).length;
+            const overdue = editorVids.filter(v => v.date_planned && v.date_planned < today && !DONE_STATUSES.includes(v.status)).length;
+            const working = editorVids.filter(v => v.status === 'editing');
+            const notStarted = editorVids.filter(v => !DONE_STATUSES.includes(v.status) && !STARTED_STATUSES.includes(v.status));
             return (
-              <div key={editor.id} className="glass-card p-4 space-y-1 cursor-pointer hover:ring-1 hover:ring-primary/50 transition-all"
+              <div key={editor.id} className="glass-card p-4 space-y-2 cursor-pointer hover:ring-1 hover:ring-primary/50 transition-all"
                 onClick={() => setEditorFilter(f => f === editor.id ? '' : editor.id)}>
                 <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-full bg-blue-500/20 flex items-center justify-center text-xs font-bold text-blue-400">
+                  <div className="h-8 w-8 rounded-full bg-primary/25 flex items-center justify-center text-xs font-bold text-foreground">
                     {editor.full_name.charAt(0)}
                   </div>
-                  <p className="font-medium text-foreground text-sm">{editor.full_name}</p>
+                  <p className="font-semibold text-foreground text-sm">{editor.full_name}</p>
                 </div>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <span>{active} active</span>
-                  <span>{editorVids.length} total</span>
-                  {overdue > 0 && <span className="text-destructive font-medium">{overdue} overdue</span>}
+                  <span>{notStarted.length} not started</span>
+                  {overdue > 0 && <span className="text-destructive font-semibold">{overdue} overdue</span>}
+                </div>
+                <div className="rounded-lg border border-border px-2 py-1.5 text-[11px]">
+                  {working.length > 0 ? (
+                    <div className="space-y-0.5">
+                      <span className="flex items-center gap-1.5 font-semibold text-warning">
+                        <span className="h-1.5 w-1.5 rounded-full bg-warning animate-pulse" /> Currently editing
+                      </span>
+                      {working.slice(0, 2).map(v => (
+                        <p key={v.id} className="truncate text-foreground">{v.title}</p>
+                      ))}
+                      {working.length > 2 && <p className="text-muted-foreground">+{working.length - 2} more</p>}
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">Nothing started yet</span>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
+
 
         {/* Table + Mobile Cards */}
         <div className="glass-card overflow-auto">
@@ -160,34 +220,36 @@ export default function AdminEditorTasks() {
           <table className="w-full text-sm hidden md:table">
             <thead className="bg-card/80 border-b border-glass-border">
               <tr>
-                {['Video', 'Client', 'Stage', 'Editor', 'Due Date', 'Links'].map(h => (
+                {['Priority', 'Video', 'Client', 'Work', 'Stage', 'Editor', 'Due Date', 'Links'].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {loading ? [...Array(5)].map((_, i) => (
-                <tr key={i}><td colSpan={6} className="px-4 py-3"><div className="h-7 bg-muted/50 rounded animate-pulse" /></td></tr>
+                <tr key={i}><td colSpan={8} className="px-4 py-3"><div className="h-7 bg-muted/50 rounded animate-pulse" /></td></tr>
               )) : filtered.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
+                <tr><td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
                   <Video size={32} className="mx-auto mb-2 opacity-40" />
                   No editor tasks found.
                 </td></tr>
               ) : filtered.map(video => {
-                const isOverdue = video.date_planned && video.date_planned < today && !['live', 'approved', 'ready_to_upload'].includes(video.status);
-                const stageIdx = VIDEO_STATUS_ORDER.indexOf(video.status as VideoStatus) + 1;
+                const isOverdue = video.date_planned && video.date_planned < today && !DONE_STATUSES.includes(video.status);
                 return (
                   <tr key={video.id} className="border-b border-glass-border/50 hover:bg-muted/20 transition-colors">
+                    <td className="px-4 py-3"><PriorityChip priority={video.priority} /></td>
                     <td className="px-4 py-3 font-medium text-foreground max-w-52 truncate">{video.title}</td>
                     <td className="px-4 py-3 text-muted-foreground">{video.client_name}</td>
+                    <td className="px-4 py-3"><WorkStateChip status={video.status} /></td>
                     <td className="px-4 py-3">
                       <select value={video.status} onChange={e => handleStatusChange(video.id, e.target.value)}
-                        className="h-7 rounded border border-input bg-background px-2 text-xs text-foreground max-w-[180px]">
+                        className="h-8 rounded border border-input bg-background px-2 text-xs text-foreground max-w-[180px]">
                         {VIDEO_STATUS_ORDER.map(s => <option key={s} value={s}>{VIDEO_STATUSES[s].emoji} {VIDEO_STATUSES[s].label}</option>)}
                       </select>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{video.editor_name || '—'}</td>
                     <td className="px-4 py-3">
+
                       {video.date_planned ? (
                         <span className={cn('text-xs flex items-center gap-1', isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground')}>
                           <Calendar size={10} />
@@ -226,24 +288,31 @@ export default function AdminEditorTasks() {
                 <p>No editor tasks found.</p>
               </div>
             ) : filtered.map(video => {
-              const isOverdue = video.date_planned && video.date_planned < today && !['live', 'approved', 'ready_to_upload'].includes(video.status);
-              const stageIdx = VIDEO_STATUS_ORDER.indexOf(video.status as VideoStatus) + 1;
+              const isOverdue = video.date_planned && video.date_planned < today && !DONE_STATUSES.includes(video.status);
               return (
                 <div key={video.id} className="p-4 space-y-2">
                   <div className="flex items-start gap-3">
-                    <div className="h-10 w-10 rounded-lg bg-blue-500/20 flex items-center justify-center text-sm font-bold text-blue-400 flex-shrink-0">
+                    <div className="h-10 w-10 rounded-lg bg-primary/25 flex items-center justify-center text-sm font-bold text-foreground flex-shrink-0 relative">
                       {video.client_name?.charAt(0)}
+                      {video.priority != null && video.priority < 100 && (
+                        <span className={cn('absolute -top-1.5 -right-1.5 h-5 min-w-5 px-1 rounded-full text-[10px] font-bold flex items-center justify-center',
+                          PRIORITY_STYLES[video.priority] || 'bg-muted text-foreground')}>
+                          {video.priority}
+                        </span>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-foreground text-sm truncate">{video.title}</p>
+                      <p className="font-semibold text-foreground text-sm truncate">{video.title}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">{video.client_name}</p>
+                      <div className="mt-2"><WorkStateChip status={video.status} /></div>
                       <div className="flex items-center gap-2 mt-2 flex-wrap">
                         <select value={video.status} onChange={e => handleStatusChange(video.id, e.target.value)}
-                          className="h-7 rounded border border-input bg-background px-2 text-xs text-foreground">
+                          className="h-8 rounded border border-input bg-background px-2 text-xs text-foreground">
                           {VIDEO_STATUS_ORDER.map(s => <option key={s} value={s}>{VIDEO_STATUSES[s].emoji} {VIDEO_STATUSES[s].label}</option>)}
                         </select>
                         {video.editor_name && <span className="text-xs text-muted-foreground">👤 {video.editor_name}</span>}
                       </div>
+
                       <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
                         {video.date_planned && (
                           <span className={cn('flex items-center gap-1', isOverdue ? 'text-destructive font-medium' : '')}>

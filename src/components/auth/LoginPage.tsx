@@ -92,7 +92,7 @@ export default function LoginPage() {
                 <h2 className="text-base font-semibold text-foreground text-center">Reset password</h2>
                 <div className="space-y-2">
                   <Label htmlFor="reset-email">Email</Label>
-                  <Input id="reset-email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" required className="bg-input border-border" />
+                  <Input id="reset-email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" required className="bg-muted border-border" />
                 </div>
                 {error && <p className="text-sm text-destructive bg-destructive/10 rounded-lg p-3">{error}</p>}
                 <Button type="submit" className="w-full" disabled={isLoading}>
@@ -107,12 +107,12 @@ export default function LoginPage() {
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" required className="bg-input border-border" />
+                <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" required className="bg-muted border-border" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <div className="relative">
-                  <Input id="password" type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required className="bg-input border-border pr-10" />
+                  <Input id="password" type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required className="bg-muted border-border pr-10" />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>

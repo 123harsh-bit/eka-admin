@@ -189,28 +189,45 @@ export default function EditorDashboard() {
                             </div>
                             {/* Quick-access action row — no need to open panel */}
                             <div className="flex flex-wrap gap-1.5 mt-2 pt-2 border-t border-border/40">
+                              {video.status === 'editing' ? (
+                                <span className="flex items-center gap-1.5 text-[11px] font-semibold py-1 px-2 rounded bg-warning/20 text-warning border border-warning/40">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-warning animate-pulse" /> In progress
+                                </span>
+                              ) : ['footage_delivered', 'idea', 'shooting'].includes(video.status) ? (
+                                <button onClick={(e) => { e.stopPropagation(); handleStatusChange(video.id, 'editing'); }}
+                                  className="flex items-center gap-1 text-[11px] font-semibold py-1 px-2 rounded bg-primary text-primary-foreground hover:bg-primary/85">
+                                  ▶ Start Editing
+                                </button>
+                              ) : null}
+                              {video.status === 'editing' && (
+                                <button onClick={(e) => { e.stopPropagation(); handleStatusChange(video.id, 'internal_review'); }}
+                                  className="flex items-center gap-1 text-[11px] font-semibold py-1 px-2 rounded bg-success text-success-foreground hover:bg-success/85">
+                                  ✓ Send to Review
+                                </button>
+                              )}
                               {video.raw_footage_link ? (
                                 <a href={video.raw_footage_link} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                                  className="flex items-center gap-1 text-[11px] font-medium py-1 px-2 rounded bg-amber-500/15 text-amber-400 hover:bg-amber-500/25">
+                                  className="flex items-center gap-1 text-[11px] font-semibold py-1 px-2 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40 hover:bg-amber-400/30">
                                   <FolderOpen size={11} /> Raw Footage
                                 </a>
                               ) : (
-                                <span className="flex items-center gap-1 text-[11px] py-1 px-2 rounded bg-muted/30 text-muted-foreground/60">
+                                <span className="flex items-center gap-1 text-[11px] py-1 px-2 rounded bg-muted text-muted-foreground border border-border">
                                   <FolderOpen size={11} /> No footage yet
                                 </span>
                               )}
                               {video.drive_link ? (
                                 <a href={video.drive_link} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                                  className="flex items-center gap-1 text-[11px] font-medium py-1 px-2 rounded bg-primary/15 text-primary hover:bg-primary/25">
+                                  className="flex items-center gap-1 text-[11px] font-semibold py-1 px-2 rounded bg-primary/25 text-foreground border border-primary/50 hover:bg-primary/35">
                                   <ExternalLink size={11} /> Final Drive
                                 </a>
                               ) : (
                                 <button onClick={(e) => { e.stopPropagation(); openVideo(video); }}
-                                  className="flex items-center gap-1 text-[11px] font-medium py-1 px-2 rounded bg-secondary/15 text-secondary hover:bg-secondary/25">
+                                  className="flex items-center gap-1 text-[11px] font-semibold py-1 px-2 rounded bg-secondary/25 text-foreground border border-secondary/50 hover:bg-secondary/35">
                                   <ExternalLink size={11} /> + Add Drive Link
                                 </button>
                               )}
                             </div>
+
                           </div>
                         );
                       })}

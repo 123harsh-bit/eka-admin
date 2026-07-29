@@ -68,7 +68,7 @@ export function ConfirmDeleteModal({
               value={key}
               onChange={e => { setKey(e.target.value); setError(''); }}
               placeholder="Security key"
-              className="bg-input/50 border-glass-border pr-10"
+              className="bg-muted/50 border-glass-border pr-10"
             />
             <button
               type="button"

@@ -74,7 +74,7 @@ export default function ResetPassword() {
                     onChange={e => setPassword(e.target.value)}
                     placeholder="••••••••"
                     required
-                    className="bg-input/50 border-glass-border pr-10"
+                    className="bg-muted/50 border-glass-border pr-10"
                   />
                   <button
                     type="button"
@@ -96,7 +96,7 @@ export default function ResetPassword() {
                   onChange={e => setConfirmPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="bg-input/50 border-glass-border"
+                  className="bg-muted/50 border-glass-border"
                 />
               </div>
 
