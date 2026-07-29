@@ -101,9 +101,11 @@ export default function AdminEditorTasks() {
   const fetchVideos = async () => {
     const { data } = await supabase
       .from('videos')
-      .select('id, title, status, client_id, assigned_editor, drive_link, raw_footage_link, date_planned, date_delivered, clients(name)')
+      .select('id, title, status, client_id, assigned_editor, drive_link, raw_footage_link, date_planned, date_delivered, priority, clients(name)')
       .not('assigned_editor', 'is', null)
+      .order('priority', { ascending: true })
       .order('date_planned', { ascending: true, nullsFirst: false });
+
     if (data) {
       const editorIds = [...new Set((data as any[]).map(v => v.assigned_editor).filter(Boolean))];
       let profileMap: Record<string, string> = {};
