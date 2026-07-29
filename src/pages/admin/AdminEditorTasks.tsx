@@ -288,24 +288,31 @@ export default function AdminEditorTasks() {
                 <p>No editor tasks found.</p>
               </div>
             ) : filtered.map(video => {
-              const isOverdue = video.date_planned && video.date_planned < today && !['live', 'approved', 'ready_to_upload'].includes(video.status);
-              const stageIdx = VIDEO_STATUS_ORDER.indexOf(video.status as VideoStatus) + 1;
+              const isOverdue = video.date_planned && video.date_planned < today && !DONE_STATUSES.includes(video.status);
               return (
                 <div key={video.id} className="p-4 space-y-2">
                   <div className="flex items-start gap-3">
-                    <div className="h-10 w-10 rounded-lg bg-blue-500/20 flex items-center justify-center text-sm font-bold text-blue-400 flex-shrink-0">
+                    <div className="h-10 w-10 rounded-lg bg-primary/25 flex items-center justify-center text-sm font-bold text-foreground flex-shrink-0 relative">
                       {video.client_name?.charAt(0)}
+                      {video.priority != null && video.priority < 100 && (
+                        <span className={cn('absolute -top-1.5 -right-1.5 h-5 min-w-5 px-1 rounded-full text-[10px] font-bold flex items-center justify-center',
+                          PRIORITY_STYLES[video.priority] || 'bg-muted text-foreground')}>
+                          {video.priority}
+                        </span>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-foreground text-sm truncate">{video.title}</p>
+                      <p className="font-semibold text-foreground text-sm truncate">{video.title}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">{video.client_name}</p>
+                      <div className="mt-2"><WorkStateChip status={video.status} /></div>
                       <div className="flex items-center gap-2 mt-2 flex-wrap">
                         <select value={video.status} onChange={e => handleStatusChange(video.id, e.target.value)}
-                          className="h-7 rounded border border-input bg-background px-2 text-xs text-foreground">
+                          className="h-8 rounded border border-input bg-background px-2 text-xs text-foreground">
                           {VIDEO_STATUS_ORDER.map(s => <option key={s} value={s}>{VIDEO_STATUSES[s].emoji} {VIDEO_STATUSES[s].label}</option>)}
                         </select>
                         {video.editor_name && <span className="text-xs text-muted-foreground">👤 {video.editor_name}</span>}
                       </div>
+
                       <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
                         {video.date_planned && (
                           <span className={cn('flex items-center gap-1', isOverdue ? 'text-destructive font-medium' : '')}>
