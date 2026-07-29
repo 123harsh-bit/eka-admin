@@ -175,26 +175,44 @@ export default function AdminEditorTasks() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {editors.map(editor => {
             const editorVids = videos.filter(v => v.assigned_editor === editor.id);
-            const active = editorVids.filter(v => !['live', 'approved', 'ready_to_upload'].includes(v.status)).length;
-            const overdue = editorVids.filter(v => v.date_planned && v.date_planned < today && !['live', 'approved', 'ready_to_upload'].includes(v.status)).length;
+            const active = editorVids.filter(v => !DONE_STATUSES.includes(v.status)).length;
+            const overdue = editorVids.filter(v => v.date_planned && v.date_planned < today && !DONE_STATUSES.includes(v.status)).length;
+            const working = editorVids.filter(v => v.status === 'editing');
+            const notStarted = editorVids.filter(v => !DONE_STATUSES.includes(v.status) && !STARTED_STATUSES.includes(v.status));
             return (
-              <div key={editor.id} className="glass-card p-4 space-y-1 cursor-pointer hover:ring-1 hover:ring-primary/50 transition-all"
+              <div key={editor.id} className="glass-card p-4 space-y-2 cursor-pointer hover:ring-1 hover:ring-primary/50 transition-all"
                 onClick={() => setEditorFilter(f => f === editor.id ? '' : editor.id)}>
                 <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-full bg-blue-500/20 flex items-center justify-center text-xs font-bold text-blue-400">
+                  <div className="h-8 w-8 rounded-full bg-primary/25 flex items-center justify-center text-xs font-bold text-foreground">
                     {editor.full_name.charAt(0)}
                   </div>
-                  <p className="font-medium text-foreground text-sm">{editor.full_name}</p>
+                  <p className="font-semibold text-foreground text-sm">{editor.full_name}</p>
                 </div>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <span>{active} active</span>
-                  <span>{editorVids.length} total</span>
-                  {overdue > 0 && <span className="text-destructive font-medium">{overdue} overdue</span>}
+                  <span>{notStarted.length} not started</span>
+                  {overdue > 0 && <span className="text-destructive font-semibold">{overdue} overdue</span>}
+                </div>
+                <div className="rounded-lg border border-border px-2 py-1.5 text-[11px]">
+                  {working.length > 0 ? (
+                    <div className="space-y-0.5">
+                      <span className="flex items-center gap-1.5 font-semibold text-warning">
+                        <span className="h-1.5 w-1.5 rounded-full bg-warning animate-pulse" /> Currently editing
+                      </span>
+                      {working.slice(0, 2).map(v => (
+                        <p key={v.id} className="truncate text-foreground">{v.title}</p>
+                      ))}
+                      {working.length > 2 && <p className="text-muted-foreground">+{working.length - 2} more</p>}
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">Nothing started yet</span>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
+
 
         {/* Table + Mobile Cards */}
         <div className="glass-card overflow-auto">
