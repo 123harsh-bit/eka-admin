@@ -119,12 +119,14 @@ const App = () => (
               <Route path="/editor" element={<ProtectedRoute allowedRoles={['editor']}><EditorDashboard /></ProtectedRoute>} />
 
               <Route path="/editor/clients" element={<ProtectedRoute allowedRoles={['editor']}><EditorLayout><ClientsHub /></EditorLayout></ProtectedRoute>} />
+              <Route path="/editor/profile" element={<ProtectedRoute allowedRoles={['editor']}><EditorLayout><MyProfilePage /></EditorLayout></ProtectedRoute>} />
 
               {/* Designer */}
               <Route path="/designer" element={<ProtectedRoute allowedRoles={['designer']}><DesignerDashboard /></ProtectedRoute>} />
               <Route path="/designer/brand-kits" element={<ProtectedRoute allowedRoles={['designer']}><DesignerBrandKits /></ProtectedRoute>} />
 
               <Route path="/designer/clients" element={<ProtectedRoute allowedRoles={['designer']}><DesignerLayout><ClientsHub /></DesignerLayout></ProtectedRoute>} />
+              <Route path="/designer/profile" element={<ProtectedRoute allowedRoles={['designer']}><DesignerLayout><MyProfilePage /></DesignerLayout></ProtectedRoute>} />
 
               {/* Writer */}
               <Route path="/writer" element={<ProtectedRoute allowedRoles={['writer']}><WriterDashboard /></ProtectedRoute>} />
@@ -133,12 +135,14 @@ const App = () => (
               <Route path="/writer/briefs" element={<ProtectedRoute allowedRoles={['writer']}><WriterClientBriefs /></ProtectedRoute>} />
 
               <Route path="/writer/clients" element={<ProtectedRoute allowedRoles={['writer']}><WriterLayout><ClientsHub /></WriterLayout></ProtectedRoute>} />
+              <Route path="/writer/profile" element={<ProtectedRoute allowedRoles={['writer']}><WriterLayout><MyProfilePage /></WriterLayout></ProtectedRoute>} />
 
               {/* Camera */}
               <Route path="/camera" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraShoots /></ProtectedRoute>} />
               <Route path="/camera/footage" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraFootage /></ProtectedRoute>} />
 
               <Route path="/camera/clients" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraLayout><ClientsHub /></CameraLayout></ProtectedRoute>} />
+              <Route path="/camera/profile" element={<ProtectedRoute allowedRoles={['camera_operator']}><CameraLayout><MyProfilePage /></CameraLayout></ProtectedRoute>} />
 
               {/* Social executive */}
               <Route path="/social" element={<ProtectedRoute allowedRoles={['social_executive']}><SocialDashboard /></ProtectedRoute>} />
@@ -146,6 +150,7 @@ const App = () => (
               <Route path="/social/calendar" element={<ProtectedRoute allowedRoles={['social_executive']}><SocialCalendar /></ProtectedRoute>} />
 
               <Route path="/social/clients" element={<ProtectedRoute allowedRoles={['social_executive']}><SocialLayout><ClientsHub /></SocialLayout></ProtectedRoute>} />
+              <Route path="/social/profile" element={<ProtectedRoute allowedRoles={['social_executive']}><SocialLayout><MyProfilePage /></SocialLayout></ProtectedRoute>} />
 
               {/* Client portal */}
               <Route path="/client" element={<ProtectedRoute allowedRoles={['client']}><ClientDashboard /></ProtectedRoute>} />
