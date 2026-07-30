@@ -1,5 +1,6 @@
 # Project Memory
 
+
 ## Core
 Admin: admin@eka.agency / Eka@Admin2024. Admin key for permanent deletions (no soft-delete): 123@xcodeH.
 Client portal is LIVE at /client. Admin generates client logins via ClientPortalAccess (edge fn create-admin-user, action create/reset_password/revoke_client_access). Role 'client' links to clients.user_id.
