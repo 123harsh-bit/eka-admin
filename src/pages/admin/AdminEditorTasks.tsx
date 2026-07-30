@@ -157,6 +157,9 @@ export default function AdminEditorTasks() {
           <p className="text-muted-foreground mt-1">{videos.length} assigned videos · {activeCount} active</p>
         </div>
 
+        <WhosWorkingNow />
+
+
         <div className="flex gap-2 flex-wrap">
           <div className="relative flex-1 min-w-40">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
