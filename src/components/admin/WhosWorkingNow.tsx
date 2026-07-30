@@ -29,8 +29,8 @@ export function WhosWorkingNow() {
   const [loading, setLoading] = useState(true);
 
   const fetch = async () => {
-    const { data } = await (supabase.rpc as (fn: string) => Promise<{ data: ActiveRow[] | null }>)('admin_active_work_sessions');
-    setRows(data || []);
+    const { data } = await supabase.rpc('admin_active_work_sessions');
+    setRows((data as ActiveRow[] | null) || []);
     setLoading(false);
   };
 
