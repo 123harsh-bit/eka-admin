@@ -1,4 +1,5 @@
-import { lazy, Suspense } from "react";
+import { Suspense } from "react";
+import { lazyWithRetry } from "@/lib/lazyWithRetry";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,56 +13,56 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import LoginPage from "@/components/auth/LoginPage";
 
-const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
-const NotFound = lazy(() => import("@/pages/NotFound"));
+const ResetPassword = lazyWithRetry(() => import("@/pages/ResetPassword"));
+const NotFound = lazyWithRetry(() => import("@/pages/NotFound"));
 
 // Layouts (small wrappers, loaded with the pages that use them)
-const AdminLayout = lazy(() => import("@/components/admin/AdminLayout").then((m) => ({ default: m.AdminLayout })));
-const EditorLayout = lazy(() => import("@/components/editor/EditorLayout").then((m) => ({ default: m.EditorLayout })));
-const DesignerLayout = lazy(() => import("@/components/designer/DesignerLayout").then((m) => ({ default: m.DesignerLayout })));
-const WriterLayout = lazy(() => import("@/components/writer/WriterLayout").then((m) => ({ default: m.WriterLayout })));
-const CameraLayout = lazy(() => import("@/components/camera/CameraLayout").then((m) => ({ default: m.CameraLayout })));
-const SocialLayout = lazy(() => import("@/components/social/SocialLayout").then((m) => ({ default: m.SocialLayout })));
+const AdminLayout = lazyWithRetry(() => import("@/components/admin/AdminLayout").then((m) => ({ default: m.AdminLayout })));
+const EditorLayout = lazyWithRetry(() => import("@/components/editor/EditorLayout").then((m) => ({ default: m.EditorLayout })));
+const DesignerLayout = lazyWithRetry(() => import("@/components/designer/DesignerLayout").then((m) => ({ default: m.DesignerLayout })));
+const WriterLayout = lazyWithRetry(() => import("@/components/writer/WriterLayout").then((m) => ({ default: m.WriterLayout })));
+const CameraLayout = lazyWithRetry(() => import("@/components/camera/CameraLayout").then((m) => ({ default: m.CameraLayout })));
+const SocialLayout = lazyWithRetry(() => import("@/components/social/SocialLayout").then((m) => ({ default: m.SocialLayout })));
 
 // Shared pages (rendered inside any role layout)
-const ClientsHub = lazy(() => import("@/pages/shared/ClientsHub"));
-const ScriptsLibrary = lazy(() => import("@/pages/shared/ScriptsLibrary"));
-const ScriptEditor = lazy(() => import("@/pages/shared/ScriptEditor"));
+const ClientsHub = lazyWithRetry(() => import("@/pages/shared/ClientsHub"));
+const ScriptsLibrary = lazyWithRetry(() => import("@/pages/shared/ScriptsLibrary"));
+const ScriptEditor = lazyWithRetry(() => import("@/pages/shared/ScriptEditor"));
 
 // Admin pages
-const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
-const AdminClients = lazy(() => import("@/pages/admin/AdminClients"));
-const AdminVideos = lazy(() => import("@/pages/admin/AdminVideos"));
-const AdminDesignTasks = lazy(() => import("@/pages/admin/AdminDesignTasks"));
-const AdminWritingTasks = lazy(() => import("@/pages/admin/AdminWritingTasks"));
-const AdminTeam = lazy(() => import("@/pages/admin/AdminTeam"));
-const AdminNotifications = lazy(() => import("@/pages/admin/AdminNotifications"));
-const AdminSettings = lazy(() => import("@/pages/admin/AdminSettings"));
-const AdminDailyTasks = lazy(() => import("@/pages/admin/AdminDailyTasks"));
-const AdminEditorTasks = lazy(() => import("@/pages/admin/AdminEditorTasks"));
-const AdminCameraShoots = lazy(() => import("@/pages/admin/AdminCameraShoots"));
-const AdminClientIdeas = lazy(() => import("@/pages/admin/AdminClientIdeas"));
-const AdminWeeklyReport = lazy(() => import("@/pages/admin/AdminWeeklyReport"));
-const AdminContentPlanner = lazy(() => import("@/pages/admin/AdminContentPlanner"));
-const AdminSocialPosts = lazy(() => import("@/pages/admin/AdminSocialPosts"));
-const AdminSalaries = lazy(() => import("@/pages/admin/AdminSalaries"));
+const AdminDashboard = lazyWithRetry(() => import("@/pages/admin/AdminDashboard"));
+const AdminClients = lazyWithRetry(() => import("@/pages/admin/AdminClients"));
+const AdminVideos = lazyWithRetry(() => import("@/pages/admin/AdminVideos"));
+const AdminDesignTasks = lazyWithRetry(() => import("@/pages/admin/AdminDesignTasks"));
+const AdminWritingTasks = lazyWithRetry(() => import("@/pages/admin/AdminWritingTasks"));
+const AdminTeam = lazyWithRetry(() => import("@/pages/admin/AdminTeam"));
+const AdminNotifications = lazyWithRetry(() => import("@/pages/admin/AdminNotifications"));
+const AdminSettings = lazyWithRetry(() => import("@/pages/admin/AdminSettings"));
+const AdminDailyTasks = lazyWithRetry(() => import("@/pages/admin/AdminDailyTasks"));
+const AdminEditorTasks = lazyWithRetry(() => import("@/pages/admin/AdminEditorTasks"));
+const AdminCameraShoots = lazyWithRetry(() => import("@/pages/admin/AdminCameraShoots"));
+const AdminClientIdeas = lazyWithRetry(() => import("@/pages/admin/AdminClientIdeas"));
+const AdminWeeklyReport = lazyWithRetry(() => import("@/pages/admin/AdminWeeklyReport"));
+const AdminContentPlanner = lazyWithRetry(() => import("@/pages/admin/AdminContentPlanner"));
+const AdminSocialPosts = lazyWithRetry(() => import("@/pages/admin/AdminSocialPosts"));
+const AdminSalaries = lazyWithRetry(() => import("@/pages/admin/AdminSalaries"));
 
 // Role-specific dashboards/sub-pages
-const EditorDashboard = lazy(() => import("@/pages/editor/EditorDashboard"));
-const DesignerDashboard = lazy(() => import("@/pages/designer/DesignerDashboard"));
-const DesignerBrandKits = lazy(() => import("@/pages/designer/DesignerBrandKits"));
-const WriterDashboard = lazy(() => import("@/pages/writer/WriterDashboard"));
-const WriterClientBriefs = lazy(() => import("@/pages/writer/WriterClientBriefs"));
-const CameraShoots = lazy(() => import("@/pages/camera/CameraShoots"));
-const CameraFootage = lazy(() => import("@/pages/camera/CameraFootage"));
-const SocialDashboard = lazy(() => import("@/pages/social/SocialDashboard"));
-const SocialCompose = lazy(() => import("@/pages/social/SocialCompose"));
-const SocialCalendar = lazy(() => import("@/pages/social/SocialCalendar"));
+const EditorDashboard = lazyWithRetry(() => import("@/pages/editor/EditorDashboard"));
+const DesignerDashboard = lazyWithRetry(() => import("@/pages/designer/DesignerDashboard"));
+const DesignerBrandKits = lazyWithRetry(() => import("@/pages/designer/DesignerBrandKits"));
+const WriterDashboard = lazyWithRetry(() => import("@/pages/writer/WriterDashboard"));
+const WriterClientBriefs = lazyWithRetry(() => import("@/pages/writer/WriterClientBriefs"));
+const CameraShoots = lazyWithRetry(() => import("@/pages/camera/CameraShoots"));
+const CameraFootage = lazyWithRetry(() => import("@/pages/camera/CameraFootage"));
+const SocialDashboard = lazyWithRetry(() => import("@/pages/social/SocialDashboard"));
+const SocialCompose = lazyWithRetry(() => import("@/pages/social/SocialCompose"));
+const SocialCalendar = lazyWithRetry(() => import("@/pages/social/SocialCalendar"));
 
-const PublicPostPreview = lazy(() => import("@/pages/PublicPostPreview"));
+const PublicPostPreview = lazyWithRetry(() => import("@/pages/PublicPostPreview"));
 
 // Client portal
-const ClientDashboard = lazy(() => import("@/pages/client/ClientDashboard"));
+const ClientDashboard = lazyWithRetry(() => import("@/pages/client/ClientDashboard"));
 
 const queryClient = new QueryClient();
 
