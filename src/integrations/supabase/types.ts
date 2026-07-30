@@ -1842,6 +1842,48 @@ export type Database = {
           },
         ]
       }
+      work_sessions: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          duration_minutes: number | null
+          ended_at: string | null
+          entity_id: string
+          entity_title: string | null
+          entity_type: string
+          id: string
+          note: string | null
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          duration_minutes?: number | null
+          ended_at?: string | null
+          entity_id: string
+          entity_title?: string | null
+          entity_type: string
+          id?: string
+          note?: string | null
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          duration_minutes?: number | null
+          ended_at?: string | null
+          entity_id?: string
+          entity_title?: string | null
+          entity_type?: string
+          id?: string
+          note?: string | null
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       writing_tasks: {
         Row: {
           assigned_writer: string | null
@@ -1923,6 +1965,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_active_work_sessions: {
+        Args: never
+        Returns: {
+          client_id: string
+          entity_id: string
+          entity_title: string
+          entity_type: string
+          full_name: string
+          id: string
+          started_at: string
+          user_id: string
+        }[]
+      }
       admin_get_client: {
         Args: { _id: string }
         Returns: {

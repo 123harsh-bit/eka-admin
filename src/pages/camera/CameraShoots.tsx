@@ -10,6 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import { handleVideoStatusChange } from '@/lib/pipeline';
 import { Camera, MapPin, Clock, FileText, Loader2, CheckCircle, ChevronRight, X, Calendar, FolderOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { WorkSessionButton } from '@/components/shared/WorkSessionButton';
+import { useWorkSession } from '@/hooks/useWorkSession';
 import type { VideoStatus } from '@/lib/statusConfig';
 import { PullToRefresh } from '@/components/shared/PullToRefresh';
 
@@ -31,6 +33,7 @@ export default function CameraShoots() {
   const [footageNotes, setFootageNotes] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const { toast } = useToast();
+  const work = useWorkSession();
 
   useEffect(() => {
     if (!user?.id) return;
@@ -177,6 +180,10 @@ export default function CameraShoots() {
                               {video.shoot_start_time && <span className="flex items-center gap-1"><Clock size={9} /> {video.shoot_start_time}</span>}
                               {video.shoot_location && <span className="flex items-center gap-1"><MapPin size={9} /> {video.shoot_location}</span>}
                             </div>
+                            <WorkSessionButton
+                              entityType="shoot" entityId={video.id} title={video.title} clientId={video.client_id}
+                              active={work.active} busy={work.busy} onStart={work.start} onStop={work.stop}
+                            />
                             {isActive && (
                               <div className="flex items-center gap-2 text-destructive text-[10px] font-bold">
                                 <span className="h-1.5 w-1.5 rounded-full bg-destructive animate-pulse" /> FILMING

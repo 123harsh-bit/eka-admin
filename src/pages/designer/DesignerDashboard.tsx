@@ -10,6 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Palette, ExternalLink, Loader2, Calendar, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { WorkSessionButton } from '@/components/shared/WorkSessionButton';
+import { useWorkSession } from '@/hooks/useWorkSession';
 import { useToast } from '@/hooks/use-toast';
 import { PullToRefresh } from '@/components/shared/PullToRefresh';
 
@@ -32,6 +34,7 @@ export default function DesignerDashboard() {
   const [versionNotes, setVersionNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
+  const work = useWorkSession();
 
   useEffect(() => {
     fetchTasks();
@@ -145,6 +148,11 @@ export default function DesignerDashboard() {
                             )}
                             {task.figma_link && <span className="text-[9px] text-primary">Figma ✓</span>}
                           </div>
+                          <WorkSessionButton
+                            entityType="design_task" entityId={task.id} title={task.title} clientId={task.client_id}
+                            active={work.active} busy={work.busy} onStart={work.start} onStop={work.stop}
+                            className="w-full justify-center"
+                          />
                         </div>
                       );
                     })}

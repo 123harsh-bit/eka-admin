@@ -1,10 +1,11 @@
 import { ReactNode } from 'react';
 import { TeamLayout } from '@/components/shared/TeamLayout';
-import { Video, Building2 } from 'lucide-react';
+import { Video, Building2, User } from 'lucide-react';
 
 const navItems = [
   { to: '/editor', icon: Video, label: 'My Tasks', end: true },
   { to: '/editor/clients', icon: Building2, label: 'Client Assets' },
+  { to: '/editor/profile', icon: User, label: 'My Profile' },
 ];
 
 export function EditorLayout({ children }: { children: ReactNode }) {

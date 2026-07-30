@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { VIDEO_STATUSES, VIDEO_STATUS_ORDER, type VideoStatus } from '@/lib/statusConfig';
 import { Search, Video, ExternalLink, FolderOpen, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { WhosWorkingNow } from '@/components/admin/WhosWorkingNow';
 
 interface EditorVideo {
   id: string; title: string; status: string; client_id: string;
@@ -155,6 +156,9 @@ export default function AdminEditorTasks() {
           <h1 className="text-3xl font-display font-bold gradient-text">Editor Tasks</h1>
           <p className="text-muted-foreground mt-1">{videos.length} assigned videos · {activeCount} active</p>
         </div>
+
+        <WhosWorkingNow />
+
 
         <div className="flex gap-2 flex-wrap">
           <div className="relative flex-1 min-w-40">

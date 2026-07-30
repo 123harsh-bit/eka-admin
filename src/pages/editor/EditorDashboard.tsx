@@ -12,6 +12,8 @@ import { Video, Calendar, ExternalLink, Loader2, X, ChevronRight, FolderOpen } f
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { PullToRefresh } from '@/components/shared/PullToRefresh';
+import { WorkSessionButton } from '@/components/shared/WorkSessionButton';
+import { useWorkSession } from '@/hooks/useWorkSession';
 
 interface AssignedVideo {
   id: string; title: string; status: string; client_id: string;
@@ -34,6 +36,7 @@ export default function EditorDashboard() {
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
+  const work = useWorkSession();
 
   useEffect(() => {
     fetchVideos();
@@ -189,6 +192,10 @@ export default function EditorDashboard() {
                             </div>
                             {/* Quick-access action row — no need to open panel */}
                             <div className="flex flex-wrap gap-1.5 mt-2 pt-2 border-t border-border/40">
+                              <WorkSessionButton
+                                entityType="video" entityId={video.id} title={video.title} clientId={video.client_id}
+                                active={work.active} busy={work.busy} onStart={work.start} onStop={work.stop}
+                              />
                               {video.status === 'editing' ? (
                                 <span className="flex items-center gap-1.5 text-[11px] font-semibold py-1 px-2 rounded bg-warning/20 text-warning border border-warning/40">
                                   <span className="h-1.5 w-1.5 rounded-full bg-warning animate-pulse" /> In progress

@@ -1,5 +1,6 @@
 # Project Memory
 
+
 ## Core
 Admin: admin@eka.agency / Eka@Admin2024. Admin key for permanent deletions (no soft-delete): 123@xcodeH.
 Client portal is LIVE at /client. Admin generates client logins via ClientPortalAccess (edge fn create-admin-user, action create/reset_password/revoke_client_access). Role 'client' links to clients.user_id.
@@ -43,3 +44,4 @@ clients.deliverables JSONB stores {reels, long_videos, thumbnails, posters, caro
 - [Social phase B](mem://features/social-phase-b) — Manual PublishHelper live; native pending OAuth
 - [Phase 3 features](mem://features/phase-3-features) — WhatsApp templates, Invoices, Capacity, AI brief
 - [Removed modules](mem://features/removed-modules) — Attendance/Invoices/Capacity/WhatsApp removed; Clients Hub + admin email change added
+- [Work sessions](mem://features/work-sessions) — Start/Stop task timers, admin live activity, team My Profile pages

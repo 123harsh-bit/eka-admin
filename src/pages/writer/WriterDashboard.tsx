@@ -10,6 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PenTool, ExternalLink, Loader2, Calendar, Clock, FolderOpen, Save, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { WorkSessionButton } from '@/components/shared/WorkSessionButton';
+import { useWorkSession } from '@/hooks/useWorkSession';
 import { useToast } from '@/hooks/use-toast';
 import { PullToRefresh } from '@/components/shared/PullToRefresh';
 
@@ -34,6 +36,7 @@ export default function WriterDashboard() {
   const [saving, setSaving] = useState(false);
   const [savingDuration, setSavingDuration] = useState(false);
   const { toast } = useToast();
+  const work = useWorkSession();
 
   useEffect(() => {
     fetchTasks();
@@ -180,6 +183,10 @@ export default function WriterDashboard() {
                               </div>
                             </div>
                           )}
+                          <WorkSessionButton
+                            entityType="writing_task" entityId={task.id} title={task.title} clientId={task.client_id}
+                            active={work.active} busy={work.busy} onStart={work.start} onStop={work.stop}
+                          />
                           {task.raw_footage_link && (
                             <a href={task.raw_footage_link} target="_blank" rel="noopener noreferrer"
                               onClick={e => e.stopPropagation()}

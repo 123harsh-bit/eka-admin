@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { TeamLiveStatus } from '@/components/admin/TeamLiveStatus';
+import { WhosWorkingNow } from '@/components/admin/WhosWorkingNow';
 import { ContentPlanStatusWidget } from '@/components/admin/ContentPlanStatusWidget';
 import { formatDistanceToNow } from 'date-fns';
 import { Users, Video, Clock, CheckCircle, TrendingUp, AlertTriangle, UploadCloud, Share2 } from 'lucide-react';
@@ -193,6 +194,7 @@ export default function AdminDashboard() {
             <p className="text-sm text-muted-foreground">Welcome back. Here's what's happening.</p>
           </div>
 
+          <WhosWorkingNow />
           <TeamLiveStatus />
 
           {/* Stats */}
