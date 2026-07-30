@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { VIDEO_STATUSES, VIDEO_STATUS_ORDER, type VideoStatus } from '@/lib/statusConfig';
 import { Search, Video, ExternalLink, FolderOpen, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { WhosWorkingNow } from '@/components/admin/WhosWorkingNow';
 
 interface EditorVideo {
   id: string; title: string; status: string; client_id: string;
