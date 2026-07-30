@@ -26,6 +26,7 @@ const SocialLayout = lazyWithRetry(() => import("@/components/social/SocialLayou
 
 // Shared pages (rendered inside any role layout)
 const ClientsHub = lazyWithRetry(() => import("@/pages/shared/ClientsHub"));
+const MyProfilePage = lazyWithRetry(() => import("@/pages/shared/MyProfilePage"));
 const ScriptsLibrary = lazyWithRetry(() => import("@/pages/shared/ScriptsLibrary"));
 const ScriptEditor = lazyWithRetry(() => import("@/pages/shared/ScriptEditor"));
 
