@@ -6,27 +6,87 @@
    Modern dark theme with refined aesthetics */
 
 @layer base {
+  /* LIGHT MODE — brand blue on warm white, neon yellow accents */
   :root {
-    /* Eka — Electric Blue on True Black, Neon Yellow for CTAs */
-    --background: 0 0% 4%;             /* #0A0A0A true black */
-    --foreground: 0 0% 100%;           /* #FFFFFF */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 8%;
 
-    --card: 0 0% 7%;                   /* slightly lifted black */
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 8%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 8%;
+
+    --primary: 252 100% 47%;           /* #4400EE electric blue */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 252 100% 56%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 252 20% 96%;
+    --muted-foreground: 0 0% 36%;
+
+    --accent: 71 100% 50%;             /* #D4FF00 neon yellow */
+    --accent-foreground: 0 0% 8%;
+
+    --destructive: 0 78% 48%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 160 84% 32%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 35 95% 42%;
+    --warning-foreground: 0 0% 100%;
+
+    --info: 252 100% 47%;
+
+    --border: 252 20% 86%;
+    --input: 252 20% 80%;
+    --ring: 252 100% 47%;
+
+    --radius: 1rem;
+
+    --sidebar-background: 252 30% 98%;
+    --sidebar-foreground: 0 0% 28%;
+    --sidebar-primary: 252 100% 47%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 252 100% 47% / 0.10;
+    --sidebar-accent-foreground: 252 100% 30%;
+    --sidebar-border: 252 20% 88%;
+    --sidebar-ring: 252 100% 47%;
+
+    --surface: 252 25% 97%;
+    --glass: 0 0% 0% / 0.02;
+    --glass-border: 0 0% 0% / 0.08;
+    --glow: 252 100% 47% / 0.18;
+
+    --blue-electric: 252 100% 47%;
+    --blue-light: 252 100% 56%;
+    --blue-deep: 252 100% 33%;
+    --neon-yellow: 71 100% 50%;
+  }
+
+  /* DARK MODE — electric blue on true black */
+  .dark {
+    --background: 0 0% 4%;
+    --foreground: 0 0% 100%;
+
+    --card: 0 0% 7%;
     --card-foreground: 0 0% 100%;
 
     --popover: 0 0% 6%;
     --popover-foreground: 0 0% 100%;
 
-    --primary: 252 100% 47%;           /* #4400EE electric blue */
+    --primary: 252 100% 60%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 252 100% 56%;         /* #6622FF blue light */
+    --secondary: 252 100% 56%;
     --secondary-foreground: 0 0% 100%;
 
     --muted: 0 0% 14%;
-    --muted-foreground: 0 0% 74%;      /* raised for readability */
+    --muted-foreground: 0 0% 74%;
 
-    --accent: 71 100% 50%;             /* #D4FF00 neon yellow — CTAs/highlights */
+    --accent: 71 100% 50%;
     --accent-foreground: 0 0% 4%;
 
     --destructive: 0 90% 66%;
@@ -44,9 +104,6 @@
     --input: 0 0% 100% / 0.22;
     --ring: 252 100% 62%;
 
-
-    --radius: 1rem;
-
     --sidebar-background: 0 0% 3%;
     --sidebar-foreground: 0 0% 70%;
     --sidebar-primary: 252 100% 47%;
@@ -61,13 +118,13 @@
     --glass-border: 0 0% 100% / 0.08;
     --glow: 252 100% 47% / 0.25;
 
-    /* Brand-specific tokens */
-    --blue-electric: 252 100% 47%;     /* #4400EE */
-    --blue-light: 252 100% 56%;        /* #6622FF */
-    --blue-deep: 252 100% 33%;         /* #2200AA */
-    --neon-yellow: 71 100% 50%;        /* #D4FF00 */
+    --blue-electric: 252 100% 47%;
+    --blue-light: 252 100% 56%;
+    --blue-deep: 252 100% 33%;
+    --neon-yellow: 71 100% 50%;
   }
 }
+
 
 @layer base {
   * {
