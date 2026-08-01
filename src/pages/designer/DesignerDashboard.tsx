@@ -207,7 +207,7 @@ export default function DesignerDashboard() {
                     <Input value={figmaLink} onChange={e => setFigmaLink(e.target.value)} placeholder="https://figma.com/…" className="text-xs h-8" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-[10px]">Drive Link</Label>
+                    <Label className="text-[10px]">Final Output Link</Label>
                     <Input value={driveLink} onChange={e => setDriveLink(e.target.value)} placeholder="https://drive.google.com/…" className="text-xs h-8" />
                   </div>
                   <div className="space-y-1.5">

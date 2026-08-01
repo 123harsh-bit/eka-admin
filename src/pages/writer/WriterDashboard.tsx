@@ -20,7 +20,7 @@ interface WritingTask {
   client_id: string; due_date: string | null; doc_link: string | null;
   target_duration_seconds: number | null; script_duration_seconds: number | null;
   version_notes: string | null; video_id: string | null;
-  client_name?: string; raw_footage_link?: string | null;
+  client_name?: string; raw_footage_link?: string | null; created_at?: string;
 }
 
 const taskTypeLabel = (type: string) => WRITING_TASK_TYPES.find(t => t.value === type)?.label || type;
@@ -51,7 +51,7 @@ export default function WriterDashboard() {
     if (!user) return;
     setLoading(true);
     const { data } = await supabase.from('writing_tasks')
-      .select('id, title, task_type, status, client_id, due_date, doc_link, target_duration_seconds, script_duration_seconds, version_notes, video_id, clients(name)')
+      .select('id, title, task_type, status, client_id, due_date, doc_link, target_duration_seconds, script_duration_seconds, version_notes, video_id, created_at, clients(name)')
       .eq('assigned_writer', user.id)
       .not('status', 'eq', 'delivered')
       .order('due_date', { ascending: true, nullsFirst: false });
@@ -115,11 +115,19 @@ export default function WriterDashboard() {
   const reviewStatuses: WritingTaskStatus[] = ['review', 'revisions'];
   const approvedStatuses: WritingTaskStatus[] = ['approved'];
 
-  const groups = [
-    { label: 'Active', emoji: '🔵', tasks: tasks.filter(t => activeStatuses.includes(t.status as WritingTaskStatus)) },
-    { label: 'For Review', emoji: '🔍', tasks: tasks.filter(t => reviewStatuses.includes(t.status as WritingTaskStatus)) },
-    { label: 'Approved', emoji: '✅', tasks: tasks.filter(t => approvedStatuses.includes(t.status as WritingTaskStatus)) },
-  ];
+  const monthLabel = (iso?: string | null) =>
+    iso ? new Date(iso).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) : 'No date';
+
+  const groups = Array.from(
+    [...tasks]
+      .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
+      .reduce((acc, t) => {
+        const key = monthLabel(t.created_at || t.due_date);
+        if (!acc.has(key)) acc.set(key, []);
+        acc.get(key)!.push(t);
+        return acc;
+      }, new Map<string, WritingTask[]>()),
+  ).map(([label, list]) => ({ label, emoji: '\ud83d\uddd3\ufe0f', tasks: list }));
 
   return (
     <WriterLayout>
@@ -265,7 +273,7 @@ export default function WriterDashboard() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-[10px]">Google Doc Link</Label>
+                    <Label className="text-[10px]">Final Output (Doc link)</Label>
                     <Input value={docLink} onChange={e => setDocLink(e.target.value)} placeholder="https://docs.google.com/…" className="text-xs h-8" />
                   </div>
                   <div className="space-y-1.5">
