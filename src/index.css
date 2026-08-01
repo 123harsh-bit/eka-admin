@@ -215,9 +215,9 @@
   .animated-gradient {
     background: linear-gradient(
       135deg,
-      hsl(0 0% 4%),
-      hsl(252 100% 8%),
-      hsl(0 0% 4%)
+      hsl(var(--background)),
+      hsl(var(--primary) / 0.12),
+      hsl(var(--background))
     );
     background-size: 200% 200%;
     animation: gradientShift 12s ease infinite;
@@ -272,11 +272,11 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: hsl(220 15% 20%);
+  background: hsl(var(--muted-foreground) / 0.35);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(220 15% 28%);
+  background: hsl(var(--muted-foreground) / 0.55);
 }
 /* Scripts editor */
 .script-prose .ProseMirror { outline: none; min-height: 60vh; font-size: 15px; line-height: 1.7; color: hsl(var(--foreground)); }
