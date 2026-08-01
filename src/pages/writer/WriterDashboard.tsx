@@ -111,9 +111,6 @@ export default function WriterDashboard() {
   };
 
   const today = new Date().toISOString().split('T')[0];
-  const activeStatuses: WritingTaskStatus[] = ['briefed', 'drafting'];
-  const reviewStatuses: WritingTaskStatus[] = ['review', 'revisions'];
-  const approvedStatuses: WritingTaskStatus[] = ['approved'];
 
   const monthLabel = (iso?: string | null) =>
     iso ? new Date(iso).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) : 'No date';
