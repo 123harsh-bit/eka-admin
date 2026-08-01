@@ -19,7 +19,7 @@ interface DesignTask {
   id: string; title: string; task_type: string; status: string;
   client_id: string; due_date: string | null; figma_link: string | null;
   drive_link: string | null; version_notes: string | null;
-  client_name?: string;
+  client_name?: string; created_at?: string;
 }
 
 const taskTypeLabel = (type: string) => DESIGN_TASK_TYPES.find(t => t.value === type)?.label || type;
@@ -35,6 +35,7 @@ export default function DesignerDashboard() {
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
   const work = useWorkSession();
+  const [month, setMonth] = useState<string>('all');
 
   useEffect(() => {
     fetchTasks();
@@ -87,9 +88,15 @@ export default function DesignerDashboard() {
     setVersionNotes(t.version_notes || '');
   };
 
+  const monthKey = (iso?: string | null) => (iso ? iso.slice(0, 7) : 'none');
+  const monthLabel = (key: string) =>
+    key === 'none' ? 'No date' : new Date(`${key}-01`).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  const monthOptions = Array.from(new Set(tasks.map(t => monthKey(t.created_at)))).sort().reverse();
+  const visibleTasks = month === 'all' ? tasks : tasks.filter(t => monthKey(t.created_at) === month);
+
   const columns = DESIGN_TASK_STATUS_ORDER.map(s => ({
     status: s, config: DESIGN_TASK_STATUSES[s],
-    tasks: tasks.filter(t => t.status === s),
+    tasks: visibleTasks.filter(t => t.status === s),
   }));
 
   const today = new Date().toISOString().split('T')[0];
@@ -102,8 +109,17 @@ export default function DesignerDashboard() {
 
           <div>
             <h1 className="text-2xl font-bold text-foreground">My Design Tasks</h1>
-            <p className="text-sm text-muted-foreground">{tasks.length} active task{tasks.length !== 1 ? 's' : ''}</p>
+            <p className="text-sm text-muted-foreground">{visibleTasks.length} active task{visibleTasks.length !== 1 ? 's' : ''}</p>
           </div>
+
+          <select
+            value={month}
+            onChange={e => setMonth(e.target.value)}
+            className="h-9 rounded-lg border border-input bg-background px-2 text-xs text-foreground"
+          >
+            <option value="all">All months</option>
+            {monthOptions.map(m => <option key={m} value={m}>{monthLabel(m)}</option>)}
+          </select>
 
           {loading ? (
             <div className="flex gap-3 overflow-x-auto pb-4">
