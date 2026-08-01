@@ -114,12 +114,28 @@ export default function CameraShoots() {
   const overdue = videos.filter(v => ['shoot_assigned', 'shooting'].includes(v.status) && v.shoot_date && v.shoot_date < today && v.shoot_date !== today);
   const completed = videos.filter(v => ['footage_delivered', 'editing', 'internal_review', 'client_review', 'revisions', 'approved', 'ready_to_upload', 'live'].includes(v.status));
 
+  const monthLabel = (iso?: string | null) =>
+    iso ? new Date(iso).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) : 'No date';
+
+  const monthGroups = (list: typeof videos, collapsed = false) =>
+    Array.from(
+      [...list]
+        .sort((a, b) => (b.shoot_date || '').localeCompare(a.shoot_date || ''))
+        .reduce((acc, v) => {
+          const key = monthLabel(v.shoot_date || v.date_planned);
+          if (!acc.has(key)) acc.set(key, [] as typeof videos);
+          acc.get(key)!.push(v);
+          return acc;
+        }, new Map<string, typeof videos>()),
+    ).map(([label, items]) => ({ label, items, emoji: '🗓️', collapsed }));
+
   const groups = [
-    { label: "Today's Shoot", items: todayShoots, emoji: '🔴' },
-    { label: 'Overdue', items: overdue, emoji: '⚠️' },
-    { label: 'Upcoming', items: upcoming, emoji: '📅' },
-    { label: `Completed (${completed.length})`, items: completed, emoji: '✅', collapsed: true },
+    { label: "Today's Shoot", items: todayShoots, emoji: '🔴', collapsed: false },
+    { label: 'Overdue', items: overdue, emoji: '⚠️', collapsed: false },
+    ...monthGroups(upcoming),
+    ...monthGroups(completed, true).map(g => ({ ...g, label: `${g.label} · Completed` })),
   ];
+
 
   return (
     <CameraLayout>

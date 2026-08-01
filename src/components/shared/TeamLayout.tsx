@@ -27,6 +27,7 @@ interface TeamLayoutProps {
   roleLabel: string;
   roleColor: string;
   roleTextColor: string;
+  profilePath?: string;          // clicking the sidebar profile card opens this
   showAttendance?: boolean;      // deprecated: attendance tracking removed
 }
 
@@ -37,8 +38,10 @@ export function TeamLayout({
   roleLabel,
   roleColor,
   roleTextColor,
+  profilePath,
   showAttendance = false,
 }: TeamLayoutProps) {
+
   const { signOut, profile } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -102,17 +105,31 @@ export function TeamLayout({
         </nav>
 
         <div className={cn('p-3 border-t border-sidebar-border', collapsed && 'px-2')}>
-          {!collapsed && (
-            <div className="flex items-center gap-2.5 mb-2 px-1">
-              <div className={cn('h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0', roleColor, roleTextColor)}>
-                {profile?.full_name?.charAt(0) || '?'}
+          {profilePath && (
+            <NavLink
+              to={profilePath}
+              onClick={() => setSidebarOpen(false)}
+              title="My Profile"
+              className={({ isActive }) => cn(
+                'flex items-center gap-2.5 mb-2 p-1.5 rounded-lg transition-colors hover:bg-sidebar-accent',
+                collapsed && 'justify-center',
+                isActive && 'bg-sidebar-accent'
+              )}
+            >
+              <div className={cn('h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 overflow-hidden', roleColor, roleTextColor)}>
+                {profile?.avatar_url
+                  ? <img src={profile.avatar_url} alt="My profile photo" className="h-full w-full object-cover" />
+                  : (profile?.full_name?.charAt(0) || '?')}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-sidebar-foreground truncate">{profile?.full_name || roleLabel}</p>
-                <p className="text-[10px] text-muted-foreground">{roleLabel}</p>
-              </div>
-            </div>
+              {!collapsed && (
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-sidebar-foreground truncate">{profile?.full_name || roleLabel}</p>
+                  <p className="text-[10px] text-muted-foreground">{roleLabel} · My Profile</p>
+                </div>
+              )}
+            </NavLink>
           )}
+
           <Button
             variant="ghost"
             size="sm"

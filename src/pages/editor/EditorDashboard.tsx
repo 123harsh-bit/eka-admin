@@ -20,7 +20,7 @@ interface AssignedVideo {
   drive_link: string | null; raw_footage_link: string | null;
   internal_notes: string | null; date_planned: string | null;
   date_delivered: string | null; client_name?: string;
-  priority?: number;
+  priority?: number; created_at?: string;
 }
 
 const EDITOR_STAGES: VideoStatus[] = ['shooting', 'editing', 'internal_review'];
@@ -31,7 +31,7 @@ export default function EditorDashboard() {
   const [loading, setLoading] = useState(true);
   const [selectedVideo, setSelectedVideo] = useState<AssignedVideo | null>(null);
   const [clientFilter, setClientFilter] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<'priority' | 'client' | 'date'>('priority');
+  const [sortBy, setSortBy] = useState<'month' | 'priority' | 'client' | 'date'>('month');
   const [driveLink, setDriveLink] = useState('');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
@@ -52,7 +52,7 @@ export default function EditorDashboard() {
     setLoading(true);
     const { data } = await supabase
       .from('videos')
-      .select('id, title, status, client_id, drive_link, raw_footage_link, internal_notes, date_planned, date_delivered, priority, clients(name)')
+      .select('id, title, status, client_id, drive_link, raw_footage_link, internal_notes, date_planned, date_delivered, priority, created_at, clients(name)')
       .eq('assigned_editor', user.id)
       .not('status', 'in', '(approved,ready_to_upload,live)')
       .order('priority', { ascending: true })
@@ -105,16 +105,29 @@ export default function EditorDashboard() {
   const sortedVideos = [...filteredVideos].sort((a, b) => {
     if (sortBy === 'client') return (a.client_name || '').localeCompare(b.client_name || '');
     if (sortBy === 'date') return (a.date_planned || '9999').localeCompare(b.date_planned || '9999');
+    if (sortBy === 'month') return (b.created_at || '').localeCompare(a.created_at || '');
     return (a.priority ?? 100) - (b.priority ?? 100);
   });
 
-  const groups = sortBy === 'priority'
+  const monthLabel = (iso?: string | null) =>
+    iso ? new Date(iso).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) : 'No date';
+
+  const groups = sortBy === 'month'
+    ? Array.from(
+        sortedVideos.reduce((acc, v) => {
+          const key = monthLabel(v.created_at || v.date_planned);
+          if (!acc.has(key)) acc.set(key, []);
+          acc.get(key)!.push(v);
+          return acc;
+        }, new Map<string, AssignedVideo[]>()),
+      ).map(([label, items]) => ({ label, emoji: '\ud83d\uddd3\ufe0f', items }))
+    : sortBy === 'priority'
     ? [
-        { label: 'Due Today', emoji: '🔴', items: sortedVideos.filter(v => v.date_planned === today) },
-        { label: 'Due This Week', emoji: '📅', items: sortedVideos.filter(v => v.date_planned && v.date_planned > today && v.date_planned <= weekFromNow) },
-        { label: 'Upcoming', emoji: '📋', items: sortedVideos.filter(v => !v.date_planned || v.date_planned > weekFromNow) },
+        { label: 'Due Today', emoji: '\ud83d\udd34', items: sortedVideos.filter(v => v.date_planned === today) },
+        { label: 'Due This Week', emoji: '\ud83d\udcc5', items: sortedVideos.filter(v => v.date_planned && v.date_planned > today && v.date_planned <= weekFromNow) },
+        { label: 'Upcoming', emoji: '\ud83d\udccb', items: sortedVideos.filter(v => !v.date_planned || v.date_planned > weekFromNow) },
       ]
-    : [{ label: sortBy === 'client' ? 'By Client' : 'By Date', emoji: sortBy === 'client' ? '🏢' : '📅', items: sortedVideos }];
+    : [{ label: sortBy === 'client' ? 'By Client' : 'By Date', emoji: sortBy === 'client' ? '\ud83c\udfe2' : '\ud83d\udcc5', items: sortedVideos }];
 
   return (
     <EditorLayout>
@@ -129,12 +142,13 @@ export default function EditorDashboard() {
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <select value={clientFilter} onChange={e => setClientFilter(e.target.value)}
-                className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground">
+                className="h-9 rounded-lg border border-input bg-background px-2 text-xs text-foreground">
                 <option value="all">All clients</option>
                 {uniqueClients.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
               </select>
-              <select value={sortBy} onChange={e => setSortBy(e.target.value as 'priority' | 'client' | 'date')}
-                className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground">
+              <select value={sortBy} onChange={e => setSortBy(e.target.value as 'month' | 'priority' | 'client' | 'date')}
+                className="h-9 rounded-lg border border-input bg-background px-2 text-xs text-foreground">
+                <option value="month">Group: Month assigned</option>
                 <option value="priority">Sort: Priority</option>
                 <option value="client">Sort: Client name</option>
                 <option value="date">Sort: Due date</option>
@@ -196,41 +210,37 @@ export default function EditorDashboard() {
                                 entityType="video" entityId={video.id} title={video.title} clientId={video.client_id}
                                 active={work.active} busy={work.busy} onStart={work.start} onStop={work.stop}
                               />
-                              {video.status === 'editing' ? (
-                                <span className="flex items-center gap-1.5 text-[11px] font-semibold py-1 px-2 rounded bg-warning/20 text-warning border border-warning/40">
-                                  <span className="h-1.5 w-1.5 rounded-full bg-warning animate-pulse" /> In progress
-                                </span>
-                              ) : ['footage_delivered', 'idea', 'shooting'].includes(video.status) ? (
+                              {['footage_delivered', 'idea', 'shooting'].includes(video.status) && (
                                 <button onClick={(e) => { e.stopPropagation(); handleStatusChange(video.id, 'editing'); }}
-                                  className="flex items-center gap-1 text-[11px] font-semibold py-1 px-2 rounded bg-primary text-primary-foreground hover:bg-primary/85">
-                                  ▶ Start Editing
+                                  className="action-chip-primary">
+                                  Start Editing
                                 </button>
-                              ) : null}
+                              )}
                               {video.status === 'editing' && (
                                 <button onClick={(e) => { e.stopPropagation(); handleStatusChange(video.id, 'internal_review'); }}
-                                  className="flex items-center gap-1 text-[11px] font-semibold py-1 px-2 rounded bg-success text-success-foreground hover:bg-success/85">
-                                  ✓ Send to Review
+                                  className="action-chip-success">
+                                  Send to Review
                                 </button>
                               )}
                               {video.raw_footage_link ? (
                                 <a href={video.raw_footage_link} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                                  className="flex items-center gap-1 text-[11px] font-semibold py-1 px-2 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40 hover:bg-amber-400/30">
-                                  <FolderOpen size={11} /> Raw Footage
+                                  className="action-chip">
+                                  <FolderOpen size={12} /> Raw Footage
                                 </a>
                               ) : (
-                                <span className="flex items-center gap-1 text-[11px] py-1 px-2 rounded bg-muted text-muted-foreground border border-border">
-                                  <FolderOpen size={11} /> No footage yet
+                                <span className="action-chip text-muted-foreground">
+                                  <FolderOpen size={12} /> No footage yet
                                 </span>
                               )}
                               {video.drive_link ? (
                                 <a href={video.drive_link} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                                  className="flex items-center gap-1 text-[11px] font-semibold py-1 px-2 rounded bg-primary/25 text-foreground border border-primary/50 hover:bg-primary/35">
-                                  <ExternalLink size={11} /> Final Drive
+                                  className="action-chip-outline">
+                                  <ExternalLink size={12} /> Final Output
                                 </a>
                               ) : (
                                 <button onClick={(e) => { e.stopPropagation(); openVideo(video); }}
-                                  className="flex items-center gap-1 text-[11px] font-semibold py-1 px-2 rounded bg-secondary/25 text-foreground border border-secondary/50 hover:bg-secondary/35">
-                                  <ExternalLink size={11} /> + Add Drive Link
+                                  className="action-chip-outline">
+                                  <ExternalLink size={12} /> Add Final Output
                                 </button>
                               )}
                             </div>
@@ -274,14 +284,14 @@ export default function EditorDashboard() {
                   {/* Prominent final drive link section */}
                   <div className="space-y-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
                     <Label className="text-xs font-semibold text-primary flex items-center gap-1.5">
-                      <ExternalLink size={12} /> Final Video Drive Link
+                      <ExternalLink size={12} /> Final Output Link
                     </Label>
                     <Input value={driveLink} onChange={e => setDriveLink(e.target.value)}
                       placeholder="Paste Google Drive link here…"
                       className="text-xs h-9 bg-background" />
                     <Button size="sm" onClick={handleSaveDetails} disabled={saving} className="w-full gap-2 h-9">
                       {saving ? <Loader2 size={12} className="animate-spin" /> : <ExternalLink size={12} />}
-                      Save Drive Link
+                      Save Final Output
                     </Button>
                     {selectedVideo.drive_link && (
                       <a href={selectedVideo.drive_link} target="_blank" rel="noopener noreferrer"
