@@ -27,6 +27,7 @@ interface TeamLayoutProps {
   roleLabel: string;
   roleColor: string;
   roleTextColor: string;
+  profilePath?: string;          // clicking the sidebar profile card opens this
   showAttendance?: boolean;      // deprecated: attendance tracking removed
 }
 
@@ -37,8 +38,10 @@ export function TeamLayout({
   roleLabel,
   roleColor,
   roleTextColor,
+  profilePath,
   showAttendance = false,
 }: TeamLayoutProps) {
+
   const { signOut, profile } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
