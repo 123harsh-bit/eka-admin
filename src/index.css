@@ -145,9 +145,9 @@
 @layer components {
   .glass-card {
     background: hsl(var(--card));
-    border: 1px solid hsl(0 0% 100% / 0.12);
+    border: 1px solid hsl(var(--border));
     border-radius: var(--radius);
-    backdrop-filter: blur(12px);
+    box-shadow: 0 1px 2px hsl(var(--foreground) / 0.04);
   }
 
 
@@ -156,9 +156,25 @@
   }
   .glass-card-hover:hover {
     border-color: hsl(var(--primary) / 0.4);
-    background: hsl(0 0% 9%);
-    box-shadow: 0 8px 32px -8px hsl(var(--blue-deep) / 0.5);
+    box-shadow: 0 8px 28px -12px hsl(var(--primary) / 0.35);
   }
+
+  /* Unified small action chip used on task cards across all team portals */
+  .action-chip {
+    @apply inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold
+           border border-border bg-muted/60 text-foreground transition-colors
+           hover:bg-muted disabled:opacity-60;
+  }
+  .action-chip-primary {
+    @apply action-chip bg-primary text-primary-foreground border-transparent hover:bg-primary/90;
+  }
+  .action-chip-success {
+    @apply action-chip bg-success text-success-foreground border-transparent hover:bg-success/90;
+  }
+  .action-chip-outline {
+    @apply action-chip bg-transparent border-primary/40 text-primary hover:bg-primary/10;
+  }
+
 
   .gradient-text {
     @apply bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent;
