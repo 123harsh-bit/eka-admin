@@ -161,8 +161,9 @@ export default function MyProfilePage() {
     }
     setSaving(true);
     const { error } = await supabase.from('profiles')
-      .update({ full_name: fullName.trim(), phone: phone.trim() || null })
+      .update({ full_name: fullName.trim(), phone: phone.trim() || null, date_of_birth: dob || null } as never)
       .eq('id', user.id);
+
     setSaving(false);
     if (error) {
       toast({ title: "Couldn't save profile", description: error.message, variant: 'destructive' });
