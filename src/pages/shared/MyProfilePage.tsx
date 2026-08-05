@@ -265,7 +265,9 @@ export default function MyProfilePage() {
       </div>
 
       {/* Work history */}
+      {!isLeadership && (
       <div className="glass-card p-4 space-y-3">
+
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2">
             <CheckCircle size={14} className="text-success" />
