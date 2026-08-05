@@ -853,22 +853,24 @@ export default function AdminVideos() {
                             <div
                               key={video.id}
                               onClick={() => openDetail(video)}
-                              className={cn('flex items-center gap-3 px-4 hover:bg-muted/20 cursor-pointer transition-colors',
-                                density === 'compact' ? 'py-1' : 'py-2.5',
+                              className={cn('px-4 py-3 hover:bg-muted/20 cursor-pointer transition-colors',
                                 detailVideo?.id === video.id && 'bg-primary/10')}
-
                             >
-                              <StatusBadge status={video.status as VideoStatus} type="video" />
-                              <span className="flex-1 text-sm text-foreground truncate">{video.title}</span>
-                              <span className={cn('text-[11px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap', ar.color)}>{ar.label}</span>
-                              {video.date_planned && (
-                                <span className="text-[11px] text-muted-foreground whitespace-nowrap hidden md:inline">
-                                  {new Date(video.date_planned).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                                </span>
-                              )}
-                              <div className="flex gap-1" onClick={e => e.stopPropagation()}>
-                                <button onClick={() => openEdit(video)} className="p-1 hover:text-primary transition-colors"><Edit2 size={13} /></button>
-                                <button onClick={() => setDeleteModal({ open: true, video })} className="p-1 hover:text-destructive transition-colors"><Trash2 size={13} /></button>
+                              <div className="flex items-start gap-2">
+                                <p className="flex-1 text-sm font-semibold text-foreground leading-snug break-words">{video.title}</p>
+                                <div className="flex gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+                                  <button onClick={() => openEdit(video)} className="p-1 hover:text-primary transition-colors"><Edit2 size={13} /></button>
+                                  <button onClick={() => setDeleteModal({ open: true, video })} className="p-1 hover:text-destructive transition-colors"><Trash2 size={13} /></button>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 flex-wrap mt-1.5">
+                                <StatusBadge status={video.status as VideoStatus} type="video" />
+                                <span className={cn('text-[11px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap', ar.color)}>{ar.label}</span>
+                                {video.date_planned && (
+                                  <span className="text-[11px] text-muted-foreground whitespace-nowrap">
+                                    {new Date(video.date_planned).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                                  </span>
+                                )}
                               </div>
                             </div>
                           );
@@ -880,7 +882,8 @@ export default function AdminVideos() {
               })}
             </div>
           ) : (
-          <div className={cn('glass-card flex-1 overflow-auto', density === 'compact' && '[&_td]:!py-1 [&_th]:!py-2 text-[13px]')}>
+          <div className="glass-card flex-1 overflow-auto">
+
             {/* Desktop table — hidden on mobile */}
             <table className="w-full text-sm hidden md:table">
               <thead className="sticky top-0 bg-card/90 backdrop-blur border-b border-glass-border">
