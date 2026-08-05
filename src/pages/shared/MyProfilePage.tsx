@@ -53,10 +53,12 @@ export default function MyProfilePage() {
 
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
+  const [dob, setDob] = useState('');
   const [avatar, setAvatar] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
 
   const [items, setItems] = useState<DoneItem[]>([]);
   const [clientMap, setClientMap] = useState<Record<string, string>>({});
