@@ -86,7 +86,9 @@ export default function MyProfilePage() {
 
   useEffect(() => {
     if (!user || !role) return;
+    if (role === 'admin' || role === 'coo') { setLoading(false); return; }
     (async () => {
+
       setLoading(true);
       const done = DONE_STATUSES[role] || [];
       let rows: { id: string; title: string; client_id: string; status: string; updated_at: string }[] = [];
