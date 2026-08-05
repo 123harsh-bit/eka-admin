@@ -74,11 +74,15 @@ export default function MyProfilePage() {
   }, []);
   const [selectedMonth, setSelectedMonth] = useState(months[0].key);
 
+  const isLeadership = role === 'admin' || role === 'coo';
+
   useEffect(() => {
     setFullName(profile?.full_name || '');
     setPhone(profile?.phone || '');
+    setDob((profile as { date_of_birth?: string | null } | null)?.date_of_birth || '');
     setAvatar(profile?.avatar_url || null);
   }, [profile]);
+
 
   useEffect(() => {
     if (!user || !role) return;
