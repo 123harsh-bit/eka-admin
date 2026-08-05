@@ -54,7 +54,9 @@ export function AdminLayout({ children }: { children: ReactNode }) {
       roleLabel="Admin"
       roleColor="bg-primary/20"
       roleTextColor="text-primary"
+      profilePath="/admin/profile"
       showAttendance={false}
+
     >
       {children}
     </TeamLayout>
