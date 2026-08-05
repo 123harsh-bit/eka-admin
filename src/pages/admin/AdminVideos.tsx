@@ -9,7 +9,7 @@ import { ConfirmDeleteModal } from '@/components/shared/ConfirmDeleteModal';
 import { useToast } from '@/hooks/use-toast';
 import { VIDEO_STATUSES, VIDEO_STATUS_ORDER, EDITING_ONLY_STATUS_ORDER, EDITING_ONLY_ADMIN_LABELS, type VideoStatus, type ClientServiceType, getActionRequired, getStatusOrderForClient, getAdminLabel } from '@/lib/statusConfig';
 import { getDirectDownloadLink } from '@/lib/driveUtils';
-import { Plus, Search, X, Video, Edit2, Trash2, ExternalLink, MessageSquare, Loader2, FolderOpen, Lock, LayoutList, LayoutGrid, Layers, ChevronRight, ChevronDown, Archive, Rows3 } from 'lucide-react';
+import { Plus, Search, X, Video, Edit2, Trash2, ExternalLink, MessageSquare, Loader2, FolderOpen, Lock, LayoutList, LayoutGrid, Layers, ChevronRight, ChevronDown, Archive } from 'lucide-react';
 import { ContentPlanBadge } from '@/components/shared/ContentPlanBadge';
 import { WorkflowPrompt } from '@/components/shared/WorkflowPrompt';
 import { handleVideoStatusChange } from '@/lib/pipeline';
@@ -82,7 +82,6 @@ export default function AdminVideos() {
   // Organization controls (persisted per user as a "saved view")
   const [viewMode, setViewMode] = usePersistedState<'list' | 'kanban'>('videos.mode', 'list');
   const [groupByClient, setGroupByClient] = usePersistedState<boolean>('videos.group', false);
-  const [density, setDensity] = usePersistedState<'comfortable' | 'compact'>('videos.density', 'comfortable');
   const currentMonthKey = new Date().toISOString().slice(0, 7);
   const [monthKey, setMonthKey] = usePersistedState<string>('videos.month', currentMonthKey);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
@@ -720,25 +719,16 @@ export default function AdminVideos() {
               </div>
               <div className="flex items-center gap-1 shrink-0">
                 {viewMode === 'list' && (
-                  <>
-                    <button
-                      onClick={() => setGroupByClient(g => !g)}
-                      className={cn('h-8 px-2 rounded-md text-xs flex items-center gap-1.5 border transition-colors',
-                        groupByClient ? 'border-primary/50 bg-primary/10 text-primary' : 'border-input bg-background text-muted-foreground hover:text-foreground')}
-                      title="Group by client"
-                    >
-                      <Layers size={13} /> By client
-                    </button>
-                    <button
-                      onClick={() => setDensity(d => (d === 'compact' ? 'comfortable' : 'compact'))}
-                      className={cn('h-8 px-2 rounded-md text-xs flex items-center gap-1.5 border transition-colors',
-                        density === 'compact' ? 'border-primary/50 bg-primary/10 text-primary' : 'border-input bg-background text-muted-foreground hover:text-foreground')}
-                      title="Toggle row density"
-                    >
-                      <Rows3 size={13} /> {density === 'compact' ? 'Compact' : 'Comfy'}
-                    </button>
-                  </>
+                  <button
+                    onClick={() => setGroupByClient(g => !g)}
+                    className={cn('h-8 px-2 rounded-md text-xs flex items-center gap-1.5 border transition-colors',
+                      groupByClient ? 'border-primary/50 bg-primary/10 text-primary' : 'border-input bg-background text-muted-foreground hover:text-foreground')}
+                    title="Group by client"
+                  >
+                    <Layers size={13} /> By client
+                  </button>
                 )}
+
                 <div className="flex rounded-md border border-input overflow-hidden">
                   <button
                     onClick={() => setViewMode('list')}
@@ -862,22 +852,24 @@ export default function AdminVideos() {
                             <div
                               key={video.id}
                               onClick={() => openDetail(video)}
-                              className={cn('flex items-center gap-3 px-4 hover:bg-muted/20 cursor-pointer transition-colors',
-                                density === 'compact' ? 'py-1' : 'py-2.5',
+                              className={cn('px-4 py-3 hover:bg-muted/20 cursor-pointer transition-colors',
                                 detailVideo?.id === video.id && 'bg-primary/10')}
-
                             >
-                              <StatusBadge status={video.status as VideoStatus} type="video" />
-                              <span className="flex-1 text-sm text-foreground truncate">{video.title}</span>
-                              <span className={cn('text-[11px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap', ar.color)}>{ar.label}</span>
-                              {video.date_planned && (
-                                <span className="text-[11px] text-muted-foreground whitespace-nowrap hidden md:inline">
-                                  {new Date(video.date_planned).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                                </span>
-                              )}
-                              <div className="flex gap-1" onClick={e => e.stopPropagation()}>
-                                <button onClick={() => openEdit(video)} className="p-1 hover:text-primary transition-colors"><Edit2 size={13} /></button>
-                                <button onClick={() => setDeleteModal({ open: true, video })} className="p-1 hover:text-destructive transition-colors"><Trash2 size={13} /></button>
+                              <div className="flex items-start gap-2">
+                                <p className="flex-1 text-sm font-semibold text-foreground leading-snug break-words">{video.title}</p>
+                                <div className="flex gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+                                  <button onClick={() => openEdit(video)} className="p-1 hover:text-primary transition-colors"><Edit2 size={13} /></button>
+                                  <button onClick={() => setDeleteModal({ open: true, video })} className="p-1 hover:text-destructive transition-colors"><Trash2 size={13} /></button>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 flex-wrap mt-1.5">
+                                <StatusBadge status={video.status as VideoStatus} type="video" />
+                                <span className={cn('text-[11px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap', ar.color)}>{ar.label}</span>
+                                {video.date_planned && (
+                                  <span className="text-[11px] text-muted-foreground whitespace-nowrap">
+                                    {new Date(video.date_planned).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                                  </span>
+                                )}
                               </div>
                             </div>
                           );
@@ -889,7 +881,8 @@ export default function AdminVideos() {
               })}
             </div>
           ) : (
-          <div className={cn('glass-card flex-1 overflow-auto', density === 'compact' && '[&_td]:!py-1 [&_th]:!py-2 text-[13px]')}>
+          <div className="glass-card flex-1 overflow-auto">
+
             {/* Desktop table — hidden on mobile */}
             <table className="w-full text-sm hidden md:table">
               <thead className="sticky top-0 bg-card/90 backdrop-blur border-b border-glass-border">

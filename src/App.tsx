@@ -114,6 +114,8 @@ const App = () => (
               <Route path="/admin/scripts" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><ScriptsLibrary routeBase="/admin/scripts" /></AdminLayout></ProtectedRoute>} />
               <Route path="/admin/scripts/:id" element={<ProtectedRoute allowedRoles={['admin']}><ScriptEditor routeBase="/admin/scripts" /></ProtectedRoute>} />
               <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin']}><AdminSettings /></ProtectedRoute>} />
+              <Route path="/admin/profile" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><MyProfilePage /></AdminLayout></ProtectedRoute>} />
+
 
               {/* Editor */}
               <Route path="/editor" element={<ProtectedRoute allowedRoles={['editor']}><EditorDashboard /></ProtectedRoute>} />

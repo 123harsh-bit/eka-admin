@@ -53,10 +53,12 @@ export default function MyProfilePage() {
 
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
+  const [dob, setDob] = useState('');
   const [avatar, setAvatar] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
 
   const [items, setItems] = useState<DoneItem[]>([]);
   const [clientMap, setClientMap] = useState<Record<string, string>>({});
@@ -72,15 +74,21 @@ export default function MyProfilePage() {
   }, []);
   const [selectedMonth, setSelectedMonth] = useState(months[0].key);
 
+  const isLeadership = role === 'admin' || role === 'coo';
+
   useEffect(() => {
     setFullName(profile?.full_name || '');
     setPhone(profile?.phone || '');
+    setDob((profile as { date_of_birth?: string | null } | null)?.date_of_birth || '');
     setAvatar(profile?.avatar_url || null);
   }, [profile]);
 
+
   useEffect(() => {
     if (!user || !role) return;
+    if (role === 'admin' || role === 'coo') { setLoading(false); return; }
     (async () => {
+
       setLoading(true);
       const done = DONE_STATUSES[role] || [];
       let rows: { id: string; title: string; client_id: string; status: string; updated_at: string }[] = [];
@@ -155,8 +163,9 @@ export default function MyProfilePage() {
     }
     setSaving(true);
     const { error } = await supabase.from('profiles')
-      .update({ full_name: fullName.trim(), phone: phone.trim() || null })
+      .update({ full_name: fullName.trim(), phone: phone.trim() || null, date_of_birth: dob || null } as never)
       .eq('id', user.id);
+
     setSaving(false);
     if (error) {
       toast({ title: "Couldn't save profile", description: error.message, variant: 'destructive' });
@@ -210,7 +219,12 @@ export default function MyProfilePage() {
             <Label className="text-xs">Mobile number</Label>
             <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+91…" className="h-9 text-sm" />
           </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Date of birth</Label>
+            <Input type="date" value={dob} onChange={e => setDob(e.target.value)} className="h-9 text-sm" />
+          </div>
         </div>
+
         <p className="text-[11px] text-muted-foreground">Email changes are handled by your admin to keep your account data safe.</p>
         <Button size="sm" onClick={save} disabled={saving} className="gap-2">
           {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} Save changes
@@ -251,7 +265,9 @@ export default function MyProfilePage() {
       </div>
 
       {/* Work history */}
+      {!isLeadership && (
       <div className="glass-card p-4 space-y-3">
+
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2">
             <CheckCircle size={14} className="text-success" />
@@ -304,6 +320,8 @@ export default function MyProfilePage() {
           </div>
         )}
       </div>
+      )}
     </div>
+
   );
 }
