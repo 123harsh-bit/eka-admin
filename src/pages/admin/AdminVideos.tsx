@@ -720,25 +720,16 @@ export default function AdminVideos() {
               </div>
               <div className="flex items-center gap-1 shrink-0">
                 {viewMode === 'list' && (
-                  <>
-                    <button
-                      onClick={() => setGroupByClient(g => !g)}
-                      className={cn('h-8 px-2 rounded-md text-xs flex items-center gap-1.5 border transition-colors',
-                        groupByClient ? 'border-primary/50 bg-primary/10 text-primary' : 'border-input bg-background text-muted-foreground hover:text-foreground')}
-                      title="Group by client"
-                    >
-                      <Layers size={13} /> By client
-                    </button>
-                    <button
-                      onClick={() => setDensity(d => (d === 'compact' ? 'comfortable' : 'compact'))}
-                      className={cn('h-8 px-2 rounded-md text-xs flex items-center gap-1.5 border transition-colors',
-                        density === 'compact' ? 'border-primary/50 bg-primary/10 text-primary' : 'border-input bg-background text-muted-foreground hover:text-foreground')}
-                      title="Toggle row density"
-                    >
-                      <Rows3 size={13} /> {density === 'compact' ? 'Compact' : 'Comfy'}
-                    </button>
-                  </>
+                  <button
+                    onClick={() => setGroupByClient(g => !g)}
+                    className={cn('h-8 px-2 rounded-md text-xs flex items-center gap-1.5 border transition-colors',
+                      groupByClient ? 'border-primary/50 bg-primary/10 text-primary' : 'border-input bg-background text-muted-foreground hover:text-foreground')}
+                    title="Group by client"
+                  >
+                    <Layers size={13} /> By client
+                  </button>
                 )}
+
                 <div className="flex rounded-md border border-input overflow-hidden">
                   <button
                     onClick={() => setViewMode('list')}
