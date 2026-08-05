@@ -216,7 +216,12 @@ export default function MyProfilePage() {
             <Label className="text-xs">Mobile number</Label>
             <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+91…" className="h-9 text-sm" />
           </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Date of birth</Label>
+            <Input type="date" value={dob} onChange={e => setDob(e.target.value)} className="h-9 text-sm" />
+          </div>
         </div>
+
         <p className="text-[11px] text-muted-foreground">Email changes are handled by your admin to keep your account data safe.</p>
         <Button size="sm" onClick={save} disabled={saving} className="gap-2">
           {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} Save changes
