@@ -10,7 +10,9 @@ interface Profile {
   email: string;
   avatar_url: string | null;
   phone: string | null;
+  date_of_birth?: string | null;
   is_active: boolean;
+
 }
 
 interface AuthContextType {
