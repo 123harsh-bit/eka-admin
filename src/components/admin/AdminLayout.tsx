@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import { TeamLayout } from '@/components/shared/TeamLayout';
+import { AdminAssistant } from '@/components/admin/AdminAssistant';
 import {
   LayoutDashboard, Users, Video, Palette, PenTool, Camera,
   UserCircle, Bell, Settings, ListTodo,
@@ -59,6 +60,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
 
     >
       {children}
+      <AdminAssistant />
     </TeamLayout>
   );
 }
