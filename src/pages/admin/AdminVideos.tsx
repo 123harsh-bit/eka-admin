@@ -871,6 +871,26 @@ export default function AdminVideos() {
                                   </span>
                                 )}
                               </div>
+                              <div className="flex items-center gap-2 flex-wrap mt-2" onClick={e => e.stopPropagation()}>
+                                {video.raw_footage_link && (
+                                  <a href={video.raw_footage_link} target="_blank" rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border border-border/60 text-muted-foreground hover:text-primary hover:border-primary/60 transition-colors">
+                                    <FolderOpen size={12} /> Raw Footage
+                                  </a>
+                                )}
+                                {video.drive_link && (
+                                  <a href={video.drive_link} target="_blank" rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border border-primary/50 text-primary hover:bg-primary/10 transition-colors">
+                                    <ExternalLink size={12} /> Final Output
+                                  </a>
+                                )}
+                                {video.live_url && (
+                                  <a href={video.live_url} target="_blank" rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border border-success/50 text-success hover:bg-success/10 transition-colors">
+                                    <ExternalLink size={12} /> Live
+                                  </a>
+                                )}
+                              </div>
                             </div>
                           );
                         })}
