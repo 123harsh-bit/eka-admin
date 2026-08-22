@@ -147,17 +147,26 @@ async function runTool(db: SB, name: string, args: any) {
       }));
     }
     case 'find_videos': {
-      let q = db.from('videos').select('id, title, status, priority, date_planned, assigned_editor, assigned_camera_operator, assigned_social_id, client_id, clients(name)').order('created_at', { ascending: false }).limit(25);
-      if (args?.query) q = q.ilike('title', `%${args.query}%`);
+      let q = db.from('videos').select('id, title, status, priority, date_planned, created_at, assigned_editor, assigned_camera_operator, assigned_social_id, client_id, clients(name)').order('created_at', { ascending: false }).limit(300);
       if (args?.status) q = q.eq('status', args.status);
       const { data, error } = await q;
       if (error) return { error: error.message };
       let rows = (data ?? []) as any[];
       if (args?.client_name) {
-        const needle = String(args.client_name).toLowerCase();
-        rows = rows.filter(r => (r.clients?.name ?? '').toLowerCase().includes(needle));
+        const scored = rows
+          .map(r => ({ r, s: fuzzyScore(String(args.client_name), r.clients?.name ?? '') }))
+          .filter(x => x.s > 0.34)
+          .sort((a, b) => b.s - a.s);
+        rows = scored.map(x => x.r);
       }
-      return rows.map(r => ({ id: r.id, title: r.title, status: r.status, priority: r.priority, date_planned: r.date_planned, client: r.clients?.name, assigned_editor: r.assigned_editor, assigned_camera_operator: r.assigned_camera_operator, assigned_social_id: r.assigned_social_id }));
+      if (args?.query) {
+        const scored = rows
+          .map(r => ({ r, s: Math.max(fuzzyScore(String(args.query), r.title ?? ''), fuzzyScore(String(args.query), `${r.clients?.name ?? ''} ${r.title ?? ''}`)) }))
+          .filter(x => x.s > 0.34)
+          .sort((a, b) => b.s - a.s);
+        rows = scored.map(x => x.r);
+      }
+      return rows.slice(0, 25).map(r => ({ id: r.id, title: r.title, status: r.status, priority: r.priority, date_planned: r.date_planned, created_at: r.created_at, client: r.clients?.name, assigned_editor: r.assigned_editor, assigned_camera_operator: r.assigned_camera_operator, assigned_social_id: r.assigned_social_id }));
     }
     case 'create_video': {
       const { data: clients } = await db.from('clients').select('id, name');
