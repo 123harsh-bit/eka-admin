@@ -336,17 +336,45 @@ Deno.serve(async (req) => {
     if (!history.length) return json({ error: 'messages required' }, 400);
 
     const today = new Date().toISOString().slice(0, 10);
+
+    // Preload a live roster so the model can guess misspelled names without extra tool calls.
+    const [clientsRes, rolesRes, videosRes] = await Promise.all([
+      db.from('clients').select('id, name').eq('is_active', true).order('name'),
+      db.from('user_roles').select('user_id, role'),
+      db.from('videos').select('id, title, status, priority, created_at, client_id, clients(name)').order('created_at', { ascending: false }).limit(40),
+    ]);
+    const teamRoles = ((rolesRes.data ?? []) as any[]).filter(r => r.role !== 'client');
+    const { data: teamProfiles } = teamRoles.length
+      ? await db.from('profiles').select('id, full_name').in('id', teamRoles.map(r => r.user_id))
+      : { data: [] as any[] };
+    const roster = teamRoles.map(r => `${(teamProfiles ?? []).find((p: any) => p.id === r.user_id)?.full_name ?? 'Unknown'} (${r.role}) id=${r.user_id}`);
+    const clientList = ((clientsRes.data ?? []) as any[]).map(c => `${c.name} id=${c.id}`);
+    const recent = ((videosRes.data ?? []) as any[]).map(v => `"${v.title}" — ${v.clients?.name ?? '?'} — ${v.status} — created ${String(v.created_at).slice(0, 10)} — id=${v.id}`);
+
     const system = `You are the production assistant for EKA, a content agency. You help the admin manage the video pipeline by calling tools.
 
 Today is ${today}.
 
-Rules:
-- Always resolve names to ids with list_clients / list_team / find_videos BEFORE create/update/assign calls. Never invent ids.
-- If a name is ambiguous (multiple matches), ask which one instead of guessing.
-- Video statuses in order: ${VIDEO_STATUSES.join(', ')}.
-- Priority is a number where lower = higher priority (1 = first priority).
-- You may chain several tools in one turn to complete a multi-part request (e.g. create a video, then assign a writer, camera operator and editor).
-- After acting, reply in short markdown confirming exactly what changed. Be concise, no fluff.`;
+CLIENTS:
+${clientList.join('\n') || '(none)'}
+
+TEAM:
+${roster.join('\n') || '(none)'}
+
+40 MOST RECENT VIDEOS (newest first):
+${recent.join('\n') || '(none)'}
+
+How to behave:
+- The admin types fast, with typos, nicknames, short forms and missing words ("dr divya", "harsha", "kiran", "recent video"). ALWAYS interpret generously: match the closest client/team/video from the lists above by sound and spelling (e.g. "divya" -> "Dr. Divya Sri", "harsha" -> "Harshavardhan", "kiran" -> "Kiran Kumar"). Never reply "I can't find that" if a plausible close match exists.
+- "recent" / "latest" video = the newest one in the list above for that client. "The X video" = closest title match.
+- You may use the ids listed above directly — they are real. Use find_videos / list_team / list_clients only when something is not in these lists.
+- Only ask a clarifying question when two or more candidates are genuinely equally likely; then list them as numbered options so the admin can just reply "1".
+- Remember everything said earlier in this conversation (client, video, people already discussed) and resolve follow-ups like "assign editor too" or "mark it approved" against that context — do not ask again.
+- One message can contain several actions (create video + assign writer + camera + editor). Do them all in that turn.
+- Video statuses in order: ${VIDEO_STATUSES.join(', ')}. Priority: lower number = higher priority (1 = first).
+- If a request is outside the pipeline (general advice, unrelated questions), answer briefly and helpfully anyway, then steer back to what you can do here.
+- After acting, confirm in short markdown exactly what changed (video, people, statuses). State the assumption you made when you guessed a name, e.g. "Assumed Dr. Divya Sri". Be concise, no fluff.
+- End with 2-3 short suggested next steps as a markdown list when useful.`;
 
     const messages: any[] = [{ role: 'system', content: system }, ...history];
     const actions: string[] = [];
@@ -355,7 +383,7 @@ Rules:
       const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
         headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'google/gemini-2.5-flash', messages, tools, tool_choice: 'auto' }),
+        body: JSON.stringify({ model: 'google/gemini-3.7-flash', messages, tools, tool_choice: 'auto' }),
       });
 
       if (res.status === 429) return json({ error: 'Rate limited — try again shortly' }, 429);
