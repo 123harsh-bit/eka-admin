@@ -118,6 +118,59 @@ const tools = [
 
 type SB = ReturnType<typeof createClient>;
 
+// --- typo-tolerant matching ---------------------------------------------
+const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+const STOP = new Set(['dr', 'mr', 'mrs', 'ms', 'the', 'a', 'of', 'and', 'video', 'reel', 'for']);
+
+function lev(a: string, b: string) {
+  const m = a.length, n = b.length;
+  if (!m || !n) return Math.max(m, n);
+  let prev = Array.from({ length: n + 1 }, (_, i) => i);
+  for (let i = 1; i <= m; i++) {
+    const cur = [i];
+    for (let j = 1; j <= n; j++) {
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    prev = cur;
+  }
+  return prev[n];
+}
+
+function tokenScore(t: string, target: string) {
+  if (!t) return 0;
+  const words = norm(target).split(' ').filter(Boolean);
+  let best = 0;
+  for (const w of words) {
+    if (w === t) best = Math.max(best, 1);
+    else if (w.startsWith(t) || t.startsWith(w)) best = Math.max(best, 0.85);
+    else if (w.includes(t) || t.includes(w)) best = Math.max(best, 0.7);
+    else {
+      const d = lev(t, w);
+      const sim = 1 - d / Math.max(t.length, w.length);
+      if (sim >= 0.7) best = Math.max(best, sim * 0.9);
+    }
+  }
+  return best;
+}
+
+/** 0..1 similarity that tolerates typos, partials, missing titles and word order. */
+function fuzzyScore(needle: string, target: string) {
+  const n = norm(needle), t = norm(target);
+  if (!n || !t) return 0;
+  if (t.includes(n)) return 1;
+  const toks = n.split(' ').filter(w => w && !STOP.has(w));
+  if (!toks.length) return 0;
+  const scores = toks.map(tok => tokenScore(tok, t));
+  const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+  return Math.max(avg, Math.max(...scores) * 0.8);
+}
+
+function bestMatch<T>(needle: string, rows: T[], get: (r: T) => string) {
+  const scored = rows.map(r => ({ r, s: fuzzyScore(needle, get(r)) })).sort((a, b) => b.s - a.s);
+  return scored.length && scored[0].s > 0.5 ? scored[0].r : null;
+}
+
+
 async function notify(db: SB, userId: string, message: string, videoId?: string, clientId?: string | null) {
   await db.from('notifications').insert({
     recipient_id: userId,
