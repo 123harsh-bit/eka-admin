@@ -119,7 +119,13 @@ const tools = [
 type SB = ReturnType<typeof createClient>;
 
 async function notify(db: SB, userId: string, message: string, videoId?: string, clientId?: string | null) {
-  await db.from('notifications').insert({ user_id: userId, message, video_id: videoId ?? null, client_id: clientId ?? null } as any);
+  await db.from('notifications').insert({
+    recipient_id: userId,
+    type: 'assignment',
+    message,
+    related_video_id: videoId ?? null,
+    related_client_id: clientId ?? null,
+  } as any);
 }
 
 async function runTool(db: SB, name: string, args: any) {
