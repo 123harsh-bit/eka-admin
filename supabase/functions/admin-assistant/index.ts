@@ -223,9 +223,7 @@ async function runTool(db: SB, name: string, args: any) {
     }
     case 'create_video': {
       const { data: clients } = await db.from('clients').select('id, name');
-      const needle = String(args.client_name ?? '').toLowerCase();
-      const client = (clients ?? []).find((c: any) => c.name.toLowerCase() === needle)
-        ?? (clients ?? []).find((c: any) => c.name.toLowerCase().includes(needle));
+      const client = bestMatch(String(args.client_name ?? ''), (clients ?? []) as any[], (c: any) => c.name);
       if (!client) return { error: `No client matching "${args.client_name}". Available: ${(clients ?? []).map((c: any) => c.name).join(', ')}` };
       const status = args.status && VIDEO_STATUSES.includes(args.status) ? args.status : 'idea';
       const { data, error } = await db.from('videos').insert({
