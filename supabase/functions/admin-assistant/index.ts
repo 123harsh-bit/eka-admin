@@ -118,6 +118,59 @@ const tools = [
 
 type SB = ReturnType<typeof createClient>;
 
+// --- typo-tolerant matching ---------------------------------------------
+const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+const STOP = new Set(['dr', 'mr', 'mrs', 'ms', 'the', 'a', 'of', 'and', 'video', 'reel', 'for']);
+
+function lev(a: string, b: string) {
+  const m = a.length, n = b.length;
+  if (!m || !n) return Math.max(m, n);
+  let prev = Array.from({ length: n + 1 }, (_, i) => i);
+  for (let i = 1; i <= m; i++) {
+    const cur = [i];
+    for (let j = 1; j <= n; j++) {
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    prev = cur;
+  }
+  return prev[n];
+}
+
+function tokenScore(t: string, target: string) {
+  if (!t) return 0;
+  const words = norm(target).split(' ').filter(Boolean);
+  let best = 0;
+  for (const w of words) {
+    if (w === t) best = Math.max(best, 1);
+    else if (w.startsWith(t) || t.startsWith(w)) best = Math.max(best, 0.85);
+    else if (w.includes(t) || t.includes(w)) best = Math.max(best, 0.7);
+    else {
+      const d = lev(t, w);
+      const sim = 1 - d / Math.max(t.length, w.length);
+      if (sim >= 0.7) best = Math.max(best, sim * 0.9);
+    }
+  }
+  return best;
+}
+
+/** 0..1 similarity that tolerates typos, partials, missing titles and word order. */
+function fuzzyScore(needle: string, target: string) {
+  const n = norm(needle), t = norm(target);
+  if (!n || !t) return 0;
+  if (t.includes(n)) return 1;
+  const toks = n.split(' ').filter(w => w && !STOP.has(w));
+  if (!toks.length) return 0;
+  const scores = toks.map(tok => tokenScore(tok, t));
+  const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+  return Math.max(avg, Math.max(...scores) * 0.8);
+}
+
+function bestMatch<T>(needle: string, rows: T[], get: (r: T) => string) {
+  const scored = rows.map(r => ({ r, s: fuzzyScore(needle, get(r)) })).sort((a, b) => b.s - a.s);
+  return scored.length && scored[0].s > 0.5 ? scored[0].r : null;
+}
+
+
 async function notify(db: SB, userId: string, message: string, videoId?: string, clientId?: string | null) {
   await db.from('notifications').insert({
     recipient_id: userId,
@@ -147,23 +200,30 @@ async function runTool(db: SB, name: string, args: any) {
       }));
     }
     case 'find_videos': {
-      let q = db.from('videos').select('id, title, status, priority, date_planned, assigned_editor, assigned_camera_operator, assigned_social_id, client_id, clients(name)').order('created_at', { ascending: false }).limit(25);
-      if (args?.query) q = q.ilike('title', `%${args.query}%`);
+      let q = db.from('videos').select('id, title, status, priority, date_planned, created_at, assigned_editor, assigned_camera_operator, assigned_social_id, client_id, clients(name)').order('created_at', { ascending: false }).limit(300);
       if (args?.status) q = q.eq('status', args.status);
       const { data, error } = await q;
       if (error) return { error: error.message };
       let rows = (data ?? []) as any[];
       if (args?.client_name) {
-        const needle = String(args.client_name).toLowerCase();
-        rows = rows.filter(r => (r.clients?.name ?? '').toLowerCase().includes(needle));
+        const scored = rows
+          .map(r => ({ r, s: fuzzyScore(String(args.client_name), r.clients?.name ?? '') }))
+          .filter(x => x.s > 0.34)
+          .sort((a, b) => b.s - a.s);
+        rows = scored.map(x => x.r);
       }
-      return rows.map(r => ({ id: r.id, title: r.title, status: r.status, priority: r.priority, date_planned: r.date_planned, client: r.clients?.name, assigned_editor: r.assigned_editor, assigned_camera_operator: r.assigned_camera_operator, assigned_social_id: r.assigned_social_id }));
+      if (args?.query) {
+        const scored = rows
+          .map(r => ({ r, s: Math.max(fuzzyScore(String(args.query), r.title ?? ''), fuzzyScore(String(args.query), `${r.clients?.name ?? ''} ${r.title ?? ''}`)) }))
+          .filter(x => x.s > 0.34)
+          .sort((a, b) => b.s - a.s);
+        rows = scored.map(x => x.r);
+      }
+      return rows.slice(0, 25).map(r => ({ id: r.id, title: r.title, status: r.status, priority: r.priority, date_planned: r.date_planned, created_at: r.created_at, client: r.clients?.name, assigned_editor: r.assigned_editor, assigned_camera_operator: r.assigned_camera_operator, assigned_social_id: r.assigned_social_id }));
     }
     case 'create_video': {
       const { data: clients } = await db.from('clients').select('id, name');
-      const needle = String(args.client_name ?? '').toLowerCase();
-      const client = (clients ?? []).find((c: any) => c.name.toLowerCase() === needle)
-        ?? (clients ?? []).find((c: any) => c.name.toLowerCase().includes(needle));
+      const client = bestMatch(String(args.client_name ?? ''), (clients ?? []) as any[], (c: any) => c.name);
       if (!client) return { error: `No client matching "${args.client_name}". Available: ${(clients ?? []).map((c: any) => c.name).join(', ')}` };
       const status = args.status && VIDEO_STATUSES.includes(args.status) ? args.status : 'idea';
       const { data, error } = await db.from('videos').insert({
@@ -276,17 +336,45 @@ Deno.serve(async (req) => {
     if (!history.length) return json({ error: 'messages required' }, 400);
 
     const today = new Date().toISOString().slice(0, 10);
+
+    // Preload a live roster so the model can guess misspelled names without extra tool calls.
+    const [clientsRes, rolesRes, videosRes] = await Promise.all([
+      db.from('clients').select('id, name').eq('is_active', true).order('name'),
+      db.from('user_roles').select('user_id, role'),
+      db.from('videos').select('id, title, status, priority, created_at, client_id, clients(name)').order('created_at', { ascending: false }).limit(40),
+    ]);
+    const teamRoles = ((rolesRes.data ?? []) as any[]).filter(r => r.role !== 'client');
+    const { data: teamProfiles } = teamRoles.length
+      ? await db.from('profiles').select('id, full_name').in('id', teamRoles.map(r => r.user_id))
+      : { data: [] as any[] };
+    const roster = teamRoles.map(r => `${(teamProfiles ?? []).find((p: any) => p.id === r.user_id)?.full_name ?? 'Unknown'} (${r.role}) id=${r.user_id}`);
+    const clientList = ((clientsRes.data ?? []) as any[]).map(c => `${c.name} id=${c.id}`);
+    const recent = ((videosRes.data ?? []) as any[]).map(v => `"${v.title}" — ${v.clients?.name ?? '?'} — ${v.status} — created ${String(v.created_at).slice(0, 10)} — id=${v.id}`);
+
     const system = `You are the production assistant for EKA, a content agency. You help the admin manage the video pipeline by calling tools.
 
 Today is ${today}.
 
-Rules:
-- Always resolve names to ids with list_clients / list_team / find_videos BEFORE create/update/assign calls. Never invent ids.
-- If a name is ambiguous (multiple matches), ask which one instead of guessing.
-- Video statuses in order: ${VIDEO_STATUSES.join(', ')}.
-- Priority is a number where lower = higher priority (1 = first priority).
-- You may chain several tools in one turn to complete a multi-part request (e.g. create a video, then assign a writer, camera operator and editor).
-- After acting, reply in short markdown confirming exactly what changed. Be concise, no fluff.`;
+CLIENTS:
+${clientList.join('\n') || '(none)'}
+
+TEAM:
+${roster.join('\n') || '(none)'}
+
+40 MOST RECENT VIDEOS (newest first):
+${recent.join('\n') || '(none)'}
+
+How to behave:
+- The admin types fast, with typos, nicknames, short forms and missing words ("dr divya", "harsha", "kiran", "recent video"). ALWAYS interpret generously: match the closest client/team/video from the lists above by sound and spelling (e.g. "divya" -> "Dr. Divya Sri", "harsha" -> "Harshavardhan", "kiran" -> "Kiran Kumar"). Never reply "I can't find that" if a plausible close match exists.
+- "recent" / "latest" video = the newest one in the list above for that client. "The X video" = closest title match.
+- You may use the ids listed above directly — they are real. Use find_videos / list_team / list_clients only when something is not in these lists.
+- Only ask a clarifying question when two or more candidates are genuinely equally likely; then list them as numbered options so the admin can just reply "1".
+- Remember everything said earlier in this conversation (client, video, people already discussed) and resolve follow-ups like "assign editor too" or "mark it approved" against that context — do not ask again.
+- One message can contain several actions (create video + assign writer + camera + editor). Do them all in that turn.
+- Video statuses in order: ${VIDEO_STATUSES.join(', ')}. Priority: lower number = higher priority (1 = first).
+- If a request is outside the pipeline (general advice, unrelated questions), answer briefly and helpfully anyway, then steer back to what you can do here.
+- After acting, confirm in short markdown exactly what changed (video, people, statuses). State the assumption you made when you guessed a name, e.g. "Assumed Dr. Divya Sri". Be concise, no fluff.
+- End with 2-3 short suggested next steps as a markdown list when useful.`;
 
     const messages: any[] = [{ role: 'system', content: system }, ...history];
     const actions: string[] = [];
@@ -295,7 +383,7 @@ Rules:
       const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
         headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'google/gemini-2.5-flash', messages, tools, tool_choice: 'auto' }),
+        body: JSON.stringify({ model: 'google/gemini-3.7-flash', messages, tools, tool_choice: 'auto' }),
       });
 
       if (res.status === 429) return json({ error: 'Rate limited — try again shortly' }, 429);

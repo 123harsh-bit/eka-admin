@@ -41,7 +41,7 @@ export function AdminAssistant() {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('admin-assistant', {
-        body: { messages: next.slice(-16) },
+        body: { messages: next.slice(-30) },
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
