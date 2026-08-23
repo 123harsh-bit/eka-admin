@@ -406,12 +406,25 @@ How to behave:
 - Video statuses in order: ${VIDEO_STATUSES.join(', ')}. Priority: lower number = higher priority (1 = first).
 - If a request is outside the pipeline (general advice, unrelated questions), answer briefly and helpfully anyway, then steer back to what you can do here.
 - After acting, confirm in short markdown exactly what changed (video, people, statuses). State the assumption you made when you guessed a name, e.g. "Assumed Dr. Divya Sri". Be concise, no fluff.
-- End with 2-3 short suggested next steps as a markdown list when useful.`;
+- Be proactive: if you notice something obviously stuck or unassigned that relates to the request, mention it in one line.
+- ALWAYS finish your final message with one line in exactly this format (nothing after it):
+NEXT: <short command 1> | <short command 2> | <short command 3>
+  Each item must be a ready-to-send instruction written as the admin would type it (max 6 words), tailored to what just happened — e.g. "Mark it approved", "Assign editor Kiran", "Show what needs approval". Never repeat generic filler.`;
 
     const messages: any[] = [{ role: 'system', content: system }, ...history];
     const actions: string[] = [];
+    const steps: { name: string; args: unknown; result: unknown; ok: boolean }[] = [];
 
-    for (let step = 0; step < 10; step++) {
+    const finish = (raw: string) => {
+      const m = raw.match(/^NEXT:\s*(.+)$/im);
+      const suggestions = m
+        ? m[1].split('|').map(s => s.trim().replace(/^["'\-•\s]+|["']+$/g, '')).filter(s => s.length > 1).slice(0, 4)
+        : [];
+      const reply = (m ? raw.replace(m[0], '') : raw).trim();
+      return json({ reply, actions, steps, suggestions });
+    };
+
+    for (let step = 0; step < 12; step++) {
       const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
         headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
@@ -428,23 +441,24 @@ How to behave:
       if (!msg) return json({ error: 'Empty AI response' }, 500);
 
       const calls = msg.tool_calls ?? [];
-      if (!calls.length) {
-        return json({ reply: msg.content ?? '', actions });
-      }
+      if (!calls.length) return finish(String(msg.content ?? ''));
 
       messages.push({ role: 'assistant', content: msg.content ?? '', tool_calls: calls });
       for (const call of calls) {
         let args: any = {};
         try { args = JSON.parse(call.function.arguments || '{}'); } catch { /* ignore */ }
         const result = await runTool(db, call.function.name, args);
-        if (['create_video', 'update_video', 'assign_person'].includes(call.function.name) && !(result as any)?.error) {
+        const ok = !(result as any)?.error;
+        if (['create_video', 'update_video', 'assign_person'].includes(call.function.name) && ok) {
           actions.push(call.function.name);
         }
+        steps.push({ name: call.function.name, args, result, ok });
         messages.push({ role: 'tool', tool_call_id: call.id, content: JSON.stringify(result) });
       }
     }
 
-    return json({ reply: 'I ran out of steps on that request — try breaking it into smaller instructions.', actions });
+    return json({ reply: 'I ran out of steps on that request — try breaking it into smaller instructions.', actions, steps, suggestions: [] });
+
   } catch (err) {
     return json({ error: err instanceof Error ? err.message : 'Server error' }, 500);
   }
