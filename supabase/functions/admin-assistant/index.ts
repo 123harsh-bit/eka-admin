@@ -40,6 +40,14 @@ const tools = [
   {
     type: 'function',
     function: {
+      name: 'pipeline_overview',
+      description: 'Live snapshot of the whole pipeline: what is awaiting review, in editing, missing an editor/camera/social owner, and what is overdue. Use for "what needs my attention", "status", "what is stuck".',
+      parameters: { type: 'object', properties: {}, additionalProperties: false },
+    },
+  },
+  {
+    type: 'function',
+    function: {
       name: 'find_videos',
       description: 'Search videos by title text, client name, or status. Returns ids, titles, statuses and current assignees.',
       parameters: {
@@ -53,6 +61,7 @@ const tools = [
       },
     },
   },
+
   {
     type: 'function',
     function: {
