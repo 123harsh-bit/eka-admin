@@ -147,7 +147,7 @@ export function AdminAssistant() {
                   )}
 
                   <Message from={m.role === 'user' ? 'user' : 'assistant'}>
-                    <MessageContent variant={m.role === 'user' ? 'contained' : 'flat'}>
+                    <MessageContent>
                       {m.role === 'user' ? (
                         <span className="text-sm">{m.content}</span>
                       ) : m.failed ? (
@@ -191,7 +191,7 @@ export function AdminAssistant() {
 
           <div className="border-t border-glass-border p-2 bg-card/60">
             <PromptInput
-              onSubmit={(e) => { e.preventDefault(); send(input); }}
+              onSubmit={(message) => { send(message.text || input); }}
             >
               <PromptInputTextarea
                 ref={inputRef}
