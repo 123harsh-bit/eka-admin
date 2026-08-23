@@ -40,6 +40,14 @@ const tools = [
   {
     type: 'function',
     function: {
+      name: 'pipeline_overview',
+      description: 'Live snapshot of the whole pipeline: what is awaiting review, in editing, missing an editor/camera/social owner, and what is overdue. Use for "what needs my attention", "status", "what is stuck".',
+      parameters: { type: 'object', properties: {}, additionalProperties: false },
+    },
+  },
+  {
+    type: 'function',
+    function: {
       name: 'find_videos',
       description: 'Search videos by title text, client name, or status. Returns ids, titles, statuses and current assignees.',
       parameters: {
@@ -53,6 +61,7 @@ const tools = [
       },
     },
   },
+
   {
     type: 'function',
     function: {
@@ -221,6 +230,29 @@ async function runTool(db: SB, name: string, args: any) {
       }
       return rows.slice(0, 25).map(r => ({ id: r.id, title: r.title, status: r.status, priority: r.priority, date_planned: r.date_planned, created_at: r.created_at, client: r.clients?.name, assigned_editor: r.assigned_editor, assigned_camera_operator: r.assigned_camera_operator, assigned_social_id: r.assigned_social_id }));
     }
+    case 'pipeline_overview': {
+      const [{ data: vids }, { data: roles }] = await Promise.all([
+        db.from('videos').select('id, title, status, priority, date_planned, shoot_date, assigned_editor, assigned_camera_operator, assigned_social_id, clients(name)').order('created_at', { ascending: false }).limit(200),
+        db.from('user_roles').select('user_id, role'),
+      ]);
+      const rows = (vids ?? []) as any[];
+      const today = new Date().toISOString().slice(0, 10);
+      const brief = (r: any) => ({ id: r.id, title: r.title, client: r.clients?.name, status: r.status, priority: r.priority });
+      const ids = ((roles ?? []) as any[]).filter(r => r.role !== 'client').map(r => r.user_id);
+      const { data: profiles } = ids.length ? await db.from('profiles').select('id, full_name').in('id', ids) : { data: [] as any[] };
+      const nameOf = (id: string | null) => (profiles ?? []).find((p: any) => p.id === id)?.full_name ?? null;
+      return {
+        total: rows.length,
+        awaiting_client_review: rows.filter(r => r.status === 'client_review').map(brief),
+        awaiting_internal_review: rows.filter(r => r.status === 'internal_review').map(brief),
+        in_editing: rows.filter(r => r.status === 'editing').map(r => ({ ...brief(r), editor: nameOf(r.assigned_editor) })),
+        needs_editor: rows.filter(r => r.status === 'footage_delivered' && !r.assigned_editor).map(brief),
+        needs_camera: rows.filter(r => r.status === 'script_approved' && !r.assigned_camera_operator).map(brief),
+        needs_social: rows.filter(r => r.status === 'approved' && !r.assigned_social_id).map(brief),
+        overdue: rows.filter(r => r.date_planned && r.date_planned < today && !['approved', 'ready_to_upload', 'live'].includes(r.status)).map(r => ({ ...brief(r), date_planned: r.date_planned })),
+      };
+    }
+
     case 'create_video': {
       const { data: clients } = await db.from('clients').select('id, name');
       const client = bestMatch(String(args.client_name ?? ''), (clients ?? []) as any[], (c: any) => c.name);
@@ -374,12 +406,25 @@ How to behave:
 - Video statuses in order: ${VIDEO_STATUSES.join(', ')}. Priority: lower number = higher priority (1 = first).
 - If a request is outside the pipeline (general advice, unrelated questions), answer briefly and helpfully anyway, then steer back to what you can do here.
 - After acting, confirm in short markdown exactly what changed (video, people, statuses). State the assumption you made when you guessed a name, e.g. "Assumed Dr. Divya Sri". Be concise, no fluff.
-- End with 2-3 short suggested next steps as a markdown list when useful.`;
+- Be proactive: if you notice something obviously stuck or unassigned that relates to the request, mention it in one line.
+- ALWAYS finish your final message with one line in exactly this format (nothing after it):
+NEXT: <short command 1> | <short command 2> | <short command 3>
+  Each item must be a ready-to-send instruction written as the admin would type it (max 6 words), tailored to what just happened — e.g. "Mark it approved", "Assign editor Kiran", "Show what needs approval". Never repeat generic filler.`;
 
     const messages: any[] = [{ role: 'system', content: system }, ...history];
     const actions: string[] = [];
+    const steps: { name: string; args: unknown; result: unknown; ok: boolean }[] = [];
 
-    for (let step = 0; step < 10; step++) {
+    const finish = (raw: string) => {
+      const m = raw.match(/^NEXT:\s*(.+)$/im);
+      const suggestions = m
+        ? m[1].split('|').map(s => s.trim().replace(/^["'\-•\s]+|["']+$/g, '')).filter(s => s.length > 1).slice(0, 4)
+        : [];
+      const reply = (m ? raw.replace(m[0], '') : raw).trim();
+      return json({ reply, actions, steps, suggestions });
+    };
+
+    for (let step = 0; step < 12; step++) {
       const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
         headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
@@ -396,23 +441,24 @@ How to behave:
       if (!msg) return json({ error: 'Empty AI response' }, 500);
 
       const calls = msg.tool_calls ?? [];
-      if (!calls.length) {
-        return json({ reply: msg.content ?? '', actions });
-      }
+      if (!calls.length) return finish(String(msg.content ?? ''));
 
       messages.push({ role: 'assistant', content: msg.content ?? '', tool_calls: calls });
       for (const call of calls) {
         let args: any = {};
         try { args = JSON.parse(call.function.arguments || '{}'); } catch { /* ignore */ }
         const result = await runTool(db, call.function.name, args);
-        if (['create_video', 'update_video', 'assign_person'].includes(call.function.name) && !(result as any)?.error) {
+        const ok = !(result as any)?.error;
+        if (['create_video', 'update_video', 'assign_person'].includes(call.function.name) && ok) {
           actions.push(call.function.name);
         }
+        steps.push({ name: call.function.name, args, result, ok });
         messages.push({ role: 'tool', tool_call_id: call.id, content: JSON.stringify(result) });
       }
     }
 
-    return json({ reply: 'I ran out of steps on that request — try breaking it into smaller instructions.', actions });
+    return json({ reply: 'I ran out of steps on that request — try breaking it into smaller instructions.', actions, steps, suggestions: [] });
+
   } catch (err) {
     return json({ error: err instanceof Error ? err.message : 'Server error' }, 500);
   }
