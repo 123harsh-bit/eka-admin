@@ -221,6 +221,29 @@ async function runTool(db: SB, name: string, args: any) {
       }
       return rows.slice(0, 25).map(r => ({ id: r.id, title: r.title, status: r.status, priority: r.priority, date_planned: r.date_planned, created_at: r.created_at, client: r.clients?.name, assigned_editor: r.assigned_editor, assigned_camera_operator: r.assigned_camera_operator, assigned_social_id: r.assigned_social_id }));
     }
+    case 'pipeline_overview': {
+      const [{ data: vids }, { data: roles }] = await Promise.all([
+        db.from('videos').select('id, title, status, priority, date_planned, shoot_date, assigned_editor, assigned_camera_operator, assigned_social_id, clients(name)').order('created_at', { ascending: false }).limit(200),
+        db.from('user_roles').select('user_id, role'),
+      ]);
+      const rows = (vids ?? []) as any[];
+      const today = new Date().toISOString().slice(0, 10);
+      const brief = (r: any) => ({ id: r.id, title: r.title, client: r.clients?.name, status: r.status, priority: r.priority });
+      const ids = ((roles ?? []) as any[]).filter(r => r.role !== 'client').map(r => r.user_id);
+      const { data: profiles } = ids.length ? await db.from('profiles').select('id, full_name').in('id', ids) : { data: [] as any[] };
+      const nameOf = (id: string | null) => (profiles ?? []).find((p: any) => p.id === id)?.full_name ?? null;
+      return {
+        total: rows.length,
+        awaiting_client_review: rows.filter(r => r.status === 'client_review').map(brief),
+        awaiting_internal_review: rows.filter(r => r.status === 'internal_review').map(brief),
+        in_editing: rows.filter(r => r.status === 'editing').map(r => ({ ...brief(r), editor: nameOf(r.assigned_editor) })),
+        needs_editor: rows.filter(r => r.status === 'footage_delivered' && !r.assigned_editor).map(brief),
+        needs_camera: rows.filter(r => r.status === 'script_approved' && !r.assigned_camera_operator).map(brief),
+        needs_social: rows.filter(r => r.status === 'approved' && !r.assigned_social_id).map(brief),
+        overdue: rows.filter(r => r.date_planned && r.date_planned < today && !['approved', 'ready_to_upload', 'live'].includes(r.status)).map(r => ({ ...brief(r), date_planned: r.date_planned })),
+      };
+    }
+
     case 'create_video': {
       const { data: clients } = await db.from('clients').select('id, name');
       const client = bestMatch(String(args.client_name ?? ''), (clients ?? []) as any[], (c: any) => c.name);
