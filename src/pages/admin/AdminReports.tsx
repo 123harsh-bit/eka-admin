@@ -291,50 +291,8 @@ export default function AdminReports() {
             </tbody>
           </table>
 
-          <h2 style={{ fontSize: 13, fontWeight: 700, margin: '26px 0 8px' }}>2. Client summary</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Client</th>
-                <th style={{ width: 90 }}>Total</th>
-                <th style={{ width: 90 }}>Live</th>
-                <th style={{ width: 90 }}>Pending</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(stats.byClient).length === 0 ? (
-                <tr><td colSpan={4} className="rd-muted">No data.</td></tr>
-              ) : Object.entries(stats.byClient).sort(([, a], [, b]) => b.total - a.total).map(([name, v]) => (
-                <tr key={name}>
-                  <td style={{ fontWeight: 600 }}>{name}</td>
-                  <td>{v.total}</td>
-                  <td>{v.live}</td>
-                  <td>{v.total - v.live}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <h2 style={{ fontSize: 13, fontWeight: 700, margin: '26px 0 8px' }}>3. Pipeline stage breakdown</h2>
-          <table>
-            <thead>
-              <tr><th>Stage</th><th style={{ width: 90 }}>Videos</th><th style={{ width: 90 }}>Share</th></tr>
-            </thead>
-            <tbody>
-              {Object.entries(stats.byStatus).length === 0 ? (
-                <tr><td colSpan={3} className="rd-muted">No data.</td></tr>
-              ) : Object.entries(stats.byStatus).sort(([, a], [, b]) => b - a).map(([s, n]) => (
-                <tr key={s}>
-                  <td>{VIDEO_STATUSES[s as VideoStatus]?.label ?? s}</td>
-                  <td>{n}</td>
-                  <td className="rd-muted">{stats.total ? Math.round((n / stats.total) * 100) : 0}%</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
           <div className="rd-foot">
-            EKA · {periodLabel} · {stats.total} deliverable{stats.total !== 1 ? 's' : ''} reported ·
+            EKA · {stats.total} deliverable{stats.total !== 1 ? 's' : ''} reported ·
             {' '}{stats.uploaded} live, {stats.pending} pending. Report generated {generatedOn}.
           </div>
         </div>
