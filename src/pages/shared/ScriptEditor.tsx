@@ -91,6 +91,8 @@ export default function ScriptEditor({ routeBase }: Props) {
       }
       setScriptTitle(data.title);
       setOwnerId(data.created_by);
+      contentJsonRef.current = (data as { content_json?: unknown }).content_json ?? null;
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const d = data as any;
       // Resolve link labels in parallel
