@@ -30,7 +30,12 @@ export interface YProviderState {
   awareness: Awareness;
   status: 'connecting' | 'connected' | 'error';
   peers: number;
+  /** true once the stored snapshot (if any) has been loaded into the doc */
+  hydrated: boolean;
+  /** true when no usable snapshot existed and the doc started empty */
+  needsSeed: boolean;
 }
+
 
 export function useYSupabaseProvider({
   scriptId,
