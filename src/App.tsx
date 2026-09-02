@@ -44,6 +44,8 @@ const AdminEditorTasks = lazyWithRetry(() => import("@/pages/admin/AdminEditorTa
 const AdminCameraShoots = lazyWithRetry(() => import("@/pages/admin/AdminCameraShoots"));
 const AdminClientIdeas = lazyWithRetry(() => import("@/pages/admin/AdminClientIdeas"));
 const AdminWeeklyReport = lazyWithRetry(() => import("@/pages/admin/AdminWeeklyReport"));
+const AdminReports = lazyWithRetry(() => import("@/pages/admin/AdminReports"));
+
 const AdminContentPlanner = lazyWithRetry(() => import("@/pages/admin/AdminContentPlanner"));
 const AdminSocialPosts = lazyWithRetry(() => import("@/pages/admin/AdminSocialPosts"));
 const AdminSalaries = lazyWithRetry(() => import("@/pages/admin/AdminSalaries"));
