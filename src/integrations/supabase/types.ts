@@ -1521,6 +1521,7 @@ export type Database = {
           updated_at: string
           updated_by: string | null
           word_count: number
+          ydoc_b64: string | null
           ydoc_state: string | null
         }
         Insert: {
@@ -1539,6 +1540,7 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
           word_count?: number
+          ydoc_b64?: string | null
           ydoc_state?: string | null
         }
         Update: {
@@ -1557,6 +1559,7 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
           word_count?: number
+          ydoc_b64?: string | null
           ydoc_state?: string | null
         }
         Relationships: [
