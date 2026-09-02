@@ -279,7 +279,7 @@ export default function AdminReports() {
                   </td>
                   <td>{r.client_id ? clients[r.client_id] ?? 'Unknown' : '—'}</td>
                   <td>{VIDEO_STATUSES[r.status as VideoStatus]?.label ?? r.status}</td>
-                  <td className="rd-muted">{r.date_delivered ? new Date(r.date_delivered).toLocaleDateString() : '—'}</td>
+                  <td className="rd-muted">{uploadDate(r) ? new Date(uploadDate(r)!).toLocaleDateString() : '—'}</td>
                   <td>
                     <span className={cn('rd-pill', isUploaded(r) ? 'rd-live' : 'rd-pending')}>
                       {isUploaded(r) ? 'Live' : 'Pending'}
