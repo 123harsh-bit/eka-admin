@@ -138,7 +138,7 @@ export default function ScriptEditor({ routeBase }: Props) {
   });
 
   const editor = useEditor({
-    editable: canEdit && !loading,
+    editable: canEdit && !loading && provider.hydrated,
     extensions: [
       StarterKit.configure({ undoRedo: false, link: false, underline: false }),
       Underline,
