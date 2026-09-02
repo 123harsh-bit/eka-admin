@@ -20,6 +20,7 @@ interface Row {
 
 const monthKey = (iso: string) => iso.slice(0, 7);
 const isUploaded = (v: Row) => v.status === 'live' || !!v.live_url || !!v.social_posted_at;
+const uploadDate = (v: Row) => v.social_posted_at ?? v.date_delivered ?? null;
 
 export default function AdminReports() {
   const [rows, setRows] = useState<Row[]>([]);
