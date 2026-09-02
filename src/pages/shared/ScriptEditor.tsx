@@ -154,7 +154,7 @@ export default function ScriptEditor({ routeBase }: Props) {
       CommentMark,
       Collaboration.configure({ document: provider.ydoc }),
     ],
-  }, [provider.ydoc, canEdit, loading]);
+  }, [provider.ydoc, canEdit, loading, provider.hydrated]);
 
   // Seed the collaborative doc from the last saved content when no snapshot exists
   // (recovers scripts written before snapshots were stored reliably).
