@@ -156,40 +156,76 @@ export default function ScriptEditor({ routeBase }: Props) {
     ],
   }, [provider.ydoc, canEdit, loading]);
 
+  // Seed the collaborative doc from the last saved content when no snapshot exists
+  // (recovers scripts written before snapshots were stored reliably).
+  useEffect(() => {
+    if (!editor || loading || !provider.hydrated || seededRef.current) return;
+    seededRef.current = true;
+    if (!provider.needsSeed) return;
+    const json = contentJsonRef.current as { type?: string } | null;
+    if (!json || !json.type) return;
+    if (editor.getText().trim().length > 0) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    editor.commands.setContent(json as any);
+  }, [editor, loading, provider.hydrated, provider.needsSeed]);
+
   // Debounced snapshot save
   useEffect(() => {
     if (!editor || !id || !canEdit) return;
+
+    const persist = async () => {
+      const json = editor.getJSON();
+      const html = editor.getHTML();
+      const words = editor.storage.characterCount?.words?.() ?? 0;
+      const chars = editor.storage.characterCount?.characters?.() ?? 0;
+      const snapshot = encodeSnapshotBase64(provider.ydoc);
+      const { error } = await supabase
+        .from('scripts')
+        .update({
+          content_json: json,
+          content_html: html,
+          word_count: words,
+          char_count: chars,
+          ydoc_b64: snapshot,
+          updated_by: user?.id,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any)
+        .eq('id', id);
+      if (!error) {
+        setSaving('saved');
+        window.setTimeout(() => setSaving('idle'), 1500);
+      } else {
+        setSaving('idle');
+      }
+    };
+    flushRef.current = persist;
+
     const handler = () => {
       if (saveTimer.current) window.clearTimeout(saveTimer.current);
       setSaving('saving');
-      saveTimer.current = window.setTimeout(async () => {
-        const json = editor.getJSON();
-        const html = editor.getHTML();
-        const words = editor.storage.characterCount?.words?.() ?? 0;
-        const chars = editor.storage.characterCount?.characters?.() ?? 0;
-        const snapshot = encodeSnapshotBase64(provider.ydoc);
-        const { error } = await supabase
-          .from('scripts')
-          .update({
-            content_json: json,
-            content_html: html,
-            word_count: words,
-            char_count: chars,
-            ydoc_state: snapshot,
-            updated_by: user?.id,
-          })
-          .eq('id', id);
-        if (!error) {
-          setSaving('saved');
-          window.setTimeout(() => setSaving('idle'), 1500);
-        } else {
-          setSaving('idle');
-        }
-      }, 1500);
+      saveTimer.current = window.setTimeout(persist, 1200);
     };
     editor.on('update', handler);
-    return () => { editor.off('update', handler); };
+
+    const onLeave = () => {
+      if (saveTimer.current) {
+        window.clearTimeout(saveTimer.current);
+        saveTimer.current = null;
+        void persist();
+      }
+    };
+    window.addEventListener('beforeunload', onLeave);
+    document.addEventListener('visibilitychange', onLeave);
+
+    return () => {
+      editor.off('update', handler);
+      window.removeEventListener('beforeunload', onLeave);
+      document.removeEventListener('visibilitychange', onLeave);
+      onLeave();
+      flushRef.current = null;
+    };
   }, [editor, id, canEdit, provider.ydoc, user?.id]);
+
 
   const saveTitle = (newTitle: string) => {
     setScriptTitle(newTitle);
