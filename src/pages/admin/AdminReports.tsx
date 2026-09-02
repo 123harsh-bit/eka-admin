@@ -253,7 +253,7 @@ export default function AdminReports() {
             ))}
           </div>
 
-          <h2 style={{ fontSize: 13, fontWeight: 700, margin: '0 0 8px' }}>1. Deliverables</h2>
+          <h2 style={{ fontSize: 13, fontWeight: 700, margin: '0 0 8px' }}>Deliverables</h2>
           <table>
             <thead>
               <tr>
@@ -261,7 +261,7 @@ export default function AdminReports() {
                 <th>Video / Project</th>
                 <th style={{ width: 130 }}>Client</th>
                 <th style={{ width: 110 }}>Stage</th>
-                <th style={{ width: 78 }}>Delivered</th>
+                <th style={{ width: 90 }}>Upload date</th>
                 <th style={{ width: 92 }}>Status</th>
               </tr>
             </thead>
