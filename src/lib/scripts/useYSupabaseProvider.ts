@@ -48,6 +48,9 @@ export function useYSupabaseProvider({
   const awarenessRef = useRef<Awareness | null>(null);
   const [status, setStatus] = useState<'connecting' | 'connected' | 'error'>('connecting');
   const [peers, setPeers] = useState(0);
+  const [hydrated, setHydrated] = useState(false);
+  const [needsSeed, setNeedsSeed] = useState(false);
+
 
   if (!ydocRef.current) ydocRef.current = new Y.Doc();
   if (!awarenessRef.current) awarenessRef.current = new Awareness(ydocRef.current);
