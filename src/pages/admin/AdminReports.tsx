@@ -225,9 +225,7 @@ export default function AdminReports() {
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div className="rd-label">Report period</div>
-              <div style={{ fontWeight: 700, fontSize: 13 }}>{periodLabel}</div>
-              <div className="rd-muted" style={{ marginTop: 4 }}>Generated {generatedOn}</div>
+              <div className="rd-muted">Generated {generatedOn}</div>
             </div>
           </div>
 
