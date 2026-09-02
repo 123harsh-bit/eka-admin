@@ -89,6 +89,11 @@ export default function AdminReports() {
   const allSelected = filtered.length > 0 && filtered.every(r => selected.has(r.id));
   const toggleAll = () => setSelected(allSelected ? new Set() : new Set(filtered.map(r => r.id)));
 
+  const periodLabel = month === 'all'
+    ? 'All months'
+    : new Date(`${month}-01`).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  const generatedOn = new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+
   const exportCsv = () => {
     const head = ['Title', 'Client', 'Stage', 'Uploaded', 'Live URL', 'Created', 'Delivered'];
     const lines = chosen.map(r => [
