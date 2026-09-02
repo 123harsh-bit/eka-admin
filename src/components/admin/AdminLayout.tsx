@@ -37,6 +37,8 @@ const navGroups = [
       { to: '/admin/team', icon: UserCircle, label: 'Team' },
       { to: '/admin/salaries', icon: Wallet, label: 'Salaries' },
       { to: '/admin/weekly-report', icon: BarChart3, label: 'Weekly Report' },
+      { to: '/admin/reports', icon: FileBarChart, label: 'Report Maker' },
+
     ],
   },
   {
