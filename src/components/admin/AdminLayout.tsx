@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Users, Video, Palette, PenTool, Camera,
   UserCircle, Bell, Settings, ListTodo,
   Scissors, Lightbulb, BarChart3, CalendarRange, Share2,
-  Wallet, FileText,
+  Wallet, FileText, FileBarChart,
 } from 'lucide-react';
 
 const navGroups = [
