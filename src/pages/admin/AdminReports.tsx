@@ -96,7 +96,7 @@ export default function AdminReports() {
   const generatedOn = new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 
   const exportCsv = () => {
-    const head = ['Title', 'Client', 'Stage', 'Uploaded', 'Live URL', 'Created', 'Delivered'];
+    const head = ['Title', 'Client', 'Stage', 'Uploaded', 'Live URL', 'Created', 'Upload date'];
     const lines = chosen.map(r => [
       r.title,
       r.client_id ? clients[r.client_id] ?? '' : '',
