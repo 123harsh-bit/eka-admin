@@ -212,7 +212,10 @@ export function useYSupabaseProvider({
     awareness: awarenessRef.current!,
     status,
     peers,
+    hydrated,
+    needsSeed,
   };
+
 }
 
 export const encodeSnapshotBase64 = (ydoc: Y.Doc): string =>
