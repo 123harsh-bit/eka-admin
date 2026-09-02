@@ -89,6 +89,11 @@ export default function AdminReports() {
   const allSelected = filtered.length > 0 && filtered.every(r => selected.has(r.id));
   const toggleAll = () => setSelected(allSelected ? new Set() : new Set(filtered.map(r => r.id)));
 
+  const periodLabel = month === 'all'
+    ? 'All months'
+    : new Date(`${month}-01`).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  const generatedOn = new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+
   const exportCsv = () => {
     const head = ['Title', 'Client', 'Stage', 'Uploaded', 'Live URL', 'Created', 'Delivered'];
     const lines = chosen.map(r => [
@@ -163,66 +168,10 @@ export default function AdminReports() {
           </label>
         </div>
 
-        {/* Report summary */}
-        <div className="glass-card p-6 space-y-5">
-          <div className="flex items-center gap-2">
-            <FileBarChart size={18} className="text-primary" />
-            <h2 className="text-lg font-display font-semibold text-foreground">{reportTitle}</h2>
-            <span className="text-xs text-muted-foreground">
-              {month === 'all' ? 'All months' : new Date(`${month}-01`).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
-              {clientFilter !== 'all' && ` · ${clients[clientFilter]}`}
-              {selected.size > 0 && ` · ${selected.size} selected`}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {[
-              { label: 'Videos in report', value: stats.total, icon: FileBarChart, color: 'text-primary' },
-              { label: 'Uploaded / Live', value: stats.uploaded, icon: Globe, color: 'text-success' },
-              { label: 'Not uploaded', value: stats.pending, icon: CircleSlash, color: 'text-warning' },
-            ].map(c => (
-              <div key={c.label} className="p-4 rounded-xl bg-muted/30 border border-border space-y-2">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">{c.label}</p>
-                  <c.icon size={15} className={c.color} />
-                </div>
-                <p className="text-3xl font-display font-bold text-foreground">{c.value}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <div className="space-y-2">
-              <p className="text-sm font-semibold text-foreground">By stage</p>
-              {Object.entries(stats.byStatus).length === 0 ? (
-                <p className="text-sm text-muted-foreground">Nothing in this selection.</p>
-              ) : Object.entries(stats.byStatus).sort(([, a], [, b]) => b - a).map(([s, n]) => (
-                <div key={s} className="flex items-center justify-between text-sm">
-                  <span className={VIDEO_STATUSES[s as VideoStatus]?.color ?? 'text-muted-foreground'}>
-                    {VIDEO_STATUSES[s as VideoStatus]?.label ?? s}
-                  </span>
-                  <span className="font-semibold text-foreground">{n}</span>
-                </div>
-              ))}
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm font-semibold text-foreground">By client</p>
-              {Object.entries(stats.byClient).length === 0 ? (
-                <p className="text-sm text-muted-foreground">Nothing in this selection.</p>
-              ) : Object.entries(stats.byClient).sort(([, a], [, b]) => b.total - a.total).map(([name, v]) => (
-                <div key={name} className="flex items-center justify-between text-sm">
-                  <span className="text-foreground">{name}</span>
-                  <span className="text-muted-foreground">{v.live} live / {v.total} total</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Selection table */}
-        <div className="glass-card overflow-hidden">
+        {/* Selection list */}
+        <div className="glass-card overflow-hidden print:hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-            <button onClick={toggleAll} className="flex items-center gap-2 text-sm text-foreground print:hidden">
+            <button onClick={toggleAll} className="flex items-center gap-2 text-sm text-foreground">
               {allSelected ? <CheckSquare size={16} className="text-primary" /> : <Square size={16} className="text-muted-foreground" />}
               Select all ({filtered.length})
             </button>
@@ -237,13 +186,13 @@ export default function AdminReports() {
           ) : filtered.length === 0 ? (
             <p className="p-6 text-sm text-muted-foreground">No videos match these filters.</p>
           ) : (
-            <div className="divide-y divide-border">
+            <div className="divide-y divide-border max-h-[420px] overflow-y-auto">
               {filtered.map(r => {
                 const up = isUploaded(r);
                 const on = selected.has(r.id);
                 return (
                   <div key={r.id} className={cn('flex items-center gap-3 px-4 py-2.5', on && 'bg-primary/5')}>
-                    <button onClick={() => toggle(r.id)} className="print:hidden" aria-label="Select video">
+                    <button onClick={() => toggle(r.id)} aria-label="Select video">
                       {on ? <CheckSquare size={16} className="text-primary" /> : <Square size={16} className="text-muted-foreground" />}
                     </button>
                     <div className="flex-1 min-w-0">
@@ -264,7 +213,134 @@ export default function AdminReports() {
             </div>
           )}
         </div>
+
+        {/* Printable document */}
+        <p className="text-xs text-muted-foreground print:hidden">Document preview — this is exactly what prints / exports to PDF.</p>
+        <div className="report-doc">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 24 }}>
+            <div>
+              <div className="rd-brand">EKA</div>
+              <div className="rd-muted" style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                Content &amp; Production Agency
+              </div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div className="rd-label">Report period</div>
+              <div style={{ fontWeight: 700, fontSize: 13 }}>{periodLabel}</div>
+              <div className="rd-muted" style={{ marginTop: 4 }}>Generated {generatedOn}</div>
+            </div>
+          </div>
+
+          <div className="rd-rule" />
+
+          <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>{reportTitle}</h1>
+          <div className="rd-muted" style={{ marginTop: 4 }}>
+            {clientFilter === 'all' ? 'All clients' : `Client: ${clients[clientFilter] ?? '—'}`}
+            {' · '}
+            {uploadFilter === 'all' ? 'All delivery states' : uploadFilter === 'uploaded' ? 'Uploaded / live only' : 'Pending upload only'}
+            {selected.size > 0 && ` · ${selected.size} hand-picked item${selected.size > 1 ? 's' : ''}`}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, margin: '22px 0 26px' }}>
+            {[
+              { l: 'Total videos', v: stats.total },
+              { l: 'Uploaded / live', v: stats.uploaded },
+              { l: 'Pending upload', v: stats.pending },
+              { l: 'Completion', v: `${stats.total ? Math.round((stats.uploaded / stats.total) * 100) : 0}%` },
+            ].map(s => (
+              <div key={s.l} className="rd-stat">
+                <div className="rd-label">{s.l}</div>
+                <div className="rd-stat-value">{s.v}</div>
+              </div>
+            ))}
+          </div>
+
+          <h2 style={{ fontSize: 13, fontWeight: 700, margin: '0 0 8px' }}>1. Deliverables</h2>
+          <table>
+            <thead>
+              <tr>
+                <th style={{ width: 26 }}>#</th>
+                <th>Video / Project</th>
+                <th style={{ width: 130 }}>Client</th>
+                <th style={{ width: 110 }}>Stage</th>
+                <th style={{ width: 78 }}>Delivered</th>
+                <th style={{ width: 92 }}>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {chosen.length === 0 ? (
+                <tr><td colSpan={6} className="rd-muted">No videos in this selection.</td></tr>
+              ) : chosen.map((r, i) => (
+                <tr key={r.id}>
+                  <td className="rd-muted">{i + 1}</td>
+                  <td>
+                    <div style={{ fontWeight: 600 }}>{r.title}</div>
+                    {r.live_url && (
+                      <div className="rd-muted" style={{ fontSize: 9, wordBreak: 'break-all' }}>{r.live_url}</div>
+                    )}
+                  </td>
+                  <td>{r.client_id ? clients[r.client_id] ?? 'Unknown' : '—'}</td>
+                  <td>{VIDEO_STATUSES[r.status as VideoStatus]?.label ?? r.status}</td>
+                  <td className="rd-muted">{r.date_delivered ? new Date(r.date_delivered).toLocaleDateString() : '—'}</td>
+                  <td>
+                    <span className={cn('rd-pill', isUploaded(r) ? 'rd-live' : 'rd-pending')}>
+                      {isUploaded(r) ? 'Live' : 'Pending'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <h2 style={{ fontSize: 13, fontWeight: 700, margin: '26px 0 8px' }}>2. Client summary</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Client</th>
+                <th style={{ width: 90 }}>Total</th>
+                <th style={{ width: 90 }}>Live</th>
+                <th style={{ width: 90 }}>Pending</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(stats.byClient).length === 0 ? (
+                <tr><td colSpan={4} className="rd-muted">No data.</td></tr>
+              ) : Object.entries(stats.byClient).sort(([, a], [, b]) => b.total - a.total).map(([name, v]) => (
+                <tr key={name}>
+                  <td style={{ fontWeight: 600 }}>{name}</td>
+                  <td>{v.total}</td>
+                  <td>{v.live}</td>
+                  <td>{v.total - v.live}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <h2 style={{ fontSize: 13, fontWeight: 700, margin: '26px 0 8px' }}>3. Pipeline stage breakdown</h2>
+          <table>
+            <thead>
+              <tr><th>Stage</th><th style={{ width: 90 }}>Videos</th><th style={{ width: 90 }}>Share</th></tr>
+            </thead>
+            <tbody>
+              {Object.entries(stats.byStatus).length === 0 ? (
+                <tr><td colSpan={3} className="rd-muted">No data.</td></tr>
+              ) : Object.entries(stats.byStatus).sort(([, a], [, b]) => b - a).map(([s, n]) => (
+                <tr key={s}>
+                  <td>{VIDEO_STATUSES[s as VideoStatus]?.label ?? s}</td>
+                  <td>{n}</td>
+                  <td className="rd-muted">{stats.total ? Math.round((n / stats.total) * 100) : 0}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div className="rd-foot">
+            EKA · {periodLabel} · {stats.total} deliverable{stats.total !== 1 ? 's' : ''} reported ·
+            {' '}{stats.uploaded} live, {stats.pending} pending. Report generated {generatedOn}.
+          </div>
+        </div>
       </div>
     </AdminLayout>
   );
 }
+
