@@ -104,7 +104,7 @@ export default function AdminReports() {
       isUploaded(r) ? 'Yes' : 'No',
       r.live_url ?? '',
       r.created_at.slice(0, 10),
-      r.date_delivered ?? '',
+      (uploadDate(r) ?? '').slice(0, 10),
     ].map(c => `"${String(c).replace(/"/g, '""')}"`).join(','));
     const blob = new Blob([[head.join(','), ...lines].join('\n')], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
