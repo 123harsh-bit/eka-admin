@@ -1,0 +1,1 @@
+ALTER TABLE public.scripts ADD COLUMN IF NOT EXISTS ydoc_b64 text;

@@ -30,7 +30,12 @@ export interface YProviderState {
   awareness: Awareness;
   status: 'connecting' | 'connected' | 'error';
   peers: number;
+  /** true once the stored snapshot (if any) has been loaded into the doc */
+  hydrated: boolean;
+  /** true when no usable snapshot existed and the doc started empty */
+  needsSeed: boolean;
 }
+
 
 export function useYSupabaseProvider({
   scriptId,
@@ -43,6 +48,9 @@ export function useYSupabaseProvider({
   const awarenessRef = useRef<Awareness | null>(null);
   const [status, setStatus] = useState<'connecting' | 'connected' | 'error'>('connecting');
   const [peers, setPeers] = useState(0);
+  const [hydrated, setHydrated] = useState(false);
+  const [needsSeed, setNeedsSeed] = useState(false);
+
 
   if (!ydocRef.current) ydocRef.current = new Y.Doc();
   if (!awarenessRef.current) awarenessRef.current = new Awareness(ydocRef.current);
@@ -61,32 +69,25 @@ export function useYSupabaseProvider({
     });
 
     const start = async () => {
-      // Load initial snapshot
+      // Load initial snapshot from the text column (reliable base64 round-trip)
+      let loaded = false;
       try {
         const { data } = await supabase
           .from('scripts')
-          .select('ydoc_state')
+          .select('ydoc_b64')
           .eq('id', scriptId)
           .single();
         if (cancelled) return;
-        const state = (data as { ydoc_state: string | null } | null)?.ydoc_state;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const state = (data as any)?.ydoc_b64 as string | null | undefined;
         if (state) {
           try {
-            // Supabase returns bytea as `\x...` hex string by default via PostgREST,
-            // but when we insert as base64 text through .update({...}) it round-trips as base64.
-            // Handle both.
-            let bytes: Uint8Array | null = null;
-            if (state.startsWith('\\x')) {
-              const hex = state.slice(2);
-              bytes = new Uint8Array(hex.length / 2);
-              for (let i = 0; i < bytes.length; i++) bytes[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
-            } else {
-              bytes = base64ToBytes(state);
-            }
-            if (bytes && bytes.byteLength > 0) {
+            const bytes = base64ToBytes(state);
+            if (bytes.byteLength > 0) {
               applyingRemote = true;
               Y.applyUpdate(ydoc, bytes, 'load');
               applyingRemote = false;
+              loaded = true;
             }
           } catch {
             // ignore malformed snapshot
@@ -95,6 +96,10 @@ export function useYSupabaseProvider({
       } catch {
         // no snapshot yet
       }
+      if (cancelled) return;
+      setNeedsSeed(!loaded);
+      setHydrated(true);
+
 
       channel = supabase.channel(`script:${scriptId}`, {
         config: { broadcast: { self: false }, presence: { key: userId } },
@@ -207,7 +212,10 @@ export function useYSupabaseProvider({
     awareness: awarenessRef.current!,
     status,
     peers,
+    hydrated,
+    needsSeed,
   };
+
 }
 
 export const encodeSnapshotBase64 = (ydoc: Y.Doc): string =>

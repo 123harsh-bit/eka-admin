@@ -44,6 +44,8 @@ const AdminEditorTasks = lazyWithRetry(() => import("@/pages/admin/AdminEditorTa
 const AdminCameraShoots = lazyWithRetry(() => import("@/pages/admin/AdminCameraShoots"));
 const AdminClientIdeas = lazyWithRetry(() => import("@/pages/admin/AdminClientIdeas"));
 const AdminWeeklyReport = lazyWithRetry(() => import("@/pages/admin/AdminWeeklyReport"));
+const AdminReports = lazyWithRetry(() => import("@/pages/admin/AdminReports"));
+
 const AdminContentPlanner = lazyWithRetry(() => import("@/pages/admin/AdminContentPlanner"));
 const AdminSocialPosts = lazyWithRetry(() => import("@/pages/admin/AdminSocialPosts"));
 const AdminSalaries = lazyWithRetry(() => import("@/pages/admin/AdminSalaries"));
@@ -108,6 +110,8 @@ const App = () => (
               <Route path="/admin/team" element={<ProtectedRoute allowedRoles={['admin']}><AdminTeam /></ProtectedRoute>} />
               <Route path="/admin/notifications" element={<ProtectedRoute allowedRoles={['admin']}><AdminNotifications /></ProtectedRoute>} />
               <Route path="/admin/weekly-report" element={<ProtectedRoute allowedRoles={['admin']}><AdminWeeklyReport /></ProtectedRoute>} />
+              <Route path="/admin/reports" element={<ProtectedRoute allowedRoles={['admin']}><AdminReports /></ProtectedRoute>} />
+
               <Route path="/admin/content-planner" element={<ProtectedRoute allowedRoles={['admin']}><AdminContentPlanner /></ProtectedRoute>} />
               <Route path="/admin/social-posts" element={<ProtectedRoute allowedRoles={['admin']}><AdminSocialPosts /></ProtectedRoute>} />
               <Route path="/admin/salaries" element={<ProtectedRoute allowedRoles={['admin']}><AdminSalaries /></ProtectedRoute>} />
