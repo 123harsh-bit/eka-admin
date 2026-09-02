@@ -20,6 +20,7 @@ interface Row {
 
 const monthKey = (iso: string) => iso.slice(0, 7);
 const isUploaded = (v: Row) => v.status === 'live' || !!v.live_url || !!v.social_posted_at;
+const uploadDate = (v: Row) => v.social_posted_at ?? v.date_delivered ?? null;
 
 export default function AdminReports() {
   const [rows, setRows] = useState<Row[]>([]);
@@ -95,7 +96,7 @@ export default function AdminReports() {
   const generatedOn = new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 
   const exportCsv = () => {
-    const head = ['Title', 'Client', 'Stage', 'Uploaded', 'Live URL', 'Created', 'Delivered'];
+    const head = ['Title', 'Client', 'Stage', 'Uploaded', 'Live URL', 'Created', 'Upload date'];
     const lines = chosen.map(r => [
       r.title,
       r.client_id ? clients[r.client_id] ?? '' : '',
@@ -103,7 +104,7 @@ export default function AdminReports() {
       isUploaded(r) ? 'Yes' : 'No',
       r.live_url ?? '',
       r.created_at.slice(0, 10),
-      r.date_delivered ?? '',
+      (uploadDate(r) ?? '').slice(0, 10),
     ].map(c => `"${String(c).replace(/"/g, '""')}"`).join(','));
     const blob = new Blob([[head.join(','), ...lines].join('\n')], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -225,9 +226,7 @@ export default function AdminReports() {
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div className="rd-label">Report period</div>
-              <div style={{ fontWeight: 700, fontSize: 13 }}>{periodLabel}</div>
-              <div className="rd-muted" style={{ marginTop: 4 }}>Generated {generatedOn}</div>
+              <div className="rd-muted">Generated {generatedOn}</div>
             </div>
           </div>
 
@@ -255,7 +254,7 @@ export default function AdminReports() {
             ))}
           </div>
 
-          <h2 style={{ fontSize: 13, fontWeight: 700, margin: '0 0 8px' }}>1. Deliverables</h2>
+          <h2 style={{ fontSize: 13, fontWeight: 700, margin: '0 0 8px' }}>Deliverables</h2>
           <table>
             <thead>
               <tr>
@@ -263,7 +262,7 @@ export default function AdminReports() {
                 <th>Video / Project</th>
                 <th style={{ width: 130 }}>Client</th>
                 <th style={{ width: 110 }}>Stage</th>
-                <th style={{ width: 78 }}>Delivered</th>
+                <th style={{ width: 90 }}>Upload date</th>
                 <th style={{ width: 92 }}>Status</th>
               </tr>
             </thead>
@@ -281,7 +280,7 @@ export default function AdminReports() {
                   </td>
                   <td>{r.client_id ? clients[r.client_id] ?? 'Unknown' : '—'}</td>
                   <td>{VIDEO_STATUSES[r.status as VideoStatus]?.label ?? r.status}</td>
-                  <td className="rd-muted">{r.date_delivered ? new Date(r.date_delivered).toLocaleDateString() : '—'}</td>
+                  <td className="rd-muted">{uploadDate(r) ? new Date(uploadDate(r)!).toLocaleDateString() : '—'}</td>
                   <td>
                     <span className={cn('rd-pill', isUploaded(r) ? 'rd-live' : 'rd-pending')}>
                       {isUploaded(r) ? 'Live' : 'Pending'}
@@ -292,50 +291,8 @@ export default function AdminReports() {
             </tbody>
           </table>
 
-          <h2 style={{ fontSize: 13, fontWeight: 700, margin: '26px 0 8px' }}>2. Client summary</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Client</th>
-                <th style={{ width: 90 }}>Total</th>
-                <th style={{ width: 90 }}>Live</th>
-                <th style={{ width: 90 }}>Pending</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(stats.byClient).length === 0 ? (
-                <tr><td colSpan={4} className="rd-muted">No data.</td></tr>
-              ) : Object.entries(stats.byClient).sort(([, a], [, b]) => b.total - a.total).map(([name, v]) => (
-                <tr key={name}>
-                  <td style={{ fontWeight: 600 }}>{name}</td>
-                  <td>{v.total}</td>
-                  <td>{v.live}</td>
-                  <td>{v.total - v.live}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <h2 style={{ fontSize: 13, fontWeight: 700, margin: '26px 0 8px' }}>3. Pipeline stage breakdown</h2>
-          <table>
-            <thead>
-              <tr><th>Stage</th><th style={{ width: 90 }}>Videos</th><th style={{ width: 90 }}>Share</th></tr>
-            </thead>
-            <tbody>
-              {Object.entries(stats.byStatus).length === 0 ? (
-                <tr><td colSpan={3} className="rd-muted">No data.</td></tr>
-              ) : Object.entries(stats.byStatus).sort(([, a], [, b]) => b - a).map(([s, n]) => (
-                <tr key={s}>
-                  <td>{VIDEO_STATUSES[s as VideoStatus]?.label ?? s}</td>
-                  <td>{n}</td>
-                  <td className="rd-muted">{stats.total ? Math.round((n / stats.total) * 100) : 0}%</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
           <div className="rd-foot">
-            EKA · {periodLabel} · {stats.total} deliverable{stats.total !== 1 ? 's' : ''} reported ·
+            EKA · {stats.total} deliverable{stats.total !== 1 ? 's' : ''} reported ·
             {' '}{stats.uploaded} live, {stats.pending} pending. Report generated {generatedOn}.
           </div>
         </div>

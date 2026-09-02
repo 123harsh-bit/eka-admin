@@ -1260,7 +1260,7 @@ export default function AdminVideos() {
                   <Input type="date" value={form.date_planned} onChange={e => setForm(f => ({ ...f, date_planned: e.target.value }))} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Date Delivered</Label>
+                  <Label>Upload Date</Label>
                   <Input type="date" value={form.date_delivered} onChange={e => setForm(f => ({ ...f, date_delivered: e.target.value }))} />
                 </div>
               </div>
