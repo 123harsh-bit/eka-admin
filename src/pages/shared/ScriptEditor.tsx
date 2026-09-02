@@ -70,6 +70,10 @@ export default function ScriptEditor({ routeBase }: Props) {
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const saveTimer = useRef<number | null>(null);
   const titleTimer = useRef<number | null>(null);
+  const contentJsonRef = useRef<unknown>(null);
+  const seededRef = useRef(false);
+  const flushRef = useRef<(() => Promise<void>) | null>(null);
+
 
   const userName = (profile as { full_name?: string } | null)?.full_name || user?.email?.split('@')[0] || 'Guest';
   const userColor = useMemo(() => (user ? colorForId(user.id) : COLORS[0]), [user]);
