@@ -1289,12 +1289,14 @@ export type Database = {
       }
       scheduled_posts: {
         Row: {
+          account_ids: Json
           analytics: Json
           analytics_updated_at: string | null
           approval_status: string
           approved_at: string | null
           approved_by: string | null
           assigned_to: string | null
+          auto_publish: boolean
           caption: string | null
           client_approval_at: string | null
           client_approval_status: string | null
@@ -1312,6 +1314,9 @@ export type Database = {
           notes: string | null
           platform_urls: Json
           platforms: Json
+          publish_attempts: number
+          publish_error: string | null
+          publish_results: Json
           published_at: string | null
           rejection_reason: string | null
           reminder_sent_at: string | null
@@ -1322,12 +1327,14 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          account_ids?: Json
           analytics?: Json
           analytics_updated_at?: string | null
           approval_status?: string
           approved_at?: string | null
           approved_by?: string | null
           assigned_to?: string | null
+          auto_publish?: boolean
           caption?: string | null
           client_approval_at?: string | null
           client_approval_status?: string | null
@@ -1345,6 +1352,9 @@ export type Database = {
           notes?: string | null
           platform_urls?: Json
           platforms?: Json
+          publish_attempts?: number
+          publish_error?: string | null
+          publish_results?: Json
           published_at?: string | null
           rejection_reason?: string | null
           reminder_sent_at?: string | null
@@ -1355,12 +1365,14 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          account_ids?: Json
           analytics?: Json
           analytics_updated_at?: string | null
           approval_status?: string
           approved_at?: string | null
           approved_by?: string | null
           assigned_to?: string | null
+          auto_publish?: boolean
           caption?: string | null
           client_approval_at?: string | null
           client_approval_status?: string | null
@@ -1378,6 +1390,9 @@ export type Database = {
           notes?: string | null
           platform_urls?: Json
           platforms?: Json
+          publish_attempts?: number
+          publish_error?: string | null
+          publish_results?: Json
           published_at?: string | null
           rejection_reason?: string | null
           reminder_sent_at?: string | null
@@ -1592,6 +1607,106 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      social_account_tokens: {
+        Row: {
+          access_token: string
+          account_id: string
+          updated_at: string
+        }
+        Insert: {
+          access_token: string
+          account_id: string
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string
+          account_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_account_tokens_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: true
+            referencedRelation: "social_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_accounts: {
+        Row: {
+          avatar_url: string | null
+          client_id: string | null
+          connected_by: string | null
+          created_at: string
+          external_id: string
+          id: string
+          is_active: boolean
+          name: string
+          page_id: string | null
+          platform: string
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          client_id?: string | null
+          connected_by?: string | null
+          created_at?: string
+          external_id: string
+          id?: string
+          is_active?: boolean
+          name: string
+          page_id?: string | null
+          platform: string
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          client_id?: string | null
+          connected_by?: string | null
+          created_at?: string
+          external_id?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          page_id?: string | null
+          platform?: string
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_accounts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_oauth_states: {
+        Row: {
+          created_at: string
+          return_url: string
+          state: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          return_url: string
+          state: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          return_url?: string
+          state?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       suppressed_emails: {
         Row: {
