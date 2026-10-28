@@ -40,17 +40,27 @@ export default function SocialCompose() {
     scheduled_at: '',
     media_urls: [] as string[],
     notes: '',
+    auto_publish: false,
+    account_ids: [] as string[],
   });
+  const [accounts, setAccounts] = useState<{ id: string; platform: string; name: string; username: string | null; client_id: string | null }[]>([]);
+  const [publishStatus, setPublishStatus] = useState('');
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    supabase.from('social_accounts').select('id,platform,name,username,client_id').eq('is_active', true).then(({ data }) => setAccounts(data || []));
     supabase.from('clients').select('id, name').eq('is_active', true).order('name').then(({ data }) => {
       if (data) setClients(data);
     });
     if (editId) {
       supabase.from('scheduled_posts').select('*').eq('id', editId).single().then(({ data }) => {
         if (data) {
+          const res = (data.publish_results || {}) as Record<string, { status: string }>;
+          const vals = Object.values(res);
+          setPublishStatus(data.auto_publish && vals.length
+            ? `Auto-post: ${vals.filter(v => v.status === 'published').length} posted, ${vals.filter(v => v.status === 'failed').length} failed${data.publish_error ? ` — ${data.publish_error}` : ''}`
+            : '');
           setForm({
             client_id: data.client_id,
             title: data.title,
@@ -58,6 +68,8 @@ export default function SocialCompose() {
             hashtags: data.hashtags || '',
             media_type: data.media_type,
             platforms: (data.platforms as string[]) || [],
+            auto_publish: data.auto_publish,
+            account_ids: (data.account_ids as string[]) || [],
             scheduled_at: data.scheduled_at ? new Date(data.scheduled_at).toISOString().slice(0, 16) : '',
             media_urls: (data.media_urls as string[]) || [],
             notes: data.notes || '',
@@ -102,6 +114,10 @@ export default function SocialCompose() {
       toast({ title: 'Set a scheduled date', variant: 'destructive' });
       return;
     }
+    if (form.auto_publish && status === 'scheduled' && (form.account_ids.length === 0 || form.media_urls.length === 0)) {
+      toast({ title: 'Auto-post needs accounts and a video/photo', description: 'Tick at least one account and upload media.', variant: 'destructive' });
+      return;
+    }
     setSaving(true);
     try {
       const payload = {
@@ -116,6 +132,9 @@ export default function SocialCompose() {
         notes: form.notes,
         status,
         created_by: user!.id,
+        auto_publish: form.auto_publish,
+        account_ids: form.account_ids,
+        ...(status === 'scheduled' ? { publish_results: {}, publish_error: null, publish_attempts: 0 } : {}),
       };
       if (editId) {
         const { error } = await supabase.from('scheduled_posts').update(payload).eq('id', editId);
@@ -234,6 +253,36 @@ export default function SocialCompose() {
           <div className="space-y-1.5">
             <Label>Schedule Date & Time</Label>
             <Input type="datetime-local" value={form.scheduled_at} onChange={e => setForm(f => ({ ...f, scheduled_at: e.target.value }))} />
+          </div>
+
+          <div className="space-y-3 rounded-lg border border-border p-4">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" className="h-5 w-5 accent-primary" checked={form.auto_publish} onChange={e => setForm(f => ({ ...f, auto_publish: e.target.checked }))} />
+              <span>
+                <span className="font-medium">Auto-post at the scheduled time</span>
+                <span className="block text-xs text-muted-foreground">Goes out to the accounts you tick below. Instagram & Facebook only.</span>
+              </span>
+            </label>
+            {form.auto_publish && (
+              accounts.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No accounts connected. <a href="/social/accounts" className="text-primary underline">Connect accounts</a></p>
+              ) : (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {[...accounts].sort((a, b) => Number(b.client_id === form.client_id) - Number(a.client_id === form.client_id)).map(a => {
+                    const on = form.account_ids.includes(a.id);
+                    const Icon = a.platform === 'instagram' ? Instagram : Facebook;
+                    return (
+                      <button key={a.id} type="button"
+                        onClick={() => setForm(f => ({ ...f, account_ids: on ? f.account_ids.filter(x => x !== a.id) : [...f.account_ids, a.id] }))}
+                        className={cn('flex min-h-11 items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm', on ? 'border-primary bg-primary/10' : 'border-border bg-card text-muted-foreground')}>
+                        <Icon size={14} /> <span className="truncate">{a.username ? `@${a.username}` : a.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )
+            )}
+            {publishStatus && <p className="text-xs text-muted-foreground">{publishStatus}</p>}
           </div>
 
           <div className="space-y-1.5">

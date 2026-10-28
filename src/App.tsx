@@ -61,6 +61,7 @@ const CameraFootage = lazyWithRetry(() => import("@/pages/camera/CameraFootage")
 const SocialDashboard = lazyWithRetry(() => import("@/pages/social/SocialDashboard"));
 const SocialCompose = lazyWithRetry(() => import("@/pages/social/SocialCompose"));
 const SocialCalendar = lazyWithRetry(() => import("@/pages/social/SocialCalendar"));
+const SocialAccounts = lazyWithRetry(() => import("@/pages/social/SocialAccounts"));
 
 const PublicPostPreview = lazyWithRetry(() => import("@/pages/PublicPostPreview"));
 
@@ -154,6 +155,7 @@ const App = () => (
               <Route path="/social" element={<ProtectedRoute allowedRoles={['social_executive']}><SocialDashboard /></ProtectedRoute>} />
               <Route path="/social/compose" element={<ProtectedRoute allowedRoles={['social_executive']}><SocialCompose /></ProtectedRoute>} />
               <Route path="/social/calendar" element={<ProtectedRoute allowedRoles={['social_executive']}><SocialCalendar /></ProtectedRoute>} />
+              <Route path="/social/accounts" element={<ProtectedRoute allowedRoles={['social_executive', 'admin', 'coo']}><SocialAccounts /></ProtectedRoute>} />
 
               <Route path="/social/clients" element={<ProtectedRoute allowedRoles={['social_executive']}><SocialLayout><ClientsHub /></SocialLayout></ProtectedRoute>} />
               <Route path="/social/profile" element={<ProtectedRoute allowedRoles={['social_executive']}><SocialLayout><MyProfilePage /></SocialLayout></ProtectedRoute>} />
