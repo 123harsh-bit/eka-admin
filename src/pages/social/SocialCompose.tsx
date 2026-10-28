@@ -70,6 +70,8 @@ export default function SocialCompose() {
             platforms: (data.platforms as string[]) || [],
             auto_publish: data.auto_publish,
             account_ids: (data.account_ids as string[]) || [],
+            scheduled_at: data.scheduled_at ? new Date(data.scheduled_at).toISOString().slice(0, 16) : '',
+            media_urls: (data.media_urls as string[]) || [],
             notes: data.notes || '',
           });
         }
